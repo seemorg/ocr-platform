@@ -15,14 +15,13 @@ import { signOut, useSession } from "next-auth/react";
 import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { DirectionProvider } from "@radix-ui/react-direction";
 import Zoom from "@/components/zoom-image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
 
-export const defaultValue = {
+const defaultValue = {
   type: "doc",
   content: [
     {
