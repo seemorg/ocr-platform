@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Page" ALTER COLUMN "pageNumber" DROP NOT NULL,
+ALTER COLUMN "volumeNumber" DROP NOT NULL,
+ALTER COLUMN "footnotes" DROP NOT NULL;

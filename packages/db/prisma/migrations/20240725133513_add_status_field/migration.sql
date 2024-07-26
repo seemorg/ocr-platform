@@ -1,0 +1,5 @@
+-- CreateEnum
+CREATE TYPE "BookStatus" AS ENUM ('UNPROCESSED', 'PROCESSING', 'WAITING_FOR_REVIEW', 'REVIEWED');
+
+-- AlterTable
+ALTER TABLE "Book" ADD COLUMN     "status" "BookStatus" NOT NULL DEFAULT 'UNPROCESSED';

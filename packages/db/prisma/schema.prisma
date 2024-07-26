@@ -14,18 +14,6 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    createdBy   User   @relation(fields: [createdById], references: [id])
-    createdById String
-
-    @@index([name])
-}
-
 // Necessary for Next auth
 model Account {
     id                       String  @id @default(cuid())
@@ -62,7 +50,7 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
-    posts         Post[]
+    reviewedPages Page[]
 }
 
 model VerificationToken {
@@ -71,4 +59,48 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model Author {
+    id         String @id @default(cuid())
+    arabicName String
+    books      Book[]
+}
+
+enum BookStatus {
+    UNPROCESSED
+    PROCESSING
+    WAITING_FOR_REVIEW
+    REVIEWED
+}
+
+model Book {
+    id            String     @id @default(cuid())
+    pdfUrl        String
+    pages         Page[]
+    totalPages    Int        @default(0)
+    reviewedPages Int        @default(0)
+    author        Author     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+    authorId      String
+    status        BookStatus @default(UNPROCESSED)
+}
+
+model Page {
+    id            String @id @default(cuid())
+    pageNumber    Int?
+    volumeNumber  Int?
+    pdfPageNumber Int
+
+    content   String? @db.Text
+    footnotes String? @db.Text
+
+    ocrContent   String  @db.Text
+    ocrFootnotes String? @db.Text
+
+    book         Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+    bookId       String
+    reviewed     Boolean   @default(false)
+    reviewedAt   DateTime?
+    reviewedBy   User?     @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
+    reviewedById String?
 }
