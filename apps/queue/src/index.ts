@@ -56,6 +56,14 @@ app.post("/book/ocr", async (c) => {
 
 showRoutes(app);
 
-serve({ fetch: app.fetch, port: 3000 }, ({ address, port }) => {
+let port = 8080;
+if (process.env.PORT) {
+  const portInt = parseInt(process.env.PORT);
+  if (portInt && !isNaN(portInt)) {
+    port = portInt;
+  }
+}
+
+serve({ fetch: app.fetch, port }, ({ address, port }) => {
   console.log(`Server started on ${address}:${port}...`);
 });
