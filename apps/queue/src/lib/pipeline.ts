@@ -1,0 +1,160 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import { ocrPage } from "./ocr";
+import { AzureKeyCredential, OpenAIClient } from "@azure/openai";
+import { env } from "@/env";
+
+const openai = new OpenAIClient(
+  `https://${env.AZURE_OPENAI_RESOURCE_NAME}.openai.azure.com/`,
+  new AzureKeyCredential(env.AZURE_OPENAI_KEY),
+);
+
+type Page = {
+  imageBase64: string;
+  text: string;
+};
+
+export const correctOcrResponse = async (page: Page) => {
+  const response = await openai.getChatCompletions(
+    env.AZURE_OPENAI_DEPLOYMENT_NAME,
+    [
+      {
+        role: "system",
+        content:
+          "The following is the output of an OCR system that might contain mistakes or have the words be out of order. Given the following image and what the ocr generated, created the modified and correct version. It is possible that initial output does not contain any errors.",
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "image_url",
+            imageUrl: {
+              url: `data:image/png;base64,${page.imageBase64}`,
+            },
+          },
+          {
+            type: "text",
+            text: page.text,
+          },
+        ],
+      },
+    ],
+  );
+
+  return response.choices[0]!.message?.content;
+};
+
+export const convertOcrResponseToHtml = async (page: Page) => {
+  const response = await openai.getChatCompletions(
+    env.AZURE_OPENAI_DEPLOYMENT_NAME,
+    [
+      {
+        role: "system",
+        content: `Given the following output of an OCR system and image it was generated from. Highlight the headers, and text formatting. using html format. DO NOT modify the content of the of the output, just add html formatting.`,
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "image_url",
+            imageUrl: {
+              url: `data:image/png;base64,${page.imageBase64}`,
+            },
+          },
+          {
+            type: "text",
+            text: page.text,
+          },
+        ],
+      },
+    ],
+  );
+
+  return response.choices[0]!.message?.content;
+};
+
+export const segmentOcrResponse = async (page: Page) => {
+  const response = await openai.getChatCompletions(
+    env.AZURE_OPENAI_DEPLOYMENT_NAME,
+    [
+      {
+        role: "system",
+        content: `
+        Given the following output of an OCR system and image it was generated from. Segment the content into a header (optional), body, footnotes (optional), and page number. The output should match the following json format: 
+        {
+          header: String | null,
+          body: String,
+          footnotes: String | null,
+          pageNumber: Number
+        }.
+        
+        DO NOT modify the content or formatting, just segment them into different sections. if a section is empty or not applicable make the value \`null\`
+                    `.trim(),
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "image_url",
+            imageUrl: {
+              url: `data:image/png;base64,${page.imageBase64}`,
+            },
+          },
+          {
+            type: "text",
+            text: page.text,
+          },
+        ],
+      },
+    ],
+    {
+      responseFormat: { type: "json_object" },
+    },
+  );
+
+  const content = response.choices[0]!.message?.content;
+  if (!content) return null;
+
+  try {
+    return JSON.parse(content) as {
+      header: string | null;
+      body: string;
+      footnotes: string | null;
+      pageNumber: number;
+    };
+  } catch (e) {
+    console.log(e);
+    return null;
+  }
+};
+
+export async function pdfPipelineForPage(url: string, pageIndex: number) {
+  const page = await ocrPage(url, pageIndex);
+  console.log(`[PIPELINE] Correcting page ${page.pageNumber}`);
+
+  const corrected = await correctOcrResponse(page);
+  if (!corrected) {
+    console.log("Could not correct");
+    throw new Error("Could not correct");
+  }
+
+  console.log(`[PIPELINE] Converting page ${page.pageNumber}`);
+  const updatedPage = { text: corrected, imageBase64: page.imageBase64 };
+  const html = await convertOcrResponseToHtml(updatedPage);
+  if (!html) {
+    console.log("Could not highlight");
+    throw new Error("Could not highlight");
+  }
+
+  console.log(`[PIPELINE] Segmenting page ${page.pageNumber}`);
+  const htmlPage = { text: html, imageBase64: page.imageBase64 };
+  const segmentedHtml = await segmentOcrResponse(htmlPage);
+  if (!segmentedHtml) {
+    console.log("Could not segment");
+    throw new Error("Could not segment");
+  }
+
+  return segmentedHtml;
+}
