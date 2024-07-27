@@ -9,9 +9,10 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "generate": "prisma generate",
-    "migrate:dev": "pnpm with-env prisma db push --skip-generate",
+    "migrate:dev": "pnpm with-env prisma migrate dev",
     "push": "pnpm with-env prisma db push --skip-generate",
     "studio": "pnpm with-env prisma studio",
+    "with-env": "dotenv -e ../../.env --",
     "clean": "rm -rf .turbo dist node_modules",
     "format": "prettier --check . --ignore-path ../../.gitignore",
     "lint": "eslint"

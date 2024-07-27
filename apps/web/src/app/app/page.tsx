@@ -1,8 +1,11 @@
 "use client";
 
-import Editor from "@/components/tailwind-editor";
 import type { JSONContent } from "novel";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Editor from "@/components/tailwind-editor";
+import { Button } from "@/components/ui/button";
+import { Container } from "@/components/ui/container";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,15 +14,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { signOut, useSession } from "next-auth/react";
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import Zoom from "@/components/zoom-image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { useRouter } from "next/navigation";
+import Zoom from "@/components/zoom-image";
+import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 
 const defaultValue = {
   type: "doc",
@@ -124,20 +125,6 @@ const defaultFootnotesValue = {
       ],
     },
   ],
-};
-
-const Container = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => {
-  return (
-    <div className={cn("mx-auto w-full max-w-7xl px-4 sm:px-6", className)}>
-      {children}
-    </div>
-  );
 };
 
 export default function AppPage() {

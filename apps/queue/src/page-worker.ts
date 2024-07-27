@@ -1,9 +1,11 @@
 import { Worker } from "bullmq";
+
+import { BookStatus } from "@usul-ocr/db";
+
+import { db } from "./lib/db";
+import { pdfPipelineForPage } from "./lib/pipeline";
 import { redisOptions } from "./lib/redis";
 import { PAGES_QUEUE_NAME } from "./page-queue";
-import { pdfPipelineForPage } from "./lib/pipeline";
-import { db } from "./lib/db";
-import { BookStatus } from "@usul-ocr/db";
 
 export const pagesWorker = new Worker<{
   bookId: string;
@@ -38,5 +40,5 @@ export const pagesWorker = new Worker<{
 
     return {};
   },
-  { connection: redisOptions },
+  { connection: redisOptions, concurrency: 10 },
 );

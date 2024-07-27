@@ -1,23 +1,18 @@
-import { z } from "zod";
-
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { env } from "@/env";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { z } from "zod";
 
 export const bookRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
-        arabicName: z.string().min(1),
-        englishName: z.string().min(1),
-        pdfUrl: z.string().min(1),
+        pdfUrl: z.string().url(),
         authorId: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const book = await ctx.db.book.create({
         data: {
-          arabicName: input.arabicName,
-          englishName: input.englishName,
           author: {
             connect: {
               id: input.authorId,
@@ -27,10 +22,13 @@ export const bookRouter = createTRPCRouter({
         },
       });
 
-      const response = await fetch(`${env.OCR_SERVER_URL}/book/ocr`, {
-        method: "POST",
-        body: JSON.stringify({ bookId: book.id }),
-      });
+      const response = await fetch(
+        `${env.NEXT_PUBLIC_OCR_SERVER_URL}book/ocr`,
+        {
+          method: "POST",
+          body: JSON.stringify({ bookId: book.id }),
+        },
+      );
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const data = await response.json();
