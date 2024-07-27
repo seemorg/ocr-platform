@@ -17,7 +17,6 @@ import { BookStatus } from "@usul-ocr/db";
 const app = new Hono();
 
 const serverAdapter = new HonoAdapter(serveStatic);
-// serverAdapter.setStaticPath("./public");
 
 createBullBoard({
   queues: [new BullMQAdapter(booksQueue), new BullMQAdapter(pagesQueue)],
