@@ -28,7 +28,7 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: index.docker.io/${{ secrets.AzureAppService_ContainerUsername_713628dfb6814e24accd1488da72c0c4 }}/ahmedriad1/usul-ocr:${{ github.sha }}
+        tags: index.docker.io/${{ secrets.AzureAppService_ContainerUsername_713628dfb6814e24accd1488da72c0c4 }}/usul-ocr:${{ github.sha }}
         file: ./Dockerfile
 
   deploy:
@@ -46,4 +46,4 @@ jobs:
         app-name: 'usul-ocr'
         slot-name: 'production'
         publish-profile: ${{ secrets.AzureAppService_PublishProfile_9952d27165014253b430896794b47362 }}
-        images: 'index.docker.io/${{ secrets.AzureAppService_ContainerUsername_713628dfb6814e24accd1488da72c0c4 }}/ahmedriad1/usul-ocr:${{ github.sha }}'
+        images: 'index.docker.io/${{ secrets.AzureAppService_ContainerUsername_713628dfb6814e24accd1488da72c0c4 }}/usul-ocr:${{ github.sha }}'
