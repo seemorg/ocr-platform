@@ -1,13 +1,12 @@
-import DocumentIntelligence from "@azure-rest/ai-document-intelligence";
-import {
+import { env } from "@/env";
+import DocumentIntelligence, {
   getLongRunningPoller,
   isUnexpected,
 } from "@azure-rest/ai-document-intelligence";
-import { PDFDocument } from "pdf-lib";
 import { AzureKeyCredential } from "@azure/core-auth";
-import { env } from "@/env";
-import { pdf as pdfToImg } from "pdf-to-img";
 import { LRUCache } from "lru-cache";
+import { PDFDocument } from "pdf-lib";
+import { pdf as pdfToImg } from "pdf-to-img";
 
 const client = (
   (DocumentIntelligence as any).default as typeof DocumentIntelligence
@@ -83,8 +82,10 @@ export async function ocrPage(pdfUrl: string, pageIndex: number) {
   };
 
   if (!analyzeResult) {
-    console.log(pollResult);
-    throw new Error("Expected at least one document in the result.");
+    throw {
+      message: "Expected at least one document in the result.",
+      response: pollResult,
+    };
   }
 
   return {
