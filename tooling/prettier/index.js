@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { fileURLToPath } from 'url';
 
 /** @typedef {import("prettier").Config} PrettierConfig */
@@ -8,7 +9,7 @@ import { fileURLToPath } from 'url';
 const config = {
   plugins: ['@ianvs/prettier-plugin-sort-imports', 'prettier-plugin-tailwindcss'],
   tailwindConfig: fileURLToPath(
-    new URL('../../tooling/tailwind/web.ts', import.meta.url),
+    new URL('../../apps/web/tailwind.config.ts', import.meta.url),
   ),
   tailwindFunctions: ['cn', 'cva'],
   importOrder: [

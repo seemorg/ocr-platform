@@ -1,20 +1,32 @@
 import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/dist/src/queueAdapters/bullMQ.js";
 import { HonoAdapter } from "@bull-board/hono";
-import { Hono } from "hono";
-import { showRoutes } from "hono/dev";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
+import { Hono } from "hono";
+import { basicAuth } from "hono/basic-auth";
+import { showRoutes } from "hono/dev";
 
 import { booksQueue } from "./book-queue";
 import { pagesQueue } from "./page-queue";
 
 import "./book-worker";
 import "./page-worker";
-import { db } from "./lib/db";
+
 import { BookStatus } from "@usul-ocr/db";
 
+import { env } from "./env";
+import { db } from "./lib/db";
+
 const app = new Hono();
+
+app.use(
+  "/ui/*",
+  basicAuth({
+    username: env.DASHBOARD_USERNAME,
+    password: env.DASHBOARD_PASSWORD,
+  }),
+);
 
 const serverAdapter = new HonoAdapter(serveStatic);
 
@@ -53,6 +65,21 @@ app.post("/book/ocr", async (c) => {
   return c.json({ ok: true });
 });
 
+const formatTime = (time: number) => {
+  const seconds = Math.floor(time / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+};
+
+let startDate: Date | null;
+
+app.get("/uptime", async (c) => {
+  const time = startDate ? new Date().getTime() - startDate.getTime() : 0;
+
+  return c.json({ uptime: formatTime(time) });
+});
+
 showRoutes(app);
 
 let port = 8080;
@@ -64,5 +91,6 @@ if (process.env.PORT) {
 }
 
 serve({ fetch: app.fetch, port }, ({ address, port }) => {
+  startDate = new Date();
   console.log(`Server started on ${address}:${port}...`);
 });

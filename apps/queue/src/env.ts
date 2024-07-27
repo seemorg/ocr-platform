@@ -21,6 +21,10 @@ export const env = createEnv({
     REDIS_PASSWORD: z.string(),
     REDIS_HOST: z.string(),
     REDIS_PORT: z.coerce.number(),
+    HELICONE_API_KEY: z.string(),
+    DISABLE_HELICONE: z.coerce.boolean().optional().default(false),
+    DASHBOARD_USERNAME: z.string(),
+    DASHBOARD_PASSWORD: z.string(),
   },
 
   /**
@@ -35,4 +39,3 @@ export const env = createEnv({
    */
   emptyStringAsUndefined: true,
 });
-

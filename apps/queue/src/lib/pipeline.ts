@@ -1,15 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { ocrPage } from "./ocr";
-import { AzureKeyCredential, OpenAIClient } from "@azure/openai";
-import { env } from "@/env";
-
-const openai = new OpenAIClient(
-  `https://${env.AZURE_OPENAI_RESOURCE_NAME}.openai.azure.com/`,
-  new AzureKeyCredential(env.AZURE_OPENAI_KEY),
-);
+import { getChatCompletions } from "./openai";
 
 type Page = {
   imageBase64: string;
@@ -17,67 +7,60 @@ type Page = {
 };
 
 export const correctOcrResponse = async (page: Page) => {
-  const response = await openai.getChatCompletions(
-    env.AZURE_OPENAI_DEPLOYMENT_NAME,
-    [
-      {
-        role: "system",
-        content:
-          "The following is the output of an OCR system that might contain mistakes or have the words be out of order. Given the following image and what the ocr generated, created the modified and correct version. It is possible that initial output does not contain any errors.",
-      },
-      {
-        role: "user",
-        content: [
-          {
-            type: "image_url",
-            imageUrl: {
-              url: `data:image/png;base64,${page.imageBase64}`,
-            },
+  const response = await getChatCompletions([
+    {
+      role: "system",
+      content:
+        "The following is the output of an OCR system that might contain mistakes or have the words be out of order. Given the following image and what the ocr generated, created the modified and correct version. It is possible that initial output does not contain any errors.",
+    },
+    {
+      role: "user",
+      content: [
+        {
+          type: "image_url",
+          imageUrl: {
+            url: `data:image/png;base64,${page.imageBase64}`,
           },
-          {
-            type: "text",
-            text: page.text,
-          },
-        ],
-      },
-    ],
-  );
+        },
+        {
+          type: "text",
+          text: page.text,
+        },
+      ],
+    },
+  ]);
 
-  return response.choices[0]!.message?.content;
+  return response;
 };
 
 export const convertOcrResponseToHtml = async (page: Page) => {
-  const response = await openai.getChatCompletions(
-    env.AZURE_OPENAI_DEPLOYMENT_NAME,
-    [
-      {
-        role: "system",
-        content: `Given the following output of an OCR system and image it was generated from. Highlight the headers, and text formatting. using html format. DO NOT modify the content of the of the output, just add html formatting.`,
-      },
-      {
-        role: "user",
-        content: [
-          {
-            type: "image_url",
-            imageUrl: {
-              url: `data:image/png;base64,${page.imageBase64}`,
-            },
+  const response = await getChatCompletions([
+    {
+      role: "system",
+      content: `Given the following output of an OCR system and image it was generated from. Highlight the headers, and text formatting. using html format. DO NOT modify the content of the of the output, just add html formatting.`,
+    },
+    {
+      role: "user",
+      content: [
+        {
+          type: "image_url",
+          imageUrl: {
+            url: `data:image/png;base64,${page.imageBase64}`,
           },
-          {
-            type: "text",
-            text: page.text,
-          },
-        ],
-      },
-    ],
-  );
+        },
+        {
+          type: "text",
+          text: page.text,
+        },
+      ],
+    },
+  ]);
 
-  return response.choices[0]!.message?.content;
+  return response;
 };
 
 export const segmentOcrResponse = async (page: Page) => {
-  const response = await openai.getChatCompletions(
-    env.AZURE_OPENAI_DEPLOYMENT_NAME,
+  const response = await getChatCompletions(
     [
       {
         role: "system",
@@ -114,7 +97,7 @@ export const segmentOcrResponse = async (page: Page) => {
     },
   );
 
-  const content = response.choices[0]!.message?.content;
+  const content = response;
   if (!content) return null;
 
   try {
