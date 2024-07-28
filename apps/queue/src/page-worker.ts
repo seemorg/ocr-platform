@@ -4,8 +4,7 @@ import { BookStatus } from "@usul-ocr/db";
 
 import { db } from "./lib/db";
 import { pdfPipelineForPage } from "./lib/pipeline";
-import { redisOptions } from "./lib/redis";
-import { PAGES_QUEUE_NAME } from "./page-queue";
+import { PAGES_QUEUE_NAME, PAGES_QUEUE_REDIS } from "./page-queue";
 
 export const pagesWorker = new Worker<{
   bookId: string;
@@ -40,5 +39,11 @@ export const pagesWorker = new Worker<{
 
     return {};
   },
-  { connection: redisOptions, concurrency: 10 },
+  {
+    connection: PAGES_QUEUE_REDIS,
+    concurrency: 10,
+    removeOnComplete: {
+      age: 3600 * 24 * 5, // keep up to 5 days
+    },
+  },
 );

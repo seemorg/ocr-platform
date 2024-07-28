@@ -1,8 +1,9 @@
 import { Queue } from "bullmq";
 
-import { redisOptions } from "./lib/redis";
+import { createRedis } from "./lib/redis";
 
 export const PAGES_QUEUE_NAME = "pages_queue";
+export const PAGES_QUEUE_REDIS = createRedis();
 
 export const pagesQueue = new Queue<{
   bookId: string;
@@ -10,5 +11,5 @@ export const pagesQueue = new Queue<{
   pdfUrl: string;
   isLast?: boolean;
 }>(PAGES_QUEUE_NAME, {
-  connection: redisOptions,
+  connection: PAGES_QUEUE_REDIS,
 });

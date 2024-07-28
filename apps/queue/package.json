@@ -25,6 +25,7 @@
     "@usul-ocr/db": "workspace:*",
     "bullmq": "^5.10.3",
     "hono": "^4.5.1",
+    "ioredis": "^5.4.1",
     "lru-cache": "^11.0.0",
     "openai": "^4.53.2",
     "pdf-lib": "^1.17.1",

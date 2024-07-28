@@ -1,11 +1,12 @@
 import { Worker } from "bullmq";
-import { BOOKS_QUEUE_NAME } from "./book-queue";
-import { redisOptions } from "./lib/redis";
+
+import { BookStatus } from "@usul-ocr/db";
+
+import { BOOKS_QUEUE_NAME, BOOKS_QUEUE_REDIS } from "./book-queue";
 import { db } from "./lib/db";
 import { getPdfPages } from "./lib/ocr";
-import { pagesQueue } from "./page-queue";
 import { chunk } from "./lib/utils";
-import { BookStatus } from "@usul-ocr/db";
+import { pagesQueue } from "./page-queue";
 
 export const worker = new Worker<{ bookId: string }>(
   BOOKS_QUEUE_NAME,
@@ -44,5 +45,10 @@ export const worker = new Worker<{ bookId: string }>(
 
     return { totalPages: pages };
   },
-  { connection: redisOptions },
+  {
+    connection: BOOKS_QUEUE_REDIS,
+    removeOnComplete: {
+      age: 3600 * 24 * 7, // keep up to 24 hours
+    },
+  },
 );

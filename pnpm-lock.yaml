@@ -87,6 +87,9 @@ importers:
       hono:
         specifier: ^4.5.1
         version: 4.5.1
+      ioredis:
+        specifier: ^5.4.1
+        version: 5.4.1
       lru-cache:
         specifier: ^11.0.0
         version: 11.0.0

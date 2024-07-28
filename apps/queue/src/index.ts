@@ -20,14 +20,6 @@ import { db } from "./lib/db";
 
 const app = new Hono();
 
-app.use(
-  "/ui/*",
-  basicAuth({
-    username: env.DASHBOARD_USERNAME,
-    password: env.DASHBOARD_PASSWORD,
-  }),
-);
-
 const serverAdapter = new HonoAdapter(serveStatic);
 
 createBullBoard({
@@ -37,6 +29,14 @@ createBullBoard({
 
 const basePath = "/ui";
 serverAdapter.setBasePath(basePath);
+
+app.use(
+  "/ui/*",
+  basicAuth({
+    username: env.DASHBOARD_USERNAME,
+    password: env.DASHBOARD_PASSWORD,
+  }),
+);
 app.route(basePath, serverAdapter.registerPlugin());
 
 app.post("/book/ocr", async (c) => {
