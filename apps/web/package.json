@@ -54,6 +54,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@prisma/nextjs-monorepo-workaround-plugin": "^5.17.0",
     "@tailwindcss/typography": "^0.5.13",
     "@types/node": "^20.14.9",
     "@types/react": "catalog:react18",

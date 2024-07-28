@@ -254,6 +254,9 @@ importers:
         specifier: 'catalog:'
         version: 3.23.8
     devDependencies:
+      '@prisma/nextjs-monorepo-workaround-plugin':
+        specifier: ^5.17.0
+        version: 5.17.0
       '@tailwindcss/typography':
         specifier: ^0.5.13
         version: 0.5.13(tailwindcss@3.4.7(ts-node@10.9.2(@types/node@20.14.12)(typescript@5.5.4)))
@@ -1128,6 +1131,9 @@ packages:
 
   '@prisma/get-platform@5.17.0':
     resolution: {integrity: sha512-UlDgbRozCP1rfJ5Tlkf3Cnftb6srGrEQ4Nm3og+1Se2gWmCZ0hmPIi+tQikGDUVLlvOWx3Gyi9LzgRP+HTXV9w==}
+
+  '@prisma/nextjs-monorepo-workaround-plugin@5.17.0':
+    resolution: {integrity: sha512-kZ7RA2NhANbgQXWb2T/QmeRW5+I+9XZRcWG6c2nFnA7YhAidXDv2QBctKhtB369m86HBy8m2TFa9fCfo/pmEYQ==}
 
   '@radix-ui/number@1.1.0':
     resolution: {integrity: sha512-V3gRzhVNU1ldS5XhAPTom1fOIo4ccrjjJgmE+LI2h/WaFpHmx0MQApT+KZHnx8abG6Avtfcz4WoEciMnpFT3HQ==}
@@ -5822,6 +5828,8 @@ snapshots:
   '@prisma/get-platform@5.17.0':
     dependencies:
       '@prisma/debug': 5.17.0
+
+  '@prisma/nextjs-monorepo-workaround-plugin@5.17.0': {}
 
   '@radix-ui/number@1.1.0': {}
 
