@@ -1,49 +1,51 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
-name: 🚀 Build and Deploy
+name: 🚀 Build and Deploy Queue Service
 
 on:
   push:
     branches:
       - main
+    paths:
+      - "apps/queue/**"
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Log in to registry
-      uses: docker/login-action@v2
-      with:
-        registry: https://index.docker.io/v1/
-        username: ${{ secrets.AzureAppService_ContainerUsername_713628dfb6814e24accd1488da72c0c4 }}
-        password: ${{ secrets.AzureAppService_ContainerPassword_00926778be3d4bfd9228735cc16382e9 }}
+      - name: Log in to registry
+        uses: docker/login-action@v2
+        with:
+          registry: https://index.docker.io/v1/
+          username: ${{ secrets.AzureAppService_ContainerUsername_713628dfb6814e24accd1488da72c0c4 }}
+          password: ${{ secrets.AzureAppService_ContainerPassword_00926778be3d4bfd9228735cc16382e9 }}
 
-    - name: Build and push container image to registry
-      uses: docker/build-push-action@v3
-      with:
-        push: true
-        tags: index.docker.io/${{ secrets.AzureAppService_ContainerUsername_713628dfb6814e24accd1488da72c0c4 }}/usul-ocr:${{ github.sha }}
-        file: ./Dockerfile
+      - name: Build and push container image to registry
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: index.docker.io/${{ secrets.AzureAppService_ContainerUsername_713628dfb6814e24accd1488da72c0c4 }}/usul-ocr:${{ github.sha }}
+          file: ./Dockerfile
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
     environment:
-      name: 'production'
+      name: "production"
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-    - name: Deploy to Azure Web App
-      id: deploy-to-webapp
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: 'usul-ocr'
-        slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_9952d27165014253b430896794b47362 }}
-        images: 'index.docker.io/${{ secrets.AzureAppService_ContainerUsername_713628dfb6814e24accd1488da72c0c4 }}/usul-ocr:${{ github.sha }}'
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: "usul-ocr"
+          slot-name: "production"
+          publish-profile: ${{ secrets.AzureAppService_PublishProfile_9952d27165014253b430896794b47362 }}
+          images: "index.docker.io/${{ secrets.AzureAppService_ContainerUsername_713628dfb6814e24accd1488da72c0c4 }}/usul-ocr:${{ github.sha }}"
