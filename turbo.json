@@ -73,6 +73,7 @@
     "EMAIL_SERVER_PORT",
     "EMAIL_FROM",
     "NEXT_PUBLIC_OCR_SERVER_URL",
+    "OCR_SERVER_API_KEY",
     "PORT"
   ],
   "globalPassThroughEnv": [

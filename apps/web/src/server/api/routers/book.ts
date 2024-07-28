@@ -26,16 +26,18 @@ export const bookRouter = createTRPCRouter({
         `${env.NEXT_PUBLIC_OCR_SERVER_URL}book/ocr`,
         {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${env.OCR_SERVER_API_KEY}`,
+          },
           body: JSON.stringify({ bookId: book.id }),
         },
       );
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const data = await response.json();
+      const data = (await response.json()) as { ok: boolean };
 
       return {
         book,
-        ocrResponse: data as { ok: boolean },
+        ocrResponse: data,
       };
     }),
 });
