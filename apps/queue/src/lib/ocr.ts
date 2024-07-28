@@ -34,11 +34,7 @@ export async function getPdfPages(pdfUrl: string) {
   return pdfDoc.getPageCount();
 }
 
-// This function does the following:
-// 1. split the pdf to single pages
-// 2. for each page, OCR using azure, convert to base64 image
-// 3. yield the page number, text and image base64
-export async function ocrPage(pdfUrl: string, pageIndex: number) {
+async function getPdfPage(pdfUrl: string, pageIndex: number) {
   const pdfDoc = await getPdfDoc(pdfUrl);
 
   // Create a new PDF document for the single page
@@ -48,12 +44,39 @@ export async function ocrPage(pdfUrl: string, pageIndex: number) {
   const [copiedPage] = await singlePagePdf.copyPages(pdfDoc, [pageIndex]);
   singlePagePdf.addPage(copiedPage);
 
-  // Serialize the single-page PDF document to a buffer
+  // Serialize the single-page PDF document to a Uint8Array
   const pageUint8Array = await singlePagePdf.save();
+
+  return pageUint8Array;
+}
+
+export async function getPdfPageAsImage(pdfUrl: string, pageNumber: number) {
+  // Serialize the single-page PDF document to a buffer
+  const pageUint8Array = await getPdfPage(pdfUrl, pageNumber - 1);
+
+  let imgBuffer: Buffer | null = null;
+  for await (const page of await pdfToImg(pageUint8Array, { scale: 2 })) {
+    imgBuffer = page;
+    break;
+  }
+
+  if (!imgBuffer) {
+    return null;
+  }
+
+  return imgBuffer;
+}
+
+// This function does the following:
+// 1. split the pdf to single pages
+// 2. for each page, OCR using azure, convert to base64 image
+// 3. yield the page number, text and image base64
+export async function ocrPage(pdfUrl: string, pageIndex: number) {
+  const pageUint8Array = await getPdfPage(pdfUrl, pageIndex);
   const singlePagePdfBytes = Buffer.from(pageUint8Array).toString("base64");
 
   let imgBase64 = "";
-  for await (const page of await pdfToImg(pageUint8Array)) {
+  for await (const page of await pdfToImg(pageUint8Array, { scale: 2 })) {
     imgBase64 = page.toString("base64");
     break;
   }
@@ -63,7 +86,6 @@ export async function ocrPage(pdfUrl: string, pageIndex: number) {
     .post({
       contentType: "application/json",
       body: {
-        // urlSource: formUrl,
         base64Source: singlePagePdfBytes,
       },
     });

@@ -22,6 +22,7 @@ export const env = createEnv({
     DISABLE_HELICONE: z.coerce.boolean().optional().default(false),
     DASHBOARD_USERNAME: z.string(),
     DASHBOARD_PASSWORD: z.string(),
+    OCR_SERVER_API_KEY: z.string(),
   },
 
   /**
