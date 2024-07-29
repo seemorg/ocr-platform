@@ -107,6 +107,9 @@ ocrRoutes.get(
     c.header("Content-Type", "image/png");
     c.header("Content-Length", pageImage.byteLength.toString());
 
+    // allow all origins to use the url as a src
+    c.header("Cross-Origin-Resource-Policy", "cross-origin");
+
     return stream(
       c,
       async (stream) => {
