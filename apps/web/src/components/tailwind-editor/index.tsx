@@ -1,30 +1,29 @@
 "use client";
 
+import type { EditorInstance, JSONContent } from "novel";
 import React, { useState } from "react";
+import { cn } from "@/lib/utils";
 import {
-  EditorRoot,
-  EditorCommand,
-  EditorCommandItem,
-  EditorCommandEmpty,
-  EditorContent,
-  type JSONContent,
-  type EditorInstance,
-  EditorCommandList,
   EditorBubble,
+  EditorCommand,
+  EditorCommandEmpty,
+  EditorCommandItem,
+  EditorCommandList,
+  EditorContent,
+  EditorRoot,
 } from "novel";
 import { handleCommandNavigation } from "novel/extensions";
-import { defaultExtensions } from "./extensions";
-import { NodeSelector } from "./selectors/node-selector";
-import { LinkSelector } from "./selectors/link-selector";
-import { ColorSelector } from "./selectors/color-selector";
+import { useDebouncedCallback } from "use-debounce";
 
-import { TextButtons } from "./selectors/text-buttons";
-import { slashCommand, suggestionItems } from "./slash-command";
 // import { handleImageDrop, handleImagePaste } from "novel/plugins";
 // import { uploadFn } from "./image-upload";
 import { Separator } from "../ui/separator";
-import { useDebouncedCallback } from "use-debounce";
-import { cn } from "@/lib/utils";
+import { defaultExtensions } from "./extensions";
+import { ColorSelector } from "./selectors/color-selector";
+import { LinkSelector } from "./selectors/link-selector";
+import { NodeSelector } from "./selectors/node-selector";
+import { TextButtons } from "./selectors/text-buttons";
+import { slashCommand, suggestionItems } from "./slash-command";
 
 const extensions = [...defaultExtensions, slashCommand];
 
@@ -35,11 +34,7 @@ interface EditorProps {
 }
 
 const Editor = ({ initialValue, onChange, className }: EditorProps) => {
-  const [saveStatus, setSaveStatus] = useState("Saved");
-  const [charsCount, setCharsCount] = useState<number>(0);
-
   const [openNode, setOpenNode] = useState(false);
-  const [openColor, setOpenColor] = useState(false);
   const [openLink, setOpenLink] = useState(false);
 
   //Apply Codeblock Highlighting on the HTML from editor.getHTML()
@@ -55,7 +50,7 @@ const Editor = ({ initialValue, onChange, className }: EditorProps) => {
 
   const debouncedUpdates = useDebouncedCallback((editor: EditorInstance) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    setCharsCount(editor.storage.characterCount.words() as number);
+    // setCharsCount(editor.storage.characterCount.words() as number);
 
     if (onChange) {
       const json = editor.getJSON();
@@ -70,7 +65,7 @@ const Editor = ({ initialValue, onChange, className }: EditorProps) => {
     //   "markdown",
     //   editor.storage.markdown.getMarkdown(),
     // );
-    setSaveStatus("Saved");
+    // setSaveStatus("Saved");
   }, 500);
 
   // useEffect(() => {
@@ -121,7 +116,7 @@ const Editor = ({ initialValue, onChange, className }: EditorProps) => {
           }}
           onUpdate={({ editor }) => {
             debouncedUpdates(editor);
-            setSaveStatus("Unsaved");
+            // setSaveStatus("Unsaved");
           }}
           // slotAfter={<ImageResizer />}
         >
@@ -165,9 +160,6 @@ const Editor = ({ initialValue, onChange, className }: EditorProps) => {
 
             <Separator orientation="vertical" />
             <TextButtons />
-
-            <Separator orientation="vertical" />
-            <ColorSelector open={openColor} onOpenChange={setOpenColor} />
           </EditorBubble>
         </EditorContent>
       </EditorRoot>
