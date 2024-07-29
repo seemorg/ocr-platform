@@ -10,7 +10,12 @@ import "./page-worker";
 
 const app = new Hono();
 
-app.use(secureHeaders());
+app.use(
+  secureHeaders({
+    // crossOriginOpenerPolicy: "same-origin",
+    crossOriginResourcePolicy: "cross-origin",
+  }),
+);
 app.use(compress());
 app.use(cors());
 
