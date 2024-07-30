@@ -21,6 +21,7 @@ export default async function AppPage({
     },
     include: {
       book: true,
+      reviewedBy: { select: { email: true } },
     },
   });
 

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Editor from "@/components/tailwind-editor";
 import { defaultExtensions } from "@/components/tailwind-editor/extensions";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import {
@@ -21,9 +22,16 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import Zoom from "@/components/zoom-image";
 import { env } from "@/env";
-import { generateJSON } from "@tiptap/html";
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { api } from "@/trpc/react";
+import { generateHTML, generateJSON } from "@tiptap/html";
+import {
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  MoreHorizontal,
+} from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
+import toast from "react-hot-toast";
 
 import { Book, Page } from "@usul-ocr/db";
 
@@ -132,28 +140,34 @@ import { Book, Page } from "@usul-ocr/db";
 //   ],
 // };
 
+const serializeTipTapValue = (value: JSONContent) => {
+  return generateHTML(value, defaultExtensions);
+};
+
 export default function AppPage({
   page,
-  // parsedValue,
-  // parsedFootnotesValue,
 }: {
   page: Page & {
+    reviewedBy?: { email: string | null } | null;
+  } & {
     book: Book;
   };
-  // parsedValue: JSONContent;
-  // parsedFootnotesValue?: JSONContent;
 }) {
-  const parsedValue = useMemo(
-    () => generateJSON(page.ocrContent, defaultExtensions),
-    [page.ocrContent],
-  );
-  const parsedFootnotesValue = useMemo(
-    () =>
-      page.ocrFootnotes
-        ? generateJSON(page.ocrFootnotes, defaultExtensions)
-        : undefined,
-    [page.ocrFootnotes],
-  );
+  const session = useSession();
+  const router = useRouter();
+  const email =
+    session.status === "loading" ? "Loading..." : session.data?.user.email;
+
+  const parsedValue = useMemo(() => {
+    const value = page.content ?? page.ocrContent;
+    return value ? generateJSON(value, defaultExtensions) : undefined;
+  }, [page]);
+  const parsedFootnotesValue = useMemo(() => {
+    const value = page.footnotes ?? page.ocrFootnotes;
+    return value ? generateJSON(value, defaultExtensions) : undefined;
+  }, [page]);
+
+  const [hasChanges, setHasChanges] = useState(false);
 
   const [value, setValue] = useState<JSONContent | undefined>(parsedValue);
   const [footnotesValue, setFootnotesValue] = useState<JSONContent | undefined>(
@@ -161,45 +175,65 @@ export default function AppPage({
   );
   const [pageNumber, setPageNumber] = useState(page.pageNumber ?? undefined);
 
-  const session = useSession();
-  const router = useRouter();
-  const email =
-    session.status === "loading" ? "Loading..." : session.data?.user.email;
+  const { mutateAsync, isPending } = api.book.updatePage.useMutation({
+    onSuccess: () => {
+      toast.success("Page updated successfully");
+      router.push(`/app/${page.bookId}/${page.pdfPageNumber + 1}`);
+    },
+    onError: (error) => {
+      toast.error("Something went wrong!");
+    },
+  });
 
   const logout = async () => {
     await signOut({ redirect: false, callbackUrl: "/login" });
     router.push("/login");
   };
 
+  const submit = async () => {
+    await mutateAsync({
+      pageId: page.id,
+      content: value ? serializeTipTapValue(value) : undefined,
+      footnotesContent: footnotesValue
+        ? serializeTipTapValue(footnotesValue)
+        : undefined,
+      pageNumber,
+    });
+
+    setHasChanges(false);
+  };
+
   return (
     <main className="flex min-h-screen w-full flex-col pb-28 pt-14">
       <Container className="flex justify-between">
-        <h3 className="text-4xl font-semibold">{page.book.id}</h3>
+        <h3 className="text-4xl font-semibold">
+          {page.book.arabicName ?? page.book.englishName}
+        </h3>
 
         <div className="flex items-center gap-5">
-          <Button
-            size="icon"
-            variant="secondary"
-            asChild
-            disabled={page.pdfPageNumber === 1}
-          >
-            <Link href={`/app/${page.bookId}/${page.pdfPageNumber - 1}`}>
+          <Link href={`/app/${page.bookId}/${page.pdfPageNumber - 1}`}>
+            <Button
+              size="icon"
+              variant="secondary"
+              disabled={page.pdfPageNumber === 1}
+            >
               <ChevronLeft className="size-5" />
-            </Link>
-          </Button>
+            </Button>
+          </Link>
 
-          <Button
-            size="icon"
-            variant="secondary"
-            asChild
-            disabled={page.pdfPageNumber === page.book.totalPages}
-          >
-            <Link href={`/app/${page.bookId}/${page.pdfPageNumber + 1}`}>
+          <Link href={`/app/${page.bookId}/${page.pdfPageNumber + 1}`}>
+            <Button
+              size="icon"
+              variant="secondary"
+              disabled={page.pdfPageNumber === page.book.totalPages}
+            >
               <ChevronRight className="size-5" />
-            </Link>
-          </Button>
+            </Button>
+          </Link>
 
-          <Button>Submit</Button>
+          <Button onClick={submit} disabled={isPending || !hasChanges}>
+            {isPending ? "Submitting..." : "Submit"}
+          </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -218,6 +252,25 @@ export default function AppPage({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+      </Container>
+
+      <Container className="mt-5">
+        {page.reviewed && (
+          <Alert className="[&>svg+div]:translate-y-0" variant="success">
+            <CheckCircle className="!top-3 h-4 w-4" />
+            <AlertTitle className="mb-0">
+              This page has been submitted by {page.reviewedBy?.email} at{" "}
+              {page.reviewedAt?.toLocaleDateString("en-US", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+              . You can still edit it and override the submission
+            </AlertTitle>
+          </Alert>
+        )}
       </Container>
 
       <Container className="mt-8 flex h-full flex-1 justify-between gap-10">
@@ -241,7 +294,10 @@ export default function AppPage({
             <Editor
               className="sm:rounded-none sm:border-none sm:shadow-none"
               initialValue={value}
-              onChange={setValue}
+              onChange={(newValue) => {
+                setHasChanges(true);
+                setValue(newValue);
+              }}
             />
           </ScrollArea>
 
@@ -249,7 +305,10 @@ export default function AppPage({
             <Editor
               className="min-h-[200px] sm:rounded-none sm:border-none sm:shadow-none"
               initialValue={footnotesValue}
-              onChange={setFootnotesValue}
+              onChange={(newValue) => {
+                setHasChanges(true);
+                setFootnotesValue(newValue);
+              }}
             />
             <ScrollBar orientation="vertical" />
           </ScrollArea>
@@ -261,7 +320,10 @@ export default function AppPage({
               className="max-w-32"
               type="number"
               value={pageNumber}
-              onChange={(e) => setPageNumber(Number(e.target.value))}
+              onChange={(e) => {
+                setHasChanges(true);
+                setPageNumber(Number(e.target.value));
+              }}
             />
           </div>
         </div>

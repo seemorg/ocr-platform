@@ -40,4 +40,56 @@ export const bookRouter = createTRPCRouter({
         ocrResponse: data,
       };
     }),
+  updatePage: protectedProcedure
+    .input(
+      z.object({
+        pageId: z.string().min(1),
+        content: z.string().optional(),
+        footnotesContent: z.string().optional(),
+        pageNumber: z.number().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const page = await ctx.db.page.findUnique({
+        where: { id: input.pageId },
+        select: { reviewed: true },
+      });
+
+      if (!page) {
+        throw new Error("Page not found");
+      }
+
+      return ctx.db.page.update({
+        where: { id: input.pageId },
+        data: {
+          ...(page.reviewed
+            ? {}
+            : {
+                reviewed: true,
+                reviewedAt: new Date(),
+                reviewedBy: {
+                  connect: {
+                    id: ctx.session.user.id,
+                  },
+                },
+                book: {
+                  update: {
+                    reviewedPages: {
+                      increment: 1,
+                    },
+                  },
+                },
+              }),
+          ...(input.content && {
+            content: input.content,
+          }),
+          ...(input.footnotesContent && {
+            footnotes: input.footnotesContent,
+          }),
+          ...(input.pageNumber && {
+            pageNumber: input.pageNumber,
+          }),
+        },
+      });
+    }),
 });

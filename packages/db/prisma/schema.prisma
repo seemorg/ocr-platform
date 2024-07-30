@@ -62,20 +62,25 @@ model VerificationToken {
 }
 
 model Author {
-    id         String @id @default(cuid())
-    arabicName String
-    books      Book[]
+    id          String  @id @default(cuid())
+    arabicName  String
+    englishName String?
+    airtableId  String?
+    books       Book[]
 }
 
 enum BookStatus {
     UNPROCESSED
     PROCESSING
-    WAITING_FOR_REVIEW
-    REVIEWED
+    IN_REVIEW
+    COMPLETED
 }
 
 model Book {
     id            String     @id @default(cuid())
+    arabicName    String?
+    englishName   String?
+    airtableId    String?
     pdfUrl        String
     pages         Page[]
     totalPages    Int        @default(0)
