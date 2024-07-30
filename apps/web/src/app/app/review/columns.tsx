@@ -25,9 +25,9 @@ export type Book = {
 
 export const bookStatusToName = {
   [BookStatus.UNPROCESSED]: "Unprocessed",
-  [BookStatus.WAITING_FOR_REVIEW]: "Waiting for review",
-  [BookStatus.REVIEWED]: "Reviewed",
   [BookStatus.PROCESSING]: "Processing",
+  [BookStatus.IN_REVIEW]: "In Review",
+  [BookStatus.COMPLETED]: "Completed",
 };
 
 export const columns: ColumnDef<Book>[] = [
@@ -63,9 +63,9 @@ export const columns: ColumnDef<Book>[] = [
             "rounded-full px-2 py-1 text-xs font-medium",
             {
               [BookStatus.UNPROCESSED]: "bg-red-200 text-red-700",
-              [BookStatus.WAITING_FOR_REVIEW]: "bg-yellow-200 text-yellow-700",
-              [BookStatus.REVIEWED]: "bg-green-200 text-green-700",
               [BookStatus.PROCESSING]: "bg-blue-200 text-blue-700",
+              [BookStatus.IN_REVIEW]: "bg-yellow-200 text-yellow-700",
+              [BookStatus.COMPLETED]: "bg-green-200 text-green-700",
             }[status],
           )}
         >

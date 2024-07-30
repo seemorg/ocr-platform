@@ -33,7 +33,7 @@ export const pagesWorker = new Worker<{
     if (job.data.isLast) {
       await db.book.update({
         where: { id: bookId },
-        data: { status: BookStatus.WAITING_FOR_REVIEW },
+        data: { status: BookStatus.IN_REVIEW },
       });
     }
 

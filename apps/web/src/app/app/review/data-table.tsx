@@ -72,10 +72,10 @@ export function DataTable<TData, TValue>({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {[
-                BookStatus.PROCESSING,
-                BookStatus.REVIEWED,
                 BookStatus.UNPROCESSED,
-                BookStatus.WAITING_FOR_REVIEW,
+                BookStatus.PROCESSING,
+                BookStatus.IN_REVIEW,
+                BookStatus.COMPLETED,
               ].map((status) => {
                 return (
                   <DropdownMenuCheckboxItem
