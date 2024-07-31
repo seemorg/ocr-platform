@@ -42,12 +42,19 @@ model Session {
     user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+enum UserRole {
+    ADMIN
+    REVIEWER
+    USER
+}
+
 model User {
     id            String    @id @default(cuid())
     name          String?
     email         String?   @unique
     emailVerified DateTime?
     image         String?
+    role          UserRole  @default(USER)
     accounts      Account[]
     sessions      Session[]
     reviewedPages Page[]
@@ -90,6 +97,11 @@ model Book {
     status        BookStatus @default(UNPROCESSED)
 }
 
+enum PageFlag {
+    // Failed to generate gpt-4o content
+    NEEDS_ADDITIONAL_REVIEW
+}
+
 model Page {
     id            String @id @default(cuid())
     pageNumber    Int?
@@ -102,10 +114,17 @@ model Page {
     ocrContent   String  @db.Text
     ocrFootnotes String? @db.Text
 
+    flags PageFlag[]
+
     book         Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
     bookId       String
     reviewed     Boolean   @default(false)
     reviewedAt   DateTime?
     reviewedBy   User?     @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
     reviewedById String?
+}
+
+model UserWhitelist {
+    id    String @id @default(cuid())
+    email String @unique
 }

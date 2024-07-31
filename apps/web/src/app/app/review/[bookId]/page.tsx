@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PageLayout from "@/components/page-layout";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { db } from "@/server/db";
@@ -6,39 +7,64 @@ import { db } from "@/server/db";
 import { columns, Page } from "./columns";
 import { DataTable } from "./data-table";
 
-async function getData(bookId: string): Promise<Page[]> {
-  const pages = await db.page.findMany({
-    where: {
-      bookId,
-    },
-    select: {
-      id: true,
-      bookId: true,
-      pageNumber: true,
-      pdfPageNumber: true,
-      reviewedAt: true,
-      reviewedBy: {
-        select: {
-          id: true,
-          email: true,
-        },
+async function getData(bookId: string): Promise<{
+  book: {
+    arabicName: string | null;
+    englishName: string | null;
+  };
+  pages: Page[];
+}> {
+  const [book, pages, users] = await Promise.all([
+    db.book.findUnique({
+      where: {
+        id: bookId,
       },
-    },
-  });
+      select: {
+        arabicName: true,
+        englishName: true,
+      },
+    }),
+    db.page.findMany({
+      where: {
+        bookId,
+      },
+      select: {
+        id: true,
+        bookId: true,
+        pageNumber: true,
+        pdfPageNumber: true,
+        reviewedAt: true,
+        reviewedById: true,
+      },
+    }),
+    db.user.findMany({
+      select: {
+        id: true,
+        email: true,
+      },
+    }),
+  ]);
 
-  return pages.map((page) => ({
-    id: page.id,
-    bookId: page.bookId,
-    pageNumber: page.pageNumber,
-    pdfPageNumber: page.pdfPageNumber,
-    reviewedAt: page.reviewedAt,
-    reviewer: page.reviewedBy
-      ? {
-          id: page.reviewedBy.id,
-          email: page.reviewedBy.email!,
-        }
-      : null,
-  }));
+  const userIdToEmail = users.reduce(
+    (acc, user) => {
+      acc[user.id] = user.email;
+      return acc;
+    },
+    {} as Record<string, string | null>,
+  );
+
+  return {
+    book: book!,
+    pages: pages.map((page) => ({
+      ...page,
+      reviewer: page.reviewedById
+        ? {
+            id: page.reviewedById,
+            email: userIdToEmail[page.reviewedById] as string,
+          }
+        : null,
+    })),
+  };
 }
 
 export default async function BookPagesPage({
@@ -51,14 +77,19 @@ export default async function BookPagesPage({
   const data = await getData(bookId);
 
   return (
-    <main className="flex min-h-screen w-full flex-col pb-28 pt-14">
-      <Container>
-        <Button asChild>
-          <Link href="/app/review">Return to All Books</Link>
-        </Button>
-
-        <DataTable columns={columns} data={data} />
-      </Container>
-    </main>
+    <PageLayout
+      title={
+        <>
+          {data.book.arabicName ?? data.book.englishName}
+          <Link href="/app/review">
+            <Button size="sm" className="ml-4">
+              All Books
+            </Button>
+          </Link>
+        </>
+      }
+    >
+      <DataTable columns={columns} data={data.pages} />
+    </PageLayout>
   );
 }

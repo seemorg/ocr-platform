@@ -28,6 +28,8 @@ export const env = createEnv({
     EMAIL_SERVER_PORT: z.string(),
     EMAIL_FROM: z.string(),
     OCR_SERVER_API_KEY: z.string(),
+    AIRTABLE_API_TOKEN: z.string(),
+    AIRTABLE_APP_ID: z.string(),
   },
 
   /**
@@ -55,6 +57,8 @@ export const env = createEnv({
     EMAIL_FROM: process.env.EMAIL_FROM,
     OCR_SERVER_API_KEY: process.env.OCR_SERVER_API_KEY,
     NEXT_PUBLIC_OCR_SERVER_URL: process.env.NEXT_PUBLIC_OCR_SERVER_URL,
+    AIRTABLE_API_TOKEN: process.env.AIRTABLE_API_TOKEN,
+    AIRTABLE_APP_ID: process.env.AIRTABLE_APP_ID,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

@@ -94,6 +94,7 @@ const Editor = ({ initialValue, onChange, className }: EditorProps) => {
       </div> */}
       <EditorRoot>
         <EditorContent
+          immediatelyRender={false}
           initialContent={initialValue ?? { text: "Hello world" }}
           extensions={extensions}
           className={cn(

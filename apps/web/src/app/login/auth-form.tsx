@@ -1,17 +1,17 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { GoogleIcon } from "@/components/icons";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 // import { useSearchParams } from "next/navigation";
 import Spinner from "@/components/ui/spinner";
-import { GoogleIcon } from "@/components/icons";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import toast from "react-hot-toast";
-import { Alert, AlertTitle } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 import { CheckCircle } from "lucide-react";
+import { signIn } from "next-auth/react";
+import toast from "react-hot-toast";
 
 type UserAuthFormProps = React.HTMLAttributes<HTMLDivElement>;
 
@@ -34,9 +34,17 @@ function AuthForm({ className, ...props }: UserAuthFormProps) {
     event.preventDefault();
 
     setIsLoading(true);
-    await signIn("email", { email, redirect: false, callbackUrl: "/app" });
-    toast.success("Email sent!");
-    setIsSent(true);
+    const result = await signIn("email", {
+      email,
+      redirect: false,
+      callbackUrl: "/app",
+    });
+    if (!result || result?.error || !result.ok) {
+      toast.error("Either something went wrong or you're not authorized!");
+    } else {
+      toast.success("Email sent!");
+      setIsSent(true);
+    }
     setIsLoading(false);
   };
 

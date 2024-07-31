@@ -1,14 +1,11 @@
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import {
-  getServerSession,
-  type DefaultSession,
-  type NextAuthOptions,
-} from "next-auth";
-import { type Adapter } from "next-auth/adapters";
-import EmailProvider from "next-auth/providers/email";
-
+import type { DefaultSession, NextAuthOptions } from "next-auth";
+import { cache } from "react";
 import { env } from "@/env";
 import { db } from "@/server/db";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { getServerSession } from "next-auth";
+import { type Adapter } from "next-auth/adapters";
+import EmailProvider from "next-auth/providers/email";
 
 /**
  * Module augmentation for `next-auth` types. Allows us to add custom properties to the `session`
@@ -37,16 +34,37 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 export const authOptions: NextAuthOptions = {
+  // Include user.id on session
   callbacks: {
-    session: ({ session, user }) => ({
-      ...session,
-      user: {
-        ...session.user,
-        id: user.id,
-      },
-    }),
+    session({ session, user, token }) {
+      const id = user?.id || token?.sub;
+      if (session.user && id) session.user.id = id;
+
+      return session;
+    },
+
+    async signIn(user) {
+      console.log(user);
+
+      const email = user.profile?.email || user.user.email || "";
+
+      const whitelisted = await db.userWhitelist.findUnique({
+        where: {
+          email,
+        },
+      });
+
+      if (whitelisted) {
+        return true;
+      }
+
+      return false;
+    },
   },
   adapter: PrismaAdapter(db) as Adapter,
+  session: {
+    strategy: "jwt",
+  },
   providers: [
     EmailProvider({
       server: {
@@ -76,4 +94,4 @@ export const authOptions: NextAuthOptions = {
  *
  * @see https://next-auth.js.org/configuration/nextjs
  */
-export const getServerAuthSession = () => getServerSession(authOptions);
+export const getServerAuthSession = cache(() => getServerSession(authOptions));

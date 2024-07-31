@@ -25,6 +25,7 @@ import { env } from "@/env";
 import { api } from "@/trpc/react";
 import { generateHTML, generateJSON } from "@tiptap/html";
 import {
+  AlertCircle,
   CheckCircle,
   ChevronLeft,
   ChevronRight,
@@ -33,7 +34,7 @@ import {
 import { signOut, useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 
-import { Book, Page } from "@usul-ocr/db";
+import { Book, Page, PageFlag } from "@usul-ocr/db";
 
 // const defaultValue = {
 //   type: "doc",
@@ -255,7 +256,7 @@ export default function AppPage({
       </Container>
 
       <Container className="mt-5">
-        {page.reviewed && (
+        {page.reviewed ? (
           <Alert className="[&>svg+div]:translate-y-0" variant="success">
             <CheckCircle className="!top-3 h-4 w-4" />
             <AlertTitle className="mb-0">
@@ -270,7 +271,15 @@ export default function AppPage({
               . You can still edit it and override the submission
             </AlertTitle>
           </Alert>
-        )}
+        ) : page.flags.includes(PageFlag.NEEDS_ADDITIONAL_REVIEW) ? (
+          <Alert className="[&>svg+div]:translate-y-0" variant="warning">
+            <AlertCircle className="!top-3 h-4 w-4" />
+            <AlertTitle className="mb-0">
+              This page is more likely to contain mistakes and needs additional
+              time to review
+            </AlertTitle>
+          </Alert>
+        ) : null}
       </Container>
 
       <Container className="mt-8 flex h-full flex-1 justify-between gap-10">

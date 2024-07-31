@@ -1,3 +1,6 @@
+import Link from "next/link";
+import PageLayout from "@/components/page-layout";
+import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { db } from "@/server/db";
 
@@ -31,10 +34,17 @@ export default async function DemoPage() {
   const data = await getData();
 
   return (
-    <main className="flex min-h-screen w-full flex-col pb-28 pt-14">
-      <Container>
-        <DataTable columns={columns} data={data} />
-      </Container>
-    </main>
+    <PageLayout
+      title={
+        <>
+          All Books{" "}
+          <Link href="/app/review/new" className="ml-4">
+            <Button size="sm">New Book</Button>
+          </Link>
+        </>
+      }
+    >
+      <DataTable columns={columns} data={data} />
+    </PageLayout>
   );
 }

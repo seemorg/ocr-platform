@@ -1,5 +1,6 @@
 import { env } from "@/env";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 export const bookRouter = createTRPCRouter({
@@ -7,18 +8,53 @@ export const bookRouter = createTRPCRouter({
     .input(
       z.object({
         pdfUrl: z.string().url(),
-        authorId: z.string().min(1),
+        arabicName: z.string().min(1),
+        englishName: z.string().min(1).optional(),
+        airtableId: z.string().min(1),
+        author: z.object({
+          airtableId: z.string().min(1),
+          arabicName: z.string().min(1),
+        }),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const book = await ctx.db.book.create({
+      const author = await ctx.db.author.findFirst({
+        where: { airtableId: input.author.airtableId },
+      });
+
+      // check if book already exists
+      const book = await ctx.db.book.findFirst({
+        where: { airtableId: input.airtableId },
+        select: { id: true },
+      });
+
+      if (book) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Book already exists",
+        });
+      }
+
+      const newBook = await ctx.db.book.create({
         data: {
           author: {
-            connect: {
-              id: input.authorId,
-            },
+            ...(author
+              ? {
+                  connect: {
+                    id: author.id,
+                  },
+                }
+              : {
+                  create: {
+                    arabicName: input.author.arabicName,
+                    airtableId: input.author.airtableId,
+                  },
+                }),
           },
           pdfUrl: input.pdfUrl,
+          arabicName: input.arabicName,
+          englishName: input.englishName,
+          airtableId: input.airtableId,
         },
       });
 
@@ -29,7 +65,7 @@ export const bookRouter = createTRPCRouter({
           headers: {
             Authorization: `Bearer ${env.OCR_SERVER_API_KEY}`,
           },
-          body: JSON.stringify({ bookId: book.id }),
+          body: JSON.stringify({ bookId: newBook.id }),
         },
       );
 

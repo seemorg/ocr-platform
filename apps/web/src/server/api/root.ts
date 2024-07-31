@@ -1,6 +1,8 @@
 import { bookRouter } from "@/server/api/routers/book";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
+import { whitelistRouter } from "./routers/whitelist";
+
 /**
  * This is the primary router for your server.
  *
@@ -8,6 +10,7 @@ import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
  */
 export const appRouter = createTRPCRouter({
   book: bookRouter,
+  whitelist: whitelistRouter,
 });
 
 // export type definition of API

@@ -37,7 +37,7 @@ export const convertOcrResponseToHtml = async (page: Page) => {
   const response = await getChatCompletions([
     {
       role: "system",
-      content: `Given the following output of an OCR system and image it was generated from. Highlight the headers, and text formatting. using html format. DO NOT modify the content of the of the output, just add html formatting.`,
+      content: `Given the following output of an OCR system and image it was generated from. Highlight the headers, split the text into paragraphs, and add text formatting using the html format. DO NOT modify the content of the of the output, just add html formatting.`,
     },
     {
       role: "user",
@@ -65,7 +65,7 @@ export const segmentOcrResponse = async (page: Page) => {
       {
         role: "system",
         content: `
-        Given the following output of an OCR system and image it was generated from. Segment the content into a header (optional), body, footnotes (optional), and page number. The output should match the following json format: 
+        Given the following output of an OCR system and image it was generated from. Segment the content into a header (optional), body, footnotes (optional), and page number. Make sure to preserve the html formatting of the text and do not modify it. The output should match the following json format: 
         {
           header: String | null,
           body: String,
@@ -120,7 +120,7 @@ export async function pdfPipelineForPage(url: string, pageIndex: number) {
   const corrected = await correctOcrResponse(page);
   if (!corrected) {
     console.log("Could not correct");
-    throw new Error("Could not correct");
+    return { error: true as const, value: page.text };
   }
 
   console.log(`[PIPELINE] Converting page ${page.pageNumber}`);
@@ -128,7 +128,7 @@ export async function pdfPipelineForPage(url: string, pageIndex: number) {
   const html = await convertOcrResponseToHtml(updatedPage);
   if (!html) {
     console.log("Could not highlight");
-    throw new Error("Could not highlight");
+    return { error: true as const, value: corrected };
   }
 
   console.log(`[PIPELINE] Segmenting page ${page.pageNumber}`);
@@ -136,8 +136,8 @@ export async function pdfPipelineForPage(url: string, pageIndex: number) {
   const segmentedHtml = await segmentOcrResponse(htmlPage);
   if (!segmentedHtml) {
     console.log("Could not segment");
-    throw new Error("Could not segment");
+    return { error: true as const, value: html };
   }
 
-  return segmentedHtml;
+  return { error: false as const, value: segmentedHtml };
 }

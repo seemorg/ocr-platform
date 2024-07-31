@@ -1,6 +1,6 @@
 import { Worker } from "bullmq";
 
-import { BookStatus } from "@usul-ocr/db";
+import { BookStatus, PageFlag } from "@usul-ocr/db";
 
 import { db } from "./lib/db";
 import { pdfPipelineForPage } from "./lib/pipeline";
@@ -22,10 +22,19 @@ export const pagesWorker = new Worker<{
       data: {
         bookId,
         pdfPageNumber: pageIndex + 1,
-        pageNumber:
-          typeof result.pageNumber === "number" ? result.pageNumber : null,
-        ocrContent: result.body,
-        ocrFootnotes: result.footnotes ?? null,
+        ...(result.error
+          ? {
+              ocrContent: result.value,
+              flags: [PageFlag.NEEDS_ADDITIONAL_REVIEW],
+            }
+          : {
+              pageNumber:
+                typeof result.value.pageNumber === "number"
+                  ? result.value.pageNumber
+                  : null,
+              ocrContent: result.value.body,
+              ocrFootnotes: result.value.footnotes ?? null,
+            }),
         // volumeNumber: 1, // TODO: change later
       },
     });
