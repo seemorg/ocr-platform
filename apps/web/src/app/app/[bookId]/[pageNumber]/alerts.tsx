@@ -5,22 +5,7 @@ import { AlertCircle, CheckCircle } from "lucide-react";
 
 import { PageFlag, PageOcrStatus } from "@usul-ocr/db";
 
-const PageAlert = ({
-  icon: Icon,
-  variant,
-  children,
-}: {
-  icon: React.ElementType;
-  variant?: ComponentProps<typeof Alert>["variant"];
-  children: React.ReactNode;
-}) => {
-  return (
-    <Alert className="[&>svg+div]:translate-y-0" variant={variant}>
-      <Icon className="!top-3 size-4" />
-      <AlertTitle className="mb-0">{children}</AlertTitle>
-    </Alert>
-  );
-};
+import { PageAlert } from "./page-alert";
 
 export default function Alerts({
   page,
@@ -49,7 +34,7 @@ export default function Alerts({
       ) : null}
 
       {page.ocrStatus === PageOcrStatus.PROCESSING && (
-        <PageAlert icon={AlertCircle} variant="warning">
+        <PageAlert icon={AlertCircle} variant="info">
           This page is being regenerated. Please refresh to see if it's ready.
           When it's ready this message will no longer appear.
         </PageAlert>

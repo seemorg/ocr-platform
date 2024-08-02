@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { ComponentProps, useEffect, useState } from "react";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import { env } from "@/env";
+import { TriangleAlert } from "lucide-react";
 import { Session } from "next-auth";
 import PartySocket from "partysocket";
+
+import { PageAlert } from "./page-alert";
 
 export default function Presence({
   pageId,
@@ -59,16 +63,10 @@ export default function Presence({
   if (emails.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="size-3 rounded-full bg-green-400" />
-
-      {emails.length === 1 ? (
-        <div>{emails[0]} is currently viewing or editing this page</div>
-      ) : (
-        <div>
-          {emails.length} people are currently viewing or editing this page
-        </div>
-      )}
-    </div>
+    <PageAlert icon={TriangleAlert} variant="info">
+      {emails.length === 1
+        ? emails[0] + " is currently viewing or editing this page"
+        : emails.length + " people are currently viewing or editing this page"}
+    </PageAlert>
   );
 }

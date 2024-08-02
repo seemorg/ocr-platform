@@ -202,9 +202,6 @@ export default function AppPage({
 
       <Container className="mt-5 flex flex-col gap-3">
         <Alerts page={page} />
-      </Container>
-
-      <Container className="mt-8">
         <Presence pageId={page.id} session={session} />
       </Container>
 
