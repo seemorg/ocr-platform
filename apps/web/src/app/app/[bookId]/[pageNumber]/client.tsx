@@ -36,7 +36,7 @@ import { signOut } from "next-auth/react";
 import toast from "react-hot-toast";
 
 import type { Book, Page } from "@usul-ocr/db";
-import { PageFlag } from "@usul-ocr/db";
+import { PageFlag, PageOcrStatus } from "@usul-ocr/db";
 
 import Alerts from "./alerts";
 import Presence from "./presence";
@@ -75,6 +75,9 @@ export default function AppPage({
     parsedFootnotesValue,
   );
   const [pageNumber, setPageNumber] = useState(page.pageNumber ?? undefined);
+  const [isRegenerating, setIsRegenerating] = useState(
+    page.ocrStatus === PageOcrStatus.PROCESSING,
+  );
 
   const { mutateAsync, isPending } = api.book.updatePage.useMutation({
     onError: (error) => {
@@ -122,6 +125,7 @@ export default function AppPage({
     });
 
     toast.success("Redoing OCR... check back in a few minutes");
+    setIsRegenerating(true);
     router.refresh();
   };
 
@@ -221,6 +225,7 @@ export default function AppPage({
             <Editor
               className="sm:rounded-none sm:border-none sm:shadow-none"
               initialValue={value}
+              disabled={isRegenerating}
               onChange={(newValue) => {
                 setHasChanges(true);
                 setValue(newValue);
@@ -232,6 +237,7 @@ export default function AppPage({
             <Editor
               className="min-h-[200px] sm:rounded-none sm:border-none sm:shadow-none"
               initialValue={footnotesValue}
+              disabled={isRegenerating}
               onChange={(newValue) => {
                 setHasChanges(true);
                 setFootnotesValue(newValue);
@@ -247,6 +253,7 @@ export default function AppPage({
               className="max-w-32"
               type="number"
               value={pageNumber}
+              disabled={isRegenerating}
               onChange={(e) => {
                 setHasChanges(true);
                 setPageNumber(Number(e.target.value));

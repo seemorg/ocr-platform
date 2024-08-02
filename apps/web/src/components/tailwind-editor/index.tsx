@@ -1,7 +1,7 @@
 "use client";
 
 import type { EditorInstance, JSONContent } from "novel";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   EditorBubble,
@@ -28,11 +28,18 @@ interface EditorProps {
   initialValue?: JSONContent;
   onChange?: (value: JSONContent) => void;
   className?: string;
+  disabled?: boolean;
 }
 
-const Editor = ({ initialValue, onChange, className }: EditorProps) => {
+const Editor = ({
+  initialValue,
+  onChange,
+  className,
+  disabled,
+}: EditorProps) => {
   const [openNode, setOpenNode] = useState(false);
   const [openLink, setOpenLink] = useState(false);
+  const [editorRef, setEditorRef] = useState<EditorInstance | null>(null);
 
   const debouncedUpdates = useDebouncedCallback((editor: EditorInstance) => {
     if (onChange) {
@@ -40,6 +47,14 @@ const Editor = ({ initialValue, onChange, className }: EditorProps) => {
       onChange(json);
     }
   }, 500);
+
+  useEffect(() => {
+    if (disabled) {
+      editorRef?.setEditable(false);
+      // set content to readonly
+      editorRef?.commands.setContent("Regenerating...");
+    }
+  }, [disabled, editorRef]);
 
   return (
     <div className="relative w-full">
@@ -51,17 +66,20 @@ const Editor = ({ initialValue, onChange, className }: EditorProps) => {
           className={cn(
             "relative min-h-[500px] w-full border-muted bg-background px-6 py-6 sm:rounded-lg sm:border sm:shadow-lg",
             className,
+            disabled && "cursor-not-allowed opacity-70",
           )}
           editorProps={{
             handleDOMEvents: {
               keydown: (_view, event) => handleCommandNavigation(event),
             },
-
             attributes: {
               class:
                 "prose dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full",
               dir: "rtl",
             },
+          }}
+          onCreate={({ editor }) => {
+            setEditorRef(editor);
           }}
           onUpdate={({ editor }) => {
             debouncedUpdates(editor);
