@@ -50,7 +50,8 @@ export default function Alerts({
 
       {page.ocrStatus === PageOcrStatus.PROCESSING && (
         <PageAlert icon={AlertCircle} variant="warning">
-          This page is currently being processed. Check back in a few minutes.
+          This page is being regenerated. Please refresh to see if it's ready.
+          When it's ready this message will no longer appear.
         </PageAlert>
       )}
 
