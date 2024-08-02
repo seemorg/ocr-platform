@@ -1,3 +1,8 @@
+// import Table from "@tiptap/extension-table";
+// import TableCell from "@tiptap/extension-table-cell";
+// import TableHeader from "@tiptap/extension-table-header";
+// import TableRow from "@tiptap/extension-table-row";
+
 import { cx } from "class-variance-authority";
 import {
   HorizontalRule,
@@ -18,7 +23,7 @@ const tiptapLink = TiptapLink.configure({
 
 const taskList = TaskList.configure({
   HTMLAttributes: {
-    class: cx("not-prose pl-2 "),
+    class: cx("not-prose pl-2"),
   },
 });
 
@@ -77,6 +82,26 @@ const starterKit = StarterKit.configure({
   gapcursor: false,
 });
 
+// const table = Table.configure({
+//   resizable: true,
+//   lastColumnResizable: false,
+// });
+
+// const tableRow = TableRow.extend({
+//   allowGapCursor: false,
+//   content: "tableCell*",
+// });
+
+// const tableCell = TableCell.extend({
+//   allowGapCursor: false,
+//   content: "tableHeader*",
+// });
+
+// const tableHeader = TableHeader.extend({
+//   allowGapCursor: false,
+//   content: "tableCell*",
+// });
+
 export const defaultServerExtensions = [
   starterKit,
   tiptapLink,
@@ -86,4 +111,8 @@ export const defaultServerExtensions = [
   TextDirection.configure({
     defaultDirection: "rtl",
   }),
+  // table,
+  // tableRow,
+  // tableCell,
+  // tableHeader,
 ];

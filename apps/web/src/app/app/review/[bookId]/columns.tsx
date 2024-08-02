@@ -61,10 +61,8 @@ export const columns: ColumnDef<Page>[] = [
       );
     },
     cell: ({ row }) => {
-      const pdfPageNumber = row.getValue(
-        "pdfPageNumber",
-      ) as Page["pdfPageNumber"];
-      return <span>{pdfPageNumber ? pdfPageNumber : "-"}</span>;
+      const pageNumber = row.getValue("pageNumber") as Page["pageNumber"];
+      return <span>{pageNumber ? pageNumber : "-"}</span>;
     },
   },
   {

@@ -39,6 +39,7 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_OCR_SERVER_URL: z.string(),
+    NEXT_PUBLIC_PARTYKIT_HOST: z.string(),
   },
 
   /**
@@ -59,6 +60,7 @@ export const env = createEnv({
     NEXT_PUBLIC_OCR_SERVER_URL: process.env.NEXT_PUBLIC_OCR_SERVER_URL,
     AIRTABLE_API_TOKEN: process.env.AIRTABLE_API_TOKEN,
     AIRTABLE_APP_ID: process.env.AIRTABLE_APP_ID,
+    NEXT_PUBLIC_PARTYKIT_HOST: process.env.NEXT_PUBLIC_PARTYKIT_HOST,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

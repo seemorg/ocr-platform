@@ -76,6 +76,7 @@
     "OCR_SERVER_API_KEY",
     "AIRTABLE_API_TOKEN",
     "AIRTABLE_APP_ID",
+    "NEXT_PUBLIC_PARTYKIT_HOST",
     "PORT"
   ],
   "globalPassThroughEnv": [

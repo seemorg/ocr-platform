@@ -1,7 +1,7 @@
 "use client";
 
 import type { AirtableText } from "@/lib/airtable";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,8 +12,15 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -21,14 +28,35 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronsUpDown } from "lucide-react";
+import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import { z } from "zod";
+
+const schema = z.object({
+  airtableId: z.string().optional(),
+  id: z.string(),
+  arabicName: z.string().min(1),
+  englishName: z.string(),
+  pdfUrl: z.string().url(),
+  author: z.object({
+    id: z.string().optional(),
+    airtableId: z.string().optional(),
+    arabicName: z.string().min(1),
+  }),
+});
 
 export default function NewBookForm({
   airtableTexts,
 }: {
   airtableTexts: AirtableText[];
 }) {
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: {},
+  });
+
   const router = useRouter();
   const [selectedAirtableIndex, setSelectedAirtableIndex] = useState<
     number | null
@@ -39,10 +67,25 @@ export default function NewBookForm({
       ? airtableTexts[selectedAirtableIndex]
       : null;
 
+  useEffect(() => {
+    if (airtableText) {
+      form.setValue("airtableId", airtableText.id);
+      form.setValue("arabicName", airtableText.arabicName ?? "");
+      form.setValue("englishName", airtableText.transliteration ?? "");
+      form.setValue("pdfUrl", airtableText.pdfUrl ?? "");
+      form.setValue(
+        "author.airtableId",
+        airtableText.author?.airtableId ?? undefined,
+      );
+      form.setValue("author.arabicName", airtableText.author?.arabicName ?? "");
+    }
+  }, [airtableText]);
+
   const { mutateAsync, isPending } = api.book.create.useMutation({
     onSuccess: () => {
       toast.success("Book created successfully");
       router.push("/app/review");
+      router.refresh();
     },
     onError: (error) => {
       if (error.data?.code === "CONFLICT") {
@@ -53,37 +96,20 @@ export default function NewBookForm({
     },
   });
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!airtableText) return;
-
-    if (!airtableText.pdfUrl) {
-      toast.error("No PDF URL found");
-      return;
-    }
-
-    if (!airtableText.author) {
-      toast.error("No author found");
-      return;
-    }
-
-    if (!airtableText.arabicName) {
-      toast.error("No Arabic name found");
-      return;
-    }
-
-    await mutateAsync({
-      airtableId: airtableText.id,
-      pdfUrl: airtableText.pdfUrl,
-      arabicName: airtableText.arabicName,
-      englishName: airtableText.transliteration,
+  // 2. Define a submit handler.
+  function onSubmit(values: z.infer<typeof schema>) {
+    mutateAsync({
+      airtableId: values.airtableId,
+      pdfUrl: values.pdfUrl,
+      arabicName: values.arabicName,
+      englishName: values.englishName,
       author: {
-        airtableId: airtableText.author.airtableId,
-        arabicName: airtableText.author.arabicName,
+        id: values.author.id,
+        airtableId: values.author.airtableId,
+        arabicName: values.author.arabicName,
       },
     });
-  };
+  }
 
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
@@ -150,37 +176,96 @@ export default function NewBookForm({
         </PopoverContent>
       </Popover>
 
-      <form onSubmit={handleSubmit} className="mt-20 flex flex-col gap-10">
-        <div className="flex flex-col gap-10 sm:flex-row">
-          <div className="w-full">
-            <Label>Arabic Name</Label>
-            <Input disabled value={airtableText?.arabicName ?? ""} />
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="mt-20 flex flex-col gap-10"
+        >
+          <div className="flex flex-col gap-10 sm:flex-row">
+            <div className="w-full">
+              <FormField
+                control={form.control}
+                name="arabicName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Arabic Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="w-full">
+              <FormField
+                control={form.control}
+                name="englishName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>English Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
-          <div className="w-full">
-            <Label>English Name</Label>
-            <Input disabled value={airtableText?.transliteration ?? ""} />
-          </div>
-        </div>
+          <div className="flex flex-col gap-10 sm:flex-row">
+            <div className="w-full">
+              {/* <Label>Author</Label>
+              <Input value={airtableText?.author?.arabicName ?? ""} />
+               */}
 
-        <div className="flex flex-col gap-10 sm:flex-row">
-          <div className="w-full">
-            <Label>Author</Label>
-            <Input disabled value={airtableText?.author?.arabicName ?? ""} />
+              <FormField
+                control={form.control}
+                name="author.arabicName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Author</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="w-full">
+              {/* <Label>PDF URL</Label>
+              <Input value={airtableText?.pdfUrl ?? ""} /> */}
+              <FormField
+                control={form.control}
+                name="pdfUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PDF URL</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
-          <div className="w-full">
-            <Label>PDF URL</Label>
-            <Input disabled value={airtableText?.pdfUrl ?? ""} />
+          <div>
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Submitting..." : "Submit"}
+            </Button>
           </div>
-        </div>
-
-        <div>
-          <Button type="submit" disabled={isPending || !airtableText}>
-            {isPending ? "Submitting..." : "Submit"}
-          </Button>
-        </div>
-      </form>
+        </form>
+      </Form>
     </div>
   );
 }

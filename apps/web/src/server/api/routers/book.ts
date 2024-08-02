@@ -3,16 +3,20 @@ import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import type { Prisma } from "@usul-ocr/db";
+import { PageFlag } from "@usul-ocr/db";
+
 export const bookRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
+        airtableId: z.string().optional(),
         pdfUrl: z.string().url(),
         arabicName: z.string().min(1),
         englishName: z.string().min(1).optional(),
-        airtableId: z.string().min(1),
         author: z.object({
-          airtableId: z.string().min(1),
+          id: z.string().optional(),
+          airtableId: z.string().optional(),
           arabicName: z.string().min(1),
         }),
       }),
@@ -78,54 +82,83 @@ export const bookRouter = createTRPCRouter({
     }),
   updatePage: protectedProcedure
     .input(
-      z.object({
-        pageId: z.string().min(1),
-        content: z.string().optional(),
-        footnotesContent: z.string().optional(),
-        pageNumber: z.number().optional(),
-      }),
+      z
+        .object({
+          pageId: z.string().min(1),
+          content: z.string().optional(),
+          footnotesContent: z.string().optional(),
+          pageNumber: z.number().optional(),
+        })
+        .or(
+          z.object({
+            pageId: z.string().min(1),
+            flags: z.array(z.enum([PageFlag.EMPTY])).min(1),
+          }),
+        )
+        .or(
+          z.object({
+            pageId: z.string().min(1),
+            redoOcr: z.literal(true),
+          }),
+        ),
     )
     .mutation(async ({ ctx, input }) => {
       const page = await ctx.db.page.findUnique({
         where: { id: input.pageId },
-        select: { reviewed: true },
+        select: { id: true, reviewed: true, flags: true },
       });
 
       if (!page) {
         throw new Error("Page not found");
       }
 
+      if ("redoOcr" in input) {
+        const response = await fetch(
+          `${env.NEXT_PUBLIC_OCR_SERVER_URL}page/${page.id}/ocr`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${env.OCR_SERVER_API_KEY}`,
+            },
+          },
+        );
+
+        const data = (await response.json()) as { ok: boolean };
+        return data;
+      }
+
+      let pageData: Prisma.PageUpdateInput = {
+        reviewed: true,
+        reviewedAt: new Date(),
+        reviewedBy: {
+          connect: {
+            id: ctx.session.user.id,
+          },
+        },
+        ...(!page.reviewed
+          ? {
+              book: {
+                update: {
+                  reviewedPages: {
+                    increment: 1,
+                  },
+                },
+              },
+            }
+          : {}),
+      };
+
+      if ("flags" in input) {
+        pageData.flags = [...new Set(page.flags.concat(input.flags))];
+      } else {
+        if (input.content) pageData.content = input.content;
+        if (input.footnotesContent) pageData.footnotes = input.footnotesContent;
+        if (input.pageNumber) pageData.pageNumber = input.pageNumber;
+      }
+
       return ctx.db.page.update({
         where: { id: input.pageId },
-        data: {
-          ...(page.reviewed
-            ? {}
-            : {
-                reviewed: true,
-                reviewedAt: new Date(),
-                reviewedBy: {
-                  connect: {
-                    id: ctx.session.user.id,
-                  },
-                },
-                book: {
-                  update: {
-                    reviewedPages: {
-                      increment: 1,
-                    },
-                  },
-                },
-              }),
-          ...(input.content && {
-            content: input.content,
-          }),
-          ...(input.footnotesContent && {
-            footnotes: input.footnotesContent,
-          }),
-          ...(input.pageNumber && {
-            pageNumber: input.pageNumber,
-          }),
-        },
+        data: pageData,
       });
     }),
 });

@@ -1,39 +1,80 @@
 import { Worker } from "bullmq";
 
-import { BookStatus, PageFlag } from "@usul-ocr/db";
+import { BookStatus, PageFlag, PageOcrStatus } from "@usul-ocr/db";
 
+import type { PagesQueueData } from "./page-queue";
 import { db } from "./lib/db";
 import { pdfPipelineForPage } from "./lib/pipeline";
 import { PAGES_QUEUE_NAME, PAGES_QUEUE_REDIS } from "./page-queue";
 
-export const pagesWorker = new Worker<{
-  bookId: string;
-  pageIndex: number;
-  pdfUrl: string;
-  isLast?: boolean;
-}>(
+export const pagesWorker = new Worker<PagesQueueData>(
   PAGES_QUEUE_NAME,
   async (job) => {
     const { bookId, pageIndex, pdfUrl } = job.data;
 
-    const result = await pdfPipelineForPage(pdfUrl, pageIndex);
+    let error;
+    const result = await pdfPipelineForPage(pdfUrl, pageIndex).catch((err) => {
+      error = err;
+      return null;
+    });
+
+    if (error) {
+      job.log(JSON.stringify(error, null, 2));
+    }
+
+    if (job.data.isRedo) {
+      await db.page.update({
+        where: { id: job.data.pageId },
+        data: {
+          ocrStatus: error ? PageOcrStatus.FAILED : PageOcrStatus.COMPLETED,
+          ...(result
+            ? result.error
+              ? {
+                  ocrContent: result.value,
+                  flags: [PageFlag.NEEDS_ADDITIONAL_REVIEW],
+                }
+              : {
+                  pageNumber:
+                    typeof result.value.pageNumber === "number"
+                      ? result.value.pageNumber
+                      : null,
+                  ocrContent: result.value.body,
+                  ocrFootnotes: result.value.footnotes ?? null,
+                }
+            : {
+                ocrContent: "",
+                pageNumber: null,
+                ocrFootnotes: null,
+              }),
+        },
+      });
+
+      return {};
+    }
 
     await db.page.create({
       data: {
         bookId,
         pdfPageNumber: pageIndex + 1,
-        ...(result.error
-          ? {
-              ocrContent: result.value,
-              flags: [PageFlag.NEEDS_ADDITIONAL_REVIEW],
-            }
+        ocrStatus: error ? PageOcrStatus.FAILED : PageOcrStatus.COMPLETED,
+        ...(result
+          ? result.error
+            ? {
+                ocrContent: result.value,
+                flags: [PageFlag.NEEDS_ADDITIONAL_REVIEW],
+              }
+            : {
+                pageNumber:
+                  typeof result.value.pageNumber === "number"
+                    ? result.value.pageNumber
+                    : null,
+                ocrContent: result.value.body,
+                ocrFootnotes: result.value.footnotes ?? null,
+              }
           : {
-              pageNumber:
-                typeof result.value.pageNumber === "number"
-                  ? result.value.pageNumber
-                  : null,
-              ocrContent: result.value.body,
-              ocrFootnotes: result.value.footnotes ?? null,
+              ocrContent: "",
+              pageNumber: null,
+              ocrFootnotes: null,
             }),
         // volumeNumber: 1, // TODO: change later
       },

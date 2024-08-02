@@ -57,7 +57,9 @@ model User {
     role          UserRole  @default(USER)
     accounts      Account[]
     sessions      Session[]
-    reviewedPages Page[]
+
+    reviewedPages    Page[]
+    groupMemberships GroupMembership[]
 }
 
 model VerificationToken {
@@ -72,7 +74,7 @@ model Author {
     id          String  @id @default(cuid())
     arabicName  String
     englishName String?
-    airtableId  String?
+    airtableId  String? @unique
     books       Book[]
 }
 
@@ -87,7 +89,7 @@ model Book {
     id            String     @id @default(cuid())
     arabicName    String?
     englishName   String?
-    airtableId    String?
+    airtableId    String?    @unique
     pdfUrl        String
     pages         Page[]
     totalPages    Int        @default(0)
@@ -95,11 +97,21 @@ model Book {
     author        Author     @relation(fields: [authorId], references: [id], onDelete: Cascade)
     authorId      String
     status        BookStatus @default(UNPROCESSED)
+
+    assignedGroupId String?
+    assignedGroup   Group?  @relation(fields: [assignedGroupId], references: [id], onDelete: SetNull)
 }
 
 enum PageFlag {
-    // Failed to generate gpt-4o content
-    NEEDS_ADDITIONAL_REVIEW
+    NEEDS_ADDITIONAL_REVIEW // Failed to generate gpt-4o content
+    EMPTY // A white page
+}
+
+enum PageOcrStatus {
+    UNPROCESSED
+    PROCESSING
+    COMPLETED
+    FAILED
 }
 
 model Page {
@@ -116,6 +128,8 @@ model Page {
 
     flags PageFlag[]
 
+    ocrStatus PageOcrStatus @default(COMPLETED)
+
     book         Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
     bookId       String
     reviewed     Boolean   @default(false)
@@ -127,4 +141,29 @@ model Page {
 model UserWhitelist {
     id    String @id @default(cuid())
     email String @unique
+}
+
+enum GroupRole {
+    ADMIN
+    MEMBER
+}
+
+model GroupMembership {
+    id        String    @id @default(cuid())
+    role      GroupRole @default(MEMBER)
+    user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId    String
+    group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+    groupId   String
+    createdAt DateTime  @default(now())
+
+    @@unique([userId, groupId])
+}
+
+model Group {
+    id               String            @id @default(cuid())
+    name             String
+    assignedBooks    Book[]
+    groupMemberships GroupMembership[]
+    createdAt        DateTime          @default(now())
 }

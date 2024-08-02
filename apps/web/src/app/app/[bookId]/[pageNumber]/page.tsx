@@ -1,3 +1,4 @@
+import { getServerAuthSession } from "@/server/auth";
 import { db } from "@/server/db";
 
 // import { defaultServerExtensions } from "@/components/tailwind-editor/server-extensions";
@@ -13,6 +14,8 @@ export default async function AppPage({
     pageNumber: string;
   };
 }) {
+  const session = await getServerAuthSession();
+
   // get the first page that needs review
   const page = await db.page.findFirst({
     where: {
@@ -29,16 +32,5 @@ export default async function AppPage({
     return <div>No page to review</div>;
   }
 
-  // const parsedValue = generateJSON(page.ocrContent, defaultServerExtensions);
-  // const parsedFootnotes = page.ocrFootnotes
-  //   ? generateJSON(page.ocrFootnotes, defaultServerExtensions)
-  //   : undefined;
-
-  return (
-    <ClientAppPage
-      page={page}
-      // parsedValue={parsedValue}
-      // parsedFootnotesValue={parsedFootnotes}
-    />
-  );
+  return <ClientAppPage page={page} session={session!} />;
 }

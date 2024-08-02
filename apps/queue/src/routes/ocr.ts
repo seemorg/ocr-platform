@@ -1,5 +1,6 @@
 import { env } from "@/env";
 import { getPdfPageAsImage } from "@/lib/ocr";
+import { pagesQueue } from "@/page-queue";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 import { cache } from "hono/cache";
@@ -8,7 +9,7 @@ import { validator } from "hono/validator";
 import { LRUCache } from "lru-cache";
 import { z } from "zod";
 
-import { BookStatus } from "@usul-ocr/db";
+import { BookStatus, PageOcrStatus } from "@usul-ocr/db";
 
 import { booksQueue } from "../book-queue";
 import { db } from "../lib/db";
@@ -117,6 +118,73 @@ ocrRoutes.get(
         await stream.writeln("An error occurred!");
       },
     );
+  },
+);
+
+// route for redoing OCR for a certain page
+ocrRoutes.post(
+  "/page/:pageId/ocr",
+  validator("param", (value, c) => {
+    const parsed = z
+      .object({
+        pageId: z.string().min(1),
+      })
+      .safeParse(value);
+    if (!parsed.success) {
+      return c.json({ ok: false, error: "Invalid request" }, 400);
+    }
+    return parsed.data;
+  }),
+  async (c) => {
+    const { pageId } = c.req.valid("param");
+
+    const page = await db.page.findUnique({
+      where: {
+        id: pageId,
+      },
+      select: {
+        id: true,
+        pdfPageNumber: true,
+        book: {
+          select: {
+            id: true,
+            pdfUrl: true,
+          },
+        },
+      },
+    });
+
+    if (!page) {
+      return c.json({ ok: false, error: "Page not found" }, 404);
+    }
+
+    const pageIndex = page.pdfPageNumber - 1;
+
+    await db.page.update({
+      where: {
+        id: pageId,
+      },
+      data: {
+        ocrStatus: PageOcrStatus.PROCESSING,
+        reviewed: false,
+        reviewedAt: null,
+        reviewedById: null,
+        ocrContent: "",
+        ocrFootnotes: null,
+        content: null,
+        footnotes: null,
+      },
+    });
+
+    await pagesQueue.add(`${page.book.id}-page-${pageIndex}`, {
+      pageId,
+      bookId: page.book.id,
+      pdfUrl: page.book.pdfUrl,
+      pageIndex,
+      isRedo: true,
+    });
+
+    return c.json({ ok: true });
   },
 );
 

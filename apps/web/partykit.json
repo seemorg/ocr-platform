@@ -1,0 +1,5 @@
+{
+  "name": "usul-ocr-counter",
+  "compatibilityDate": "2024-02-15",
+  "main": "partykit/counter.ts"
+}

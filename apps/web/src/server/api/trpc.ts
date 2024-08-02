@@ -7,12 +7,13 @@
  * need to use are documented accordingly near the end.
  */
 
+import { getServerAuthSession } from "@/server/auth";
+import { db } from "@/server/db";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-import { getServerAuthSession } from "@/server/auth";
-import { db } from "@/server/db";
+import { UserRole } from "@usul-ocr/db";
 
 /**
  * 1. CONTEXT
@@ -103,6 +104,28 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
     ctx: {
       // infers the `session` as non-nullable
       session: { ...ctx.session, user: ctx.session.user },
+    },
+  });
+});
+
+export const adminProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const user = await ctx.db.user.findUnique({
+    where: {
+      id: ctx.session.user.id,
+    },
+    select: {
+      role: true,
+    },
+  });
+
+  if (!user || user.role !== UserRole.ADMIN) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  return next({
+    ctx: {
+      // infers the `session` as non-nullable
+      session: { ...ctx.session, user: ctx.session.user, role: user.role },
     },
   });
 });

@@ -28,7 +28,13 @@ export const correctOcrResponse = async (page: Page) => {
         },
       ],
     },
-  ]);
+  ]).catch((e) => {
+    if (e.message.includes(`Azure OpenAI's content management policy`)) {
+      return null;
+    }
+
+    throw e;
+  });
 
   return response;
 };
@@ -54,7 +60,13 @@ export const convertOcrResponseToHtml = async (page: Page) => {
         },
       ],
     },
-  ]);
+  ]).catch((e) => {
+    if (e.message.includes(`Azure OpenAI's content management policy`)) {
+      return null;
+    }
+
+    throw e;
+  });
 
   return response;
 };
@@ -95,7 +107,13 @@ export const segmentOcrResponse = async (page: Page) => {
     {
       responseFormat: { type: "json_object" },
     },
-  );
+  ).catch((e) => {
+    if (e.message.includes(`Azure OpenAI's content management policy`)) {
+      return null;
+    }
+
+    throw e;
+  });
 
   const content = response;
   if (!content) return null;

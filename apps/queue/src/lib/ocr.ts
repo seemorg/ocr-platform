@@ -105,6 +105,7 @@ export async function ocrPage(pdfUrl: string, pageIndex: number) {
 
   if (!analyzeResult) {
     throw {
+      code: "OCR_FAILED",
       message: "Expected at least one document in the result.",
       response: pollResult,
     };

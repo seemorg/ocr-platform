@@ -15,11 +15,8 @@ import {
 import { handleCommandNavigation } from "novel/extensions";
 import { useDebouncedCallback } from "use-debounce";
 
-// import { handleImageDrop, handleImagePaste } from "novel/plugins";
-// import { uploadFn } from "./image-upload";
 import { Separator } from "../ui/separator";
 import { defaultExtensions } from "./extensions";
-import { ColorSelector } from "./selectors/color-selector";
 import { LinkSelector } from "./selectors/link-selector";
 import { NodeSelector } from "./selectors/node-selector";
 import { TextButtons } from "./selectors/text-buttons";
@@ -37,65 +34,19 @@ const Editor = ({ initialValue, onChange, className }: EditorProps) => {
   const [openNode, setOpenNode] = useState(false);
   const [openLink, setOpenLink] = useState(false);
 
-  //Apply Codeblock Highlighting on the HTML from editor.getHTML()
-  // const highlightCodeblocks = (content: string) => {
-  //   const doc = new DOMParser().parseFromString(content, "text/html");
-  //   doc.querySelectorAll("pre code").forEach((el) => {
-  //     // @ts-ignore
-  //     // https://highlightjs.readthedocs.io/en/latest/api.html?highlight=highlightElement#highlightelement
-  //     hljs.highlightElement(el);
-  //   });
-  //   return new XMLSerializer().serializeToString(doc);
-  // };
-
   const debouncedUpdates = useDebouncedCallback((editor: EditorInstance) => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    // setCharsCount(editor.storage.characterCount.words() as number);
-
     if (onChange) {
       const json = editor.getJSON();
       onChange(json);
     }
-    // window.localStorage.setItem(
-    //   "html-content",
-    //   highlightCodeblocks(editor.getHTML()),
-    // );
-    // window.localStorage.setItem("novel-content", JSON.stringify(json));
-    // window.localStorage.setItem(
-    //   "markdown",
-    //   editor.storage.markdown.getMarkdown(),
-    // );
-    // setSaveStatus("Saved");
   }, 500);
-
-  // useEffect(() => {
-  //   const content = window.localStorage.getItem("novel-content");
-  //   if (content) setInitialContent(JSON.parse(content));
-  //   else setInitialContent(defaultEditorContent);
-  // }, []);
-
-  // if (!initialContent) return null;
 
   return (
     <div className="relative w-full">
-      {/* <div className="absolute left-5 top-5 z-10 mb-5 flex gap-2">
-        <div className="rounded-lg bg-accent px-2 py-1 text-sm text-muted-foreground">
-          {saveStatus}
-        </div>
-        <div
-          className={
-            charsCount
-              ? "rounded-lg bg-accent px-2 py-1 text-sm text-muted-foreground"
-              : "hidden"
-          }
-        >
-          {charsCount} Words
-        </div>
-      </div> */}
       <EditorRoot>
         <EditorContent
           immediatelyRender={false}
-          initialContent={initialValue ?? { text: "Hello world" }}
+          initialContent={initialValue}
           extensions={extensions}
           className={cn(
             "relative min-h-[500px] w-full border-muted bg-background px-6 py-6 sm:rounded-lg sm:border sm:shadow-lg",
@@ -105,10 +56,7 @@ const Editor = ({ initialValue, onChange, className }: EditorProps) => {
             handleDOMEvents: {
               keydown: (_view, event) => handleCommandNavigation(event),
             },
-            // handlePaste: (view, event) =>
-            //   handleImagePaste(view, event, uploadFn),
-            // handleDrop: (view, event, _slice, moved) =>
-            //   handleImageDrop(view, event, moved, uploadFn),
+
             attributes: {
               class:
                 "prose dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full",
@@ -117,9 +65,7 @@ const Editor = ({ initialValue, onChange, className }: EditorProps) => {
           }}
           onUpdate={({ editor }) => {
             debouncedUpdates(editor);
-            // setSaveStatus("Unsaved");
           }}
-          // slotAfter={<ImageResizer />}
         >
           <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-md border border-muted bg-background px-1 py-2 shadow-md transition-all">
             <EditorCommandEmpty className="px-2 text-muted-foreground">

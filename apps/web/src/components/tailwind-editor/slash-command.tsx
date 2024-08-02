@@ -1,29 +1,17 @@
 import {
   CheckSquare,
-  Code,
   Heading1,
   Heading2,
   Heading3,
-  // ImageIcon,
-  // MessageSquarePlus,
   List,
   ListOrdered,
+  Table,
   Text,
   TextQuote,
 } from "lucide-react";
-import { createSuggestionItems } from "novel/extensions";
-import { Command, renderItems } from "novel/extensions";
+import { Command, createSuggestionItems, renderItems } from "novel/extensions";
 
 export const suggestionItems = createSuggestionItems([
-  // {
-  //   title: "Send Feedback",
-  //   description: "Let us know how we can improve.",
-  //   icon: <MessageSquarePlus size={18} />,
-  //   command: ({ editor, range }) => {
-  //     editor.chain().focus().deleteRange(range).run();
-  //     window.open("/feedback", "_blank");
-  //   },
-  // },
   {
     title: "Text",
     description: "Just start typing with plain text.",
@@ -89,6 +77,16 @@ export const suggestionItems = createSuggestionItems([
         .run();
     },
   },
+  // {
+  //   title: "Table",
+  //   description: "Create a table.",
+  //   searchTerms: ["table"],
+  //   icon: <Table size={18} />,
+  //   command: ({ editor, range }) => {
+  //     editor.chain().focus().insertTable({ rows: 3, cols: 3 }).run();
+  //     // .deleteRange(range)
+  //   },
+  // },
   {
     title: "Bullet List",
     description: "Create a simple bullet list.",
@@ -121,35 +119,6 @@ export const suggestionItems = createSuggestionItems([
         .toggleBlockquote()
         .run(),
   },
-  {
-    title: "Code",
-    description: "Capture a code snippet.",
-    searchTerms: ["codeblock"],
-    icon: <Code size={18} />,
-    command: ({ editor, range }) =>
-      editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
-  },
-  // {
-  //   title: "Image",
-  //   description: "Upload an image from your computer.",
-  //   searchTerms: ["photo", "picture", "media"],
-  //   icon: <ImageIcon size={18} />,
-  //   command: ({ editor, range }) => {
-  //     editor.chain().focus().deleteRange(range).run();
-  //     // upload image
-  //     const input = document.createElement("input");
-  //     input.type = "file";
-  //     input.accept = "image/*";
-  //     input.onchange = async () => {
-  //       if (input.files?.length) {
-  //         const file = input.files[0];
-  //         const pos = editor.view.state.selection.from;
-  //         uploadFn(file, editor.view, pos);
-  //       }
-  //     };
-  //     input.click();
-  //   },
-  // },
 ]);
 
 export const slashCommand = Command.configure({

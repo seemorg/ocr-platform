@@ -30,8 +30,6 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 
-import { BookStatus } from "@usul-ocr/db";
-
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
