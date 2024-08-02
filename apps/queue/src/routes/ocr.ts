@@ -166,6 +166,7 @@ ocrRoutes.post(
       },
       data: {
         ocrStatus: PageOcrStatus.PROCESSING,
+        flags: [],
         reviewed: false,
         reviewedAt: null,
         reviewedById: null,

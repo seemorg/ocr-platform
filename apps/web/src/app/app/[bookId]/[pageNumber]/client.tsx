@@ -121,7 +121,7 @@ export default function AppPage({
       redoOcr: true,
     });
 
-    toast.loading("Redoing OCR... check back in a few minutes");
+    toast.success("Redoing OCR... check back in a few minutes");
     router.refresh();
   };
 

@@ -82,25 +82,17 @@ export const bookRouter = createTRPCRouter({
     }),
   updatePage: protectedProcedure
     .input(
-      z
-        .object({
-          pageId: z.string().min(1),
-          content: z.string().optional(),
-          footnotesContent: z.string().optional(),
-          pageNumber: z.number().optional(),
-        })
-        .or(
-          z.object({
-            pageId: z.string().min(1),
-            flags: z.array(z.enum([PageFlag.EMPTY])).min(1),
-          }),
-        )
-        .or(
-          z.object({
-            pageId: z.string().min(1),
-            redoOcr: z.literal(true),
-          }),
-        ),
+      z.object({
+        pageId: z.string().min(1),
+        content: z.string().optional(),
+        footnotesContent: z.string().optional(),
+        pageNumber: z.number().optional(),
+        flags: z
+          .array(z.enum([PageFlag.EMPTY]))
+          .min(1)
+          .optional(),
+        redoOcr: z.boolean().optional(),
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const page = await ctx.db.page.findUnique({
@@ -112,7 +104,7 @@ export const bookRouter = createTRPCRouter({
         throw new Error("Page not found");
       }
 
-      if ("redoOcr" in input) {
+      if (input.redoOcr) {
         const response = await fetch(
           `${env.NEXT_PUBLIC_OCR_SERVER_URL}page/${page.id}/ocr`,
           {
@@ -148,7 +140,7 @@ export const bookRouter = createTRPCRouter({
           : {}),
       };
 
-      if ("flags" in input) {
+      if (input.flags) {
         pageData.flags = [...new Set(page.flags.concat(input.flags))];
       } else {
         if (input.content) pageData.content = input.content;
