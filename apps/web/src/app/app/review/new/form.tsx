@@ -38,7 +38,6 @@ import { AuthorsCombobox } from "./author-selector";
 
 const schema = z.object({
   airtableId: z.string().optional(),
-  id: z.string(),
   arabicName: z.string().min(1),
   englishName: z.string(),
   pdfUrl: z.string().url(),
@@ -69,6 +68,8 @@ export default function NewBookForm({
     resolver: zodResolver(schema),
     defaultValues: {},
   });
+
+  console.log(form.formState.errors);
 
   const router = useRouter();
   const [selectedAirtableIndex, setSelectedAirtableIndex] = useState<

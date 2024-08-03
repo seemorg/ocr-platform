@@ -22,7 +22,9 @@ async function getPdfDoc(pdfUrl: string) {
   if (!pdfDoc) {
     // Load the PDF document
     const buffer = await fetch(pdfUrl).then((res) => res.arrayBuffer());
-    pdfDoc = await PDFDocument.load(buffer);
+    pdfDoc = await PDFDocument.load(buffer, {
+      ignoreEncryption: true,
+    });
     cache.set(pdfUrl, pdfDoc);
   }
 

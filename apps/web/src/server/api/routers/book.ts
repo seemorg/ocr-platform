@@ -49,16 +49,18 @@ export const bookRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       // check if book already exists
-      const book = await ctx.db.book.findFirst({
-        where: { airtableId: input.airtableId },
-        select: { id: true },
-      });
-
-      if (book) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Book already exists",
+      if (input.airtableId) {
+        const book = await ctx.db.book.findFirst({
+          where: { airtableId: input.airtableId },
+          select: { id: true },
         });
+
+        if (book) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Book already exists",
+          });
+        }
       }
 
       if (
@@ -117,7 +119,7 @@ export const bookRouter = createTRPCRouter({
       const data = (await response.json()) as { ok: boolean };
 
       return {
-        book,
+        book: newBook,
         ocrResponse: data,
       };
     }),
