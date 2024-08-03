@@ -1,8 +1,11 @@
 import Link from "next/link";
 import PageLayout from "@/components/page-layout";
 import { Button } from "@/components/ui/button";
-import { Container } from "@/components/ui/container";
+import { getServerAuthSession } from "@/server/auth";
 import { db } from "@/server/db";
+import { getUserGroupIdsAndRole } from "@/server/services/user";
+
+import { UserRole } from "@usul-ocr/db";
 
 import { columns, Page } from "./columns";
 import { DataTable } from "./data-table";
@@ -14,27 +17,38 @@ async function getData(bookId: string): Promise<{
   };
   pages: Page[];
 }> {
-  const [book, pages, users] = await Promise.all([
+  const session = await getServerAuthSession()!;
+  const user = await getUserGroupIdsAndRole(session!.user.id);
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const [book, users] = await Promise.all([
     db.book.findUnique({
       where: {
         id: bookId,
+        ...(user?.role === UserRole.ADMIN
+          ? {}
+          : {
+              assignedGroupId: {
+                in: user?.groupIds,
+              },
+            }),
       },
       select: {
         arabicName: true,
         englishName: true,
-      },
-    }),
-    db.page.findMany({
-      where: {
-        bookId,
-      },
-      select: {
-        id: true,
-        bookId: true,
-        pageNumber: true,
-        pdfPageNumber: true,
-        reviewedAt: true,
-        reviewedById: true,
+        pages: {
+          select: {
+            id: true,
+            bookId: true,
+            pageNumber: true,
+            pdfPageNumber: true,
+            reviewedAt: true,
+            reviewedById: true,
+          },
+        },
       },
     }),
     db.user.findMany({
@@ -55,7 +69,7 @@ async function getData(bookId: string): Promise<{
 
   return {
     book: book!,
-    pages: pages.map((page) => ({
+    pages: book!.pages.map((page) => ({
       ...page,
       reviewer: page.reviewedById
         ? {

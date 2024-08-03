@@ -1,14 +1,16 @@
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { EditorBubbleItem, useEditor } from "novel";
 import {
   BoldIcon,
   ItalicIcon,
-  UnderlineIcon,
+  LanguagesIcon,
   StrikethroughIcon,
-  // CodeIcon,
+  SuperscriptIcon,
+  UnderlineIcon,
 } from "lucide-react";
+import { EditorBubbleItem, useEditor } from "novel";
+
 import type { SelectorItem } from "./node-selector";
-import { Button } from "@/components/ui/button";
 
 export const TextButtons = () => {
   const { editor } = useEditor();
@@ -39,12 +41,17 @@ export const TextButtons = () => {
       command: (editor) => editor.chain().focus().toggleStrike().run(),
       icon: StrikethroughIcon,
     },
-    // {
-    //   name: "code",
-    //   isActive: (editor) => editor.isActive("code"),
-    //   command: (editor) => editor.chain().focus().toggleCode().run(),
-    //   icon: CodeIcon,
-    // },
+    {
+      name: "superscript",
+      isActive: (editor) => editor.isActive("superscript"),
+      command: (editor) => editor.chain().focus().toggleSuperscript().run(),
+      icon: SuperscriptIcon,
+    },
+    {
+      name: "arabicNumbers",
+      command: (editor) => editor.chain().focus().toggleNumbers().run(),
+      icon: (() => <span className="text-xs font-bold">123</span>) as any,
+    },
   ];
 
   return (
@@ -59,7 +66,7 @@ export const TextButtons = () => {
           <Button size="sm" className="rounded-none" variant="ghost">
             <item.icon
               className={cn("h-4 w-4", {
-                "text-blue-500": item.isActive(editor),
+                "text-blue-500": item.isActive?.(editor),
               })}
             />
           </Button>

@@ -1,7 +1,9 @@
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
+import { authorsRouter } from "./routers/author";
 import { bookRouter } from "./routers/book";
 import { groupRouter } from "./routers/group";
+import { usersRouter } from "./routers/user";
 import { whitelistRouter } from "./routers/whitelist";
 
 /**
@@ -13,6 +15,8 @@ export const appRouter = createTRPCRouter({
   book: bookRouter,
   whitelist: whitelistRouter,
   group: groupRouter,
+  user: usersRouter,
+  author: authorsRouter,
 });
 
 // export type definition of API

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -19,73 +18,32 @@ import { appRouter } from "@/server/api/root";
 import { api } from "@/trpc/react";
 import { inferRouterOutputs } from "@trpc/server";
 import { Check, ChevronsUpDown } from "lucide-react";
-import toast from "react-hot-toast";
 import { useDebounce } from "use-debounce";
 
-export default function AddMemberForm({ groupId }: { groupId: string }) {
-  const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
+type Author = inferRouterOutputs<
+  typeof appRouter
+>["author"]["searchAuthors"][number];
 
-  const router = useRouter();
-  const utils = api.useUtils();
-  const { mutateAsync, isPending } = api.group.addMember.useMutation({
-    onSuccess: () => {
-      toast.success("User added to group");
-      router.refresh();
-      setSelectedUser(undefined);
-      utils.user.searchUsers.reset();
-    },
-    onError: (error) => {
-      toast.error("Something went wrong!");
-    },
-  });
+const POPOVER_WIDTH = "w-[250px]";
 
-  const handleSubmit = () => {
-    if (!selectedUser?.email) return;
-
-    mutateAsync({ email: selectedUser.email, groupId });
-  };
-
-  return (
-    <div className="mb-10 flex max-w-[400px] gap-2">
-      <UsersCombobox
-        selected={selectedUser}
-        onSelect={setSelectedUser}
-        groupId={groupId}
-      />
-
-      <Button type="button" disabled={isPending} onClick={handleSubmit}>
-        {isPending ? "Adding..." : "Add"}
-      </Button>
-    </div>
-  );
-}
-
-type User = inferRouterOutputs<typeof appRouter>["user"]["searchUsers"][number];
-
-const POPOVER_WIDTH = "w-[350px]";
-
-function UsersCombobox({
+export function AuthorsCombobox({
   selected,
   onSelect,
-  groupId,
 }: {
-  selected: User | undefined;
-  onSelect: (user: User) => void;
-  groupId: string;
+  selected: Author | undefined;
+  onSelect: (author: Author) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSetActive = useCallback(
-    (user: User) => {
-      onSelect(user);
+    (author: Author) => {
+      onSelect(author);
     },
     [onSelect],
   );
 
-  const displayName = selected
-    ? selected.name || selected.email
-    : "Select user";
+  const displayName = selected ? selected.arabicName : "Select author";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -109,14 +67,13 @@ function UsersCombobox({
           <CommandInput
             value={searchQuery}
             onValueChange={setSearchQuery}
-            placeholder="Search for user"
+            placeholder="Search for author"
           />
 
           <SearchResults
             query={searchQuery}
             selectedResult={selected}
             onSelectResult={handleSetActive}
-            groupId={groupId}
           />
         </Command>
       </PopoverContent>
@@ -126,37 +83,34 @@ function UsersCombobox({
 
 interface SearchResultsProps {
   query: string;
-  groupId: string;
-  selectedResult: User | undefined;
-  onSelectResult: (user: User) => void;
+  selectedResult: Author | undefined;
+  onSelectResult: (author: Author) => void;
 }
 
 function SearchResults({
   query,
-  groupId,
   selectedResult,
   onSelectResult,
 }: SearchResultsProps) {
   const [debouncedSearchQuery] = useDebounce(query, 500);
 
-  const { data, isLoading, isError } = api.user.searchUsers.useQuery({
+  const { data, isLoading, isError } = api.author.searchAuthors.useQuery({
     query: debouncedSearchQuery,
-    groupId,
   });
 
   return (
     <CommandList>
       {isLoading && <div className="p-4 text-sm">Searching...</div>}
       {!isError && !isLoading && !data?.length && (
-        <div className="p-4 text-sm">No users found</div>
+        <div className="p-4 text-sm">No authors found</div>
       )}
       {isError && <div className="p-4 text-sm">Something went wrong</div>}
 
-      {data?.map(({ id, name, email }) => {
+      {data?.map(({ id, arabicName, englishName }) => {
         return (
           <CommandItem
             key={id}
-            onSelect={() => onSelectResult({ id, name, email })}
+            onSelect={() => onSelectResult({ id, arabicName, englishName })}
             value={id}
           >
             <Check
@@ -165,7 +119,7 @@ function SearchResults({
                 selectedResult?.id === id ? "opacity-100" : "opacity-0",
               )}
             />
-            {name || email}
+            {arabicName || englishName}
           </CommandItem>
         );
       })}

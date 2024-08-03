@@ -1,8 +1,8 @@
 import { getServerAuthSession } from "@/server/auth";
 import { db } from "@/server/db";
+import { getUserGroupIdsAndRole } from "@/server/services/user";
 
-// import { defaultServerExtensions } from "@/components/tailwind-editor/server-extensions";
-// import { generateJSON } from "@tiptap/html";
+import { UserRole } from "@usul-ocr/db";
 
 import ClientAppPage from "./client";
 
@@ -15,12 +15,22 @@ export default async function AppPage({
   };
 }) {
   const session = await getServerAuthSession();
+  const user = await getUserGroupIdsAndRole(session!.user.id);
 
   // get the first page that needs review
   const page = await db.page.findFirst({
     where: {
-      bookId,
       pdfPageNumber: Number(pageNumber),
+      book: {
+        id: bookId,
+        ...(user?.role === UserRole.ADMIN
+          ? {}
+          : {
+              assignedGroupId: {
+                in: user?.groupIds,
+              },
+            }),
+      },
     },
     include: {
       book: true,

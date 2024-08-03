@@ -1,27 +1,27 @@
+import type { LucideIcon } from "lucide-react";
+import type { EditorInstance } from "novel";
+import { Button } from "@/components/ui/button";
+import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover } from "@radix-ui/react-popover";
 import {
   Check,
+  CheckSquare,
   ChevronDown,
+  Code,
   Heading1,
   Heading2,
   Heading3,
-  TextQuote,
   ListOrdered,
   TextIcon,
-  Code,
-  CheckSquare,
-  type LucideIcon,
+  TextQuote,
 } from "lucide-react";
-import { EditorBubbleItem, type EditorInstance, useEditor } from "novel";
-
-import { Popover } from "@radix-ui/react-popover";
-import { PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
+import { EditorBubbleItem, useEditor } from "novel";
 
 export type SelectorItem = {
   name: string;
   icon: LucideIcon;
   command: (editor: EditorInstance) => void;
-  isActive: (editor: EditorInstance) => boolean;
+  isActive?: (editor: EditorInstance) => boolean;
 };
 
 const items: SelectorItem[] = [
@@ -101,7 +101,7 @@ export const NodeSelector = ({ open, onOpenChange }: NodeSelectorProps) => {
   const { editor } = useEditor();
   if (!editor) return null;
 
-  const activeItem = items.filter((item) => item.isActive(editor)).pop() ?? {
+  const activeItem = items.filter((item) => item.isActive?.(editor)).pop() ?? {
     name: "Multiple",
   };
 

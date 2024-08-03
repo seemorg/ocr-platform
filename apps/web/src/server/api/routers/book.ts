@@ -7,6 +7,31 @@ import type { Prisma } from "@usul-ocr/db";
 import { PageFlag } from "@usul-ocr/db";
 
 export const bookRouter = createTRPCRouter({
+  searchUnassignedBooks: protectedProcedure
+    .input(z.object({ query: z.string().optional() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.db.book.findMany({
+        where: {
+          assignedGroupId: null,
+          ...(input.query
+            ? {
+                OR: [
+                  {
+                    arabicName: { mode: "insensitive", contains: input.query },
+                  },
+                  {
+                    englishName: { mode: "insensitive", contains: input.query },
+                  },
+                ],
+              }
+            : {}),
+        },
+        select: {
+          id: true,
+          arabicName: true,
+        },
+      });
+    }),
   create: protectedProcedure
     .input(
       z.object({
@@ -17,15 +42,12 @@ export const bookRouter = createTRPCRouter({
         author: z.object({
           id: z.string().optional(),
           airtableId: z.string().optional(),
-          arabicName: z.string().min(1),
+          arabicName: z.string().optional(),
+          englishName: z.string().optional(),
         }),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const author = await ctx.db.author.findFirst({
-        where: { airtableId: input.author.airtableId },
-      });
-
       // check if book already exists
       const book = await ctx.db.book.findFirst({
         where: { airtableId: input.airtableId },
@@ -39,18 +61,37 @@ export const bookRouter = createTRPCRouter({
         });
       }
 
+      if (
+        !input.author.id &&
+        (!input.author.airtableId ||
+          !input.author.arabicName ||
+          !input.author.englishName)
+      ) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Author is required",
+        });
+      }
+
+      const existingAuthor = input.author.airtableId
+        ? await ctx.db.author.findFirst({
+            where: { airtableId: input.author.airtableId },
+          })
+        : null;
+
       const newBook = await ctx.db.book.create({
         data: {
           author: {
-            ...(author
+            ...(input.author.id || existingAuthor
               ? {
                   connect: {
-                    id: author.id,
+                    id: (input.author.id || existingAuthor?.id) as string,
                   },
                 }
               : {
                   create: {
-                    arabicName: input.author.arabicName,
+                    arabicName: input.author.arabicName as string,
+                    englishName: input.author.englishName,
                     airtableId: input.author.airtableId,
                   },
                 }),

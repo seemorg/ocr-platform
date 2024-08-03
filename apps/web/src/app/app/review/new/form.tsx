@@ -34,6 +34,8 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
 
+import { AuthorsCombobox } from "./author-selector";
+
 const schema = z.object({
   airtableId: z.string().optional(),
   id: z.string(),
@@ -43,7 +45,8 @@ const schema = z.object({
   author: z.object({
     id: z.string().optional(),
     airtableId: z.string().optional(),
-    arabicName: z.string().min(1),
+    arabicName: z.string().optional(),
+    englishName: z.string().optional(),
   }),
 });
 
@@ -52,6 +55,16 @@ export default function NewBookForm({
 }: {
   airtableTexts: AirtableText[];
 }) {
+  const [isNewAuthor, setIsNewAuthor] = useState(false);
+  const [selectedAuthor, setSelectedAuthor] = useState<
+    | {
+        id: string;
+        arabicName: string;
+        englishName: string | null;
+      }
+    | undefined
+  >();
+
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {},
@@ -73,6 +86,7 @@ export default function NewBookForm({
       form.setValue("arabicName", airtableText.arabicName ?? "");
       form.setValue("englishName", airtableText.transliteration ?? "");
       form.setValue("pdfUrl", airtableText.pdfUrl ?? "");
+
       form.setValue(
         "author.airtableId",
         airtableText.author?.airtableId ?? undefined,
@@ -103,13 +117,29 @@ export default function NewBookForm({
       pdfUrl: values.pdfUrl,
       arabicName: values.arabicName,
       englishName: values.englishName,
-      author: {
-        id: values.author.id,
-        airtableId: values.author.airtableId,
-        arabicName: values.author.arabicName,
-      },
+      author: values.author.id
+        ? {
+            id: values.author.id,
+          }
+        : {
+            airtableId: values.author.airtableId,
+            arabicName: values.author.arabicName,
+            englishName: values.author.englishName,
+          },
     });
   }
+
+  const toggleAuthorMode = () => {
+    if (isNewAuthor) {
+      form.setValue("author.airtableId", undefined);
+      form.setValue("author.arabicName", undefined);
+      form.setValue("author.englishName", undefined);
+    } else {
+      form.setValue("author.id", undefined);
+    }
+
+    setIsNewAuthor(!isNewAuthor);
+  };
 
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
@@ -219,24 +249,55 @@ export default function NewBookForm({
 
           <div className="flex flex-col gap-10 sm:flex-row">
             <div className="w-full">
-              {/* <Label>Author</Label>
-              <Input value={airtableText?.author?.arabicName ?? ""} />
-               */}
+              <Button type="button" onClick={toggleAuthorMode}>
+                {isNewAuthor ? "New Author" : "Existing Author"}
+              </Button>
 
-              <FormField
-                control={form.control}
-                name="author.arabicName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Author</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
+              <div className="mt-4">
+                {isNewAuthor ? (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="author.arabicName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Author Arabic Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
 
-                    <FormMessage />
-                  </FormItem>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="author.englishName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Author English Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                ) : (
+                  <AuthorsCombobox
+                    selected={selectedAuthor}
+                    onSelect={(author) => {
+                      setSelectedAuthor(author);
+                      form.setValue("author", {
+                        id: author.id,
+                      });
+                    }}
+                  />
                 )}
-              />
+              </div>
             </div>
 
             <div className="w-full">

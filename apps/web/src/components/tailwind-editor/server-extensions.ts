@@ -3,6 +3,7 @@
 // import TableHeader from "@tiptap/extension-table-header";
 // import TableRow from "@tiptap/extension-table-row";
 
+import Superscript from "@tiptap/extension-superscript";
 import { cx } from "class-variance-authority";
 import {
   HorizontalRule,
@@ -12,6 +13,8 @@ import {
   TiptapLink,
 } from "novel/extensions";
 import TextDirection from "tiptap-text-direction";
+
+import ArabicNumbers from "./arabic-numbers-extension";
 
 const tiptapLink = TiptapLink.configure({
   HTMLAttributes: {
@@ -82,6 +85,14 @@ const starterKit = StarterKit.configure({
   gapcursor: false,
 });
 
+const textDirection = TextDirection.configure({
+  defaultDirection: "rtl",
+});
+
+const superscript = Superscript.configure({});
+
+const arabicNumbers = ArabicNumbers.configure({});
+
 // const table = Table.configure({
 //   resizable: true,
 //   lastColumnResizable: false,
@@ -108,9 +119,9 @@ export const defaultServerExtensions = [
   taskList,
   taskItem,
   horizontalRule,
-  TextDirection.configure({
-    defaultDirection: "rtl",
-  }),
+  textDirection,
+  superscript,
+  arabicNumbers,
   // table,
   // tableRow,
   // tableCell,
