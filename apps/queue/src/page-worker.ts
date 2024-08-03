@@ -54,7 +54,11 @@ export const pagesWorker = new Worker<PagesQueueData>(
 
     await db.page.create({
       data: {
-        bookId,
+        book: {
+          connect: {
+            id: bookId,
+          },
+        },
         pdfPageNumber: pageIndex + 1,
         ocrStatus: error ? PageOcrStatus.FAILED : PageOcrStatus.COMPLETED,
         ...(result
