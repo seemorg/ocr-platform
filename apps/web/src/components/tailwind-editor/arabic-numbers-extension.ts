@@ -40,7 +40,9 @@ export const ArabicNumbers = Extension.create({
           const { from, to } = selection;
 
           if (!arabicFormatter) {
-            arabicFormatter = new Intl.NumberFormat("ar-EG");
+            arabicFormatter = new Intl.NumberFormat("ar-EG", {
+              useGrouping: false,
+            });
           }
 
           let modified = false;
@@ -82,7 +84,9 @@ export const ArabicNumbers = Extension.create({
           const { from, to } = selection;
 
           if (!englishFormatter) {
-            englishFormatter = new Intl.NumberFormat("en-US");
+            englishFormatter = new Intl.NumberFormat("en-US", {
+              useGrouping: false,
+            });
           }
           let modified = false;
 
