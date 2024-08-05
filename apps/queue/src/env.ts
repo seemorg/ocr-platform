@@ -23,6 +23,7 @@ export const env = createEnv({
     DASHBOARD_USERNAME: z.string(),
     DASHBOARD_PASSWORD: z.string(),
     OCR_SERVER_API_KEY: z.string(),
+    ANTHROPIC_API_KEY: z.string(),
   },
 
   /**

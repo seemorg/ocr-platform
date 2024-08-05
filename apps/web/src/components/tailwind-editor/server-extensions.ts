@@ -1,8 +1,4 @@
-// import Table from "@tiptap/extension-table";
-// import TableCell from "@tiptap/extension-table-cell";
-// import TableHeader from "@tiptap/extension-table-header";
-// import TableRow from "@tiptap/extension-table-row";
-
+import { Document } from "@tiptap/extension-document";
 import Superscript from "@tiptap/extension-superscript";
 import { cx } from "class-variance-authority";
 import {
@@ -15,6 +11,7 @@ import {
 import TextDirection from "tiptap-text-direction";
 
 import ArabicNumbers from "./arabic-numbers-extension";
+import { Table, TableCell, TableHeader, TableRow } from "./table/extensions";
 
 const tiptapLink = TiptapLink.configure({
   HTMLAttributes: {
@@ -64,56 +61,30 @@ const starterKit = StarterKit.configure({
       class: cx("border-l-4 border-primary"),
     },
   },
-  codeBlock: {
-    HTMLAttributes: {
-      class: cx(
-        "rounded-md bg-muted text-muted-foreground border p-5 font-mono font-medium",
-      ),
-    },
-  },
-  code: {
-    HTMLAttributes: {
-      class: cx("rounded-md bg-muted  px-1.5 py-1 font-mono font-medium"),
-      spellcheck: "false",
-    },
-  },
+  codeBlock: false,
+  code: false,
   horizontalRule: false,
   dropcursor: {
     color: "#DBEAFE",
     width: 4,
   },
   gapcursor: false,
+  document: false,
 });
 
 const textDirection = TextDirection.configure({
   defaultDirection: "rtl",
 });
-
-const superscript = Superscript.configure({});
-
-const arabicNumbers = ArabicNumbers.configure({});
-
-// const table = Table.configure({
-//   resizable: true,
-//   lastColumnResizable: false,
-// });
-
-// const tableRow = TableRow.extend({
-//   allowGapCursor: false,
-//   content: "tableCell*",
-// });
-
-// const tableCell = TableCell.extend({
-//   allowGapCursor: false,
-//   content: "tableHeader*",
-// });
-
-// const tableHeader = TableHeader.extend({
-//   allowGapCursor: false,
-//   content: "tableCell*",
-// });
+const superscript = Superscript;
+const arabicNumbers = ArabicNumbers;
+const tiptapDocument = Document.configure({ content: "(block|columns)+" });
 
 export const defaultServerExtensions = [
+  tiptapDocument,
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow,
   starterKit,
   tiptapLink,
   taskList,
@@ -122,8 +93,4 @@ export const defaultServerExtensions = [
   textDirection,
   superscript,
   arabicNumbers,
-  // table,
-  // tableRow,
-  // tableCell,
-  // tableHeader,
 ];

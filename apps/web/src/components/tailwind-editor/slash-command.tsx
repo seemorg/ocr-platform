@@ -77,16 +77,20 @@ export const suggestionItems = createSuggestionItems([
         .run();
     },
   },
-  // {
-  //   title: "Table",
-  //   description: "Create a table.",
-  //   searchTerms: ["table"],
-  //   icon: <Table size={18} />,
-  //   command: ({ editor, range }) => {
-  //     editor.chain().focus().insertTable({ rows: 3, cols: 3 }).run();
-  //     // .deleteRange(range)
-  //   },
-  // },
+  {
+    title: "Table",
+    description: "Create a table.",
+    searchTerms: ["table"],
+    icon: <Table size={18} />,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .insertTable({ rows: 3, cols: 3 })
+        .run();
+    },
+  },
   {
     title: "Bullet List",
     description: "Create a simple bullet list.",

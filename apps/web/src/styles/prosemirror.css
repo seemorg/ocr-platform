@@ -188,3 +188,5 @@ ul[data-type="taskList"] li[data-checked="true"] > div > p {
 /* p.is-editor-empty:first-child::before، p.is-empty::before {
   float: right;
 } */
+
+@import "./table.css";

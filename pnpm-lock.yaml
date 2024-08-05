@@ -54,6 +54,9 @@ importers:
 
   apps/queue:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.25.0
+        version: 0.25.0
       '@azure-rest/ai-document-intelligence':
         specifier: 1.0.0-beta.2
         version: 1.0.0-beta.2
@@ -196,6 +199,9 @@ importers:
       '@tiptap/extension-collaboration-cursor':
         specifier: ^2.5.5
         version: 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(y-prosemirror@1.2.9(prosemirror-model@1.22.2)(prosemirror-state@1.4.3)(prosemirror-view@1.33.9)(y-protocols@1.0.6(yjs@13.6.18))(yjs@13.6.18))
+      '@tiptap/extension-document':
+        specifier: ^2.5.8
+        version: 2.5.8(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))
       '@tiptap/extension-superscript':
         specifier: ^2.5.8
         version: 2.5.8(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))
@@ -217,6 +223,9 @@ importers:
       '@tiptap/pm':
         specifier: ^2.5.8
         version: 2.5.8
+      '@tiptap/react':
+        specifier: ^2.5.8
+        version: 2.5.8(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@trpc/client':
         specifier: ^11.0.0-rc.446
         version: 11.0.0-rc.467(@trpc/server@11.0.0-rc.467)
@@ -413,7 +422,7 @@ importers:
         version: 7.35.0(eslint@9.7.0)
       eslint-plugin-react-hooks:
         specifier: rc
-        version: 5.1.0-rc-8269d55d-20240802(eslint@9.7.0)
+        version: 5.1.0-rc-65903583-20240805(eslint@9.7.0)
       eslint-plugin-turbo:
         specifier: ^2.0.8
         version: 2.0.9(eslint@9.7.0)
@@ -469,6 +478,9 @@ packages:
   '@ampproject/remapping@2.3.0':
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
     engines: {node: '>=6.0.0'}
+
+  '@anthropic-ai/sdk@0.25.0':
+    resolution: {integrity: sha512-nill47zLtX+Tx6YacvuML1WMA7vuFA+I2uGh+8mGig4D3HwKFLThf45cS1itcmYVnjUQ+ohrSnkRyu1t+Xbh2w==}
 
   '@auth/core@0.29.0':
     resolution: {integrity: sha512-MdfEjU6WRjUnPG1+XeBWrTIlAsLZU6V0imCIqVDDDPxLI6UZWldXVqAA2EsDazGofV78jqiCLHaN85mJITDqdg==}
@@ -2154,11 +2166,11 @@ packages:
     peerDependencies:
       '@tiptap/core': ^2.5.6
 
-  '@tiptap/extension-bubble-menu@2.5.6':
-    resolution: {integrity: sha512-jFfMyaVkA7gSqS8CZyzdAUhMw5lMhBCoNOZE9oOIttWoE2wssSsGnprmIzTOR+g65kF8yxxzAdNOYjfv/xQ1pw==}
+  '@tiptap/extension-bubble-menu@2.5.8':
+    resolution: {integrity: sha512-COmd1Azudu7i281emZFIESECe7FnvWiRoBoQBVjjWSyq5PVzwJaA3PAlnU7GyNZKtVXMZ4xbrckdyNQfDeVQDA==}
     peerDependencies:
-      '@tiptap/core': ^2.5.6
-      '@tiptap/pm': ^2.5.6
+      '@tiptap/core': ^2.5.8
+      '@tiptap/pm': ^2.5.8
 
   '@tiptap/extension-bullet-list@2.5.6':
     resolution: {integrity: sha512-D5YRc5jeT38T7TaJQvsBwGzQRpXY+Evr5Ql8US67sORAc29DNR9afdsYfyn/L1WMwLgP8AzYjkAPB5wb8EKdZg==}
@@ -2208,10 +2220,10 @@ packages:
       '@tiptap/core': ^2.5.6
       '@tiptap/extension-text-style': ^2.5.6
 
-  '@tiptap/extension-document@2.5.6':
-    resolution: {integrity: sha512-0XNAFpCKHtTd0WCEhkg4zFCII2HV5/L7lQniHlVW/EaDsibkDtIZklSGKIRn+/xaS1bVrzcIq4Z/2hE52a9H0A==}
+  '@tiptap/extension-document@2.5.8':
+    resolution: {integrity: sha512-r3rP4ihCJAdp3VRIeqd80etHx7jttzZaKNFX8hkQShHK6eTHwrR92VL0jDE4K+NOE3bxjMsOlYizJYWV042BtA==}
     peerDependencies:
-      '@tiptap/core': ^2.5.6
+      '@tiptap/core': ^2.5.8
 
   '@tiptap/extension-dropcursor@2.5.6':
     resolution: {integrity: sha512-XEW5RQQvqzYCtP7FZbSvF2xq1OvT9X5FXi+/9q22gCetuc8fmr/Mh6vmgAe9q+yo+nb8Tjwnykzdi7lo+YCKRw==}
@@ -2219,11 +2231,11 @@ packages:
       '@tiptap/core': ^2.5.6
       '@tiptap/pm': ^2.5.6
 
-  '@tiptap/extension-floating-menu@2.5.6':
-    resolution: {integrity: sha512-UORk6CDtECqLoaOVx0oTwidrjdHEWaPaY/pYGnCC4Kptv6zEqIsZXidFcYBM1wTt44AESgUXDTnZF8U7M/YtEA==}
+  '@tiptap/extension-floating-menu@2.5.8':
+    resolution: {integrity: sha512-qsM6tCyRlXnI/gADrkO/2p0Tldu5aY96CnsXpZMaflMgsO577qhcXD0ReGg17uLXBzJa5xmV8qOik0Ptq3WEWg==}
     peerDependencies:
-      '@tiptap/core': ^2.5.6
-      '@tiptap/pm': ^2.5.6
+      '@tiptap/core': ^2.5.8
+      '@tiptap/pm': ^2.5.8
 
   '@tiptap/extension-gapcursor@2.5.6':
     resolution: {integrity: sha512-JueLDAgisNJotXFA4AEZe3VhJtwQAZOKT/f5zJtGilrr/plsmh2e9SVxcBwl+BkhmvRjy9bs/OxtqV+kHFsORA==}
@@ -2366,11 +2378,11 @@ packages:
   '@tiptap/pm@2.5.8':
     resolution: {integrity: sha512-CVhHaTG4QNHSkvuh6HHsUR4hE+nbUnk7z+VMUedaqPU8tNqkTwWGCMbiyTc+PCsz0T9Mni7vvBR+EXgEQ3+w4g==}
 
-  '@tiptap/react@2.5.6':
-    resolution: {integrity: sha512-n6R5wVug1cGzE0DYWKSkRNBwDJ5ZPwOb21w9PjlEaD2A7yw6JuUBkWaCyfwl3bCzGj8ctZQ5hd9hhnWyJ1UPOg==}
+  '@tiptap/react@2.5.8':
+    resolution: {integrity: sha512-twUMm8HV7scUgR/E1hYS9N6JDtKPl7cgDiPjxTynNHc5S5f5Ecv4ns/BZRq3TMZ/JDrp4rghLvgq+ImQsLvPOA==}
     peerDependencies:
-      '@tiptap/core': ^2.5.6
-      '@tiptap/pm': ^2.5.6
+      '@tiptap/core': ^2.5.8
+      '@tiptap/pm': ^2.5.8
       react: ^17.0.0 || ^18.0.0
       react-dom: ^17.0.0 || ^18.0.0
 
@@ -3273,8 +3285,8 @@ packages:
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8
 
-  eslint-plugin-react-hooks@5.1.0-rc-8269d55d-20240802:
-    resolution: {integrity: sha512-9bu0g9WjWv++lPQERLaMpZ2PmzgVZLIy24DqwlBW6e1V7DvZ4lOqMK3e+neulJS3BShZPm2+6ExEKawjSbIaKw==}
+  eslint-plugin-react-hooks@5.1.0-rc-65903583-20240805:
+    resolution: {integrity: sha512-NEsjgvv/oqnwGu1PIuk0LKo5UrBO0SnvFdavWl56R5SAcHPZi+sEnQ7Onzp6hpRuEAC69bhfTA/9no6JItCM/w==}
     engines: {node: '>=10'}
     peerDependencies:
       eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0
@@ -5869,6 +5881,18 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
 
+  '@anthropic-ai/sdk@0.25.0':
+    dependencies:
+      '@types/node': 18.15.3
+      '@types/node-fetch': 2.6.11
+      abort-controller: 3.0.0
+      agentkeepalive: 4.5.0
+      form-data-encoder: 1.7.2
+      formdata-node: 4.4.1
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
+
   '@auth/core@0.29.0(nodemailer@6.9.14)':
     dependencies:
       '@panva/hkdf': 1.2.1
@@ -7387,7 +7411,7 @@ snapshots:
     dependencies:
       '@tiptap/core': 2.5.8(@tiptap/pm@2.5.8)
 
-  '@tiptap/extension-bubble-menu@2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)':
+  '@tiptap/extension-bubble-menu@2.5.8(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)':
     dependencies:
       '@tiptap/core': 2.5.8(@tiptap/pm@2.5.8)
       '@tiptap/pm': 2.5.8
@@ -7433,7 +7457,7 @@ snapshots:
       '@tiptap/core': 2.5.8(@tiptap/pm@2.5.8)
       '@tiptap/extension-text-style': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))
 
-  '@tiptap/extension-document@2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))':
+  '@tiptap/extension-document@2.5.8(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))':
     dependencies:
       '@tiptap/core': 2.5.8(@tiptap/pm@2.5.8)
 
@@ -7442,7 +7466,7 @@ snapshots:
       '@tiptap/core': 2.5.8(@tiptap/pm@2.5.8)
       '@tiptap/pm': 2.5.8
 
-  '@tiptap/extension-floating-menu@2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)':
+  '@tiptap/extension-floating-menu@2.5.8(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)':
     dependencies:
       '@tiptap/core': 2.5.8(@tiptap/pm@2.5.8)
       '@tiptap/pm': 2.5.8
@@ -7583,11 +7607,11 @@ snapshots:
       prosemirror-transform: 1.9.0
       prosemirror-view: 1.33.9
 
-  '@tiptap/react@2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@tiptap/react@2.5.8(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@tiptap/core': 2.5.8(@tiptap/pm@2.5.8)
-      '@tiptap/extension-bubble-menu': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)
-      '@tiptap/extension-floating-menu': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)
+      '@tiptap/extension-bubble-menu': 2.5.8(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)
+      '@tiptap/extension-floating-menu': 2.5.8(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)
       '@tiptap/pm': 2.5.8
       '@types/use-sync-external-store': 0.0.6
       react: 18.3.1
@@ -7602,7 +7626,7 @@ snapshots:
       '@tiptap/extension-bullet-list': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))
       '@tiptap/extension-code': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))
       '@tiptap/extension-code-block': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)
-      '@tiptap/extension-document': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))
+      '@tiptap/extension-document': 2.5.8(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))
       '@tiptap/extension-dropcursor': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)
       '@tiptap/extension-gapcursor': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)
       '@tiptap/extension-hard-break': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))
@@ -8776,7 +8800,7 @@ snapshots:
       safe-regex-test: 1.0.3
       string.prototype.includes: 2.0.0
 
-  eslint-plugin-react-hooks@5.1.0-rc-8269d55d-20240802(eslint@9.7.0):
+  eslint-plugin-react-hooks@5.1.0-rc-65903583-20240805(eslint@9.7.0):
     dependencies:
       eslint: 9.7.0
 
@@ -10136,7 +10160,7 @@ snapshots:
       '@tiptap/extension-underline': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))
       '@tiptap/extension-youtube': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))
       '@tiptap/pm': 2.5.8
-      '@tiptap/react': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tiptap/react': 2.5.8(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@tiptap/starter-kit': 2.5.6(@tiptap/pm@2.5.8)
       '@tiptap/suggestion': 2.5.6(@tiptap/core@2.5.8(@tiptap/pm@2.5.8))(@tiptap/pm@2.5.8)
       '@types/node': 18.15.3

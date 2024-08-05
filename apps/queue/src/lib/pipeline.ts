@@ -1,13 +1,18 @@
+import { getChatCompletions as anthropic } from "./anthropic";
 import { ocrPage } from "./ocr";
-import { getChatCompletions } from "./openai";
+import { getChatCompletions as azure } from "./openai";
 
 type Page = {
   imageBase64: string;
   text: string;
 };
 
-export const correctOcrResponse = async (page: Page) => {
-  const response = await getChatCompletions([
+export const correctOcrResponse = async (
+  page: Page,
+  mode: "azure" | "claude" = "azure",
+) => {
+  const caller = mode === "azure" ? azure : anthropic;
+  const response = await caller([
     {
       role: "system",
       content:
@@ -39,8 +44,12 @@ export const correctOcrResponse = async (page: Page) => {
   return response;
 };
 
-export const convertOcrResponseToHtml = async (page: Page) => {
-  const response = await getChatCompletions([
+export const convertOcrResponseToHtml = async (
+  page: Page,
+  mode: "azure" | "claude" = "azure",
+) => {
+  const caller = mode === "azure" ? azure : anthropic;
+  const response = await caller([
     {
       role: "system",
       content: `Given the following output of an OCR system and image it was generated from. Highlight the headers, split the text into paragraphs, and add text formatting using the html format. DO NOT modify the content of the of the output, just add html formatting.`,
@@ -71,8 +80,36 @@ export const convertOcrResponseToHtml = async (page: Page) => {
   return response;
 };
 
-export const segmentOcrResponse = async (page: Page) => {
-  const response = await getChatCompletions(
+const Schema: NonNullable<
+  NonNullable<Parameters<typeof anthropic>["1"]>["jsonSchema"]
+> = {
+  name: "segment_ocr",
+  input_schema: {
+    type: "object",
+    properties: {
+      header: {
+        type: "string",
+      },
+      body: {
+        type: "string",
+      },
+      footnotes: {
+        type: "string",
+      },
+      pageNumber: {
+        type: "integer",
+      },
+    },
+    required: ["body", "pageNumber"],
+  },
+};
+
+export const segmentOcrResponse = async (
+  page: Page,
+  mode: "azure" | "claude" = "azure",
+) => {
+  const caller = mode === "azure" ? azure : anthropic;
+  const response = await caller(
     [
       {
         role: "system",
@@ -104,9 +141,13 @@ export const segmentOcrResponse = async (page: Page) => {
         ],
       },
     ],
-    {
-      responseFormat: { type: "json_object" },
-    },
+    mode === "azure"
+      ? {
+          responseFormat: { type: "json_object" },
+        }
+      : {
+          jsonSchema: Schema,
+        },
   ).catch((e) => {
     if (e.message.includes(`Azure OpenAI's content management policy`)) {
       return null;
@@ -135,7 +176,11 @@ export async function pdfPipelineForPage(url: string, pageIndex: number) {
   const page = await ocrPage(url, pageIndex);
   console.log(`[PIPELINE] Correcting page ${page.pageNumber}`);
 
-  const corrected = await correctOcrResponse(page);
+  let corrected = await correctOcrResponse(page, "azure");
+  if (!corrected) {
+    corrected = await correctOcrResponse(page, "claude");
+  }
+
   if (!corrected) {
     console.log("Could not correct");
     return { error: true as const, value: page.text };
@@ -143,7 +188,11 @@ export async function pdfPipelineForPage(url: string, pageIndex: number) {
 
   console.log(`[PIPELINE] Converting page ${page.pageNumber}`);
   const updatedPage = { text: corrected, imageBase64: page.imageBase64 };
-  const html = await convertOcrResponseToHtml(updatedPage);
+  let html = await convertOcrResponseToHtml(updatedPage, "azure");
+  if (!html) {
+    html = await convertOcrResponseToHtml(updatedPage, "claude");
+  }
+
   if (!html) {
     console.log("Could not highlight");
     return { error: true as const, value: corrected };
@@ -151,11 +200,24 @@ export async function pdfPipelineForPage(url: string, pageIndex: number) {
 
   console.log(`[PIPELINE] Segmenting page ${page.pageNumber}`);
   const htmlPage = { text: html, imageBase64: page.imageBase64 };
-  const segmentedHtml = await segmentOcrResponse(htmlPage);
+  let segmentedHtml = await segmentOcrResponse(htmlPage, "azure");
+  if (!segmentedHtml) {
+    segmentedHtml = await segmentOcrResponse(htmlPage, "claude");
+  }
+
   if (!segmentedHtml) {
     console.log("Could not segment");
     return { error: true as const, value: html };
   }
 
-  return { error: false as const, value: segmentedHtml };
+  return {
+    // raw: {
+    //   ocr: page.text,
+    //   corrected,
+    //   html,
+    //   segmentedHtml,
+    // },
+    error: false as const,
+    value: segmentedHtml,
+  };
 }

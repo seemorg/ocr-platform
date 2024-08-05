@@ -145,10 +145,12 @@ ocrRoutes.post(
       select: {
         id: true,
         pdfPageNumber: true,
+        reviewed: true,
         book: {
           select: {
             id: true,
             pdfUrl: true,
+            status: true,
           },
         },
       },
@@ -169,11 +171,27 @@ ocrRoutes.post(
         flags: [],
         reviewed: false,
         reviewedAt: null,
-        reviewedById: null,
+        reviewedBy: { disconnect: true },
         ocrContent: "",
         ocrFootnotes: null,
         content: null,
         footnotes: null,
+        ...(page.reviewed
+          ? {
+              book: {
+                update: {
+                  reviewedPages: {
+                    decrement: 1,
+                  },
+                  ...(page.book.status === BookStatus.COMPLETED
+                    ? {
+                        status: BookStatus.IN_REVIEW,
+                      }
+                    : {}),
+                },
+              },
+            }
+          : {}),
       },
     });
 

@@ -29,4 +29,41 @@ const PopoverContent = React.forwardRef<
 ));
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
-export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };
+const PopoverItem = ({
+  label,
+  close = true,
+  icon,
+  disabled,
+  onClick,
+  isActive,
+}: {
+  label: string | React.ReactNode;
+  icon?: React.ElementType;
+  close?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  isActive?: boolean;
+}) => {
+  const className = cn(
+    "flex w-full items-center gap-2 rounded bg-transparent p-1.5 text-left text-sm font-medium text-neutral-500",
+    !isActive && !disabled,
+    "hover:bg-neutral-100 hover:text-neutral-800 dark:hover:bg-neutral-900 dark:hover:text-neutral-200",
+    isActive &&
+      !disabled &&
+      "bg-neutral-100 text-neutral-800 dark:bg-neutral-900 dark:text-neutral-200",
+    disabled && "cursor-not-allowed text-neutral-400 dark:text-neutral-600",
+  );
+
+  const IconComponent = icon || null;
+  const ItemComponent = close ? PopoverPrimitive.Close : "button";
+
+  return (
+    <ItemComponent className={className} onClick={onClick} disabled={disabled}>
+      {IconComponent && <IconComponent className="h-4 w-4" />}
+
+      {label}
+    </ItemComponent>
+  );
+};
+
+export { Popover, PopoverTrigger, PopoverItem, PopoverContent, PopoverAnchor };

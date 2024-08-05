@@ -1,8 +1,10 @@
 "use client";
 
 import type { EditorInstance, JSONContent } from "novel";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { ShouldShowProps } from "@/types/menus";
+import { isTextSelection } from "@tiptap/core";
 import {
   EditorBubble,
   EditorCommand,
@@ -21,8 +23,60 @@ import { LinkSelector } from "./selectors/link-selector";
 import { NodeSelector } from "./selectors/node-selector";
 import { TextButtons } from "./selectors/text-buttons";
 import { slashCommand, suggestionItems } from "./slash-command";
+import { TableMenus } from "./table";
+import isColumnGripSelected from "./table/menus/TableColumn/utils";
+import isRowGripSelected from "./table/menus/TableRow/utils";
 
 const extensions = [...defaultExtensions, slashCommand];
+
+export const isTableGripSelected = (node: HTMLElement) => {
+  let container = node;
+
+  while (container && !["TD", "TH"].includes(container.tagName)) {
+    container = container.parentElement!;
+  }
+
+  const gripColumn =
+    container &&
+    container.querySelector &&
+    container.querySelector("a.grip-column.selected");
+  const gripRow =
+    container &&
+    container.querySelector &&
+    container.querySelector("a.grip-row.selected");
+
+  if (gripColumn || gripRow) {
+    return true;
+  }
+
+  return false;
+};
+
+const isCustomNodeSelected = (node: HTMLElement) => {
+  return isTableGripSelected(node);
+};
+
+const isTextSelected = ({ editor }: { editor: EditorInstance }) => {
+  const {
+    state: {
+      doc,
+      selection,
+      selection: { empty, from, to },
+    },
+  } = editor;
+
+  // Sometime check for `empty` is not enough.
+  // Doubleclick an empty paragraph returns a node size of 2.
+  // So we check also for an empty text size.
+  const isEmptyTextBlock =
+    !doc.textBetween(from, to).length && isTextSelection(selection);
+
+  if (empty || isEmptyTextBlock || !editor.isEditable) {
+    return false;
+  }
+
+  return true;
+};
 
 interface EditorProps {
   initialValue?: JSONContent;
@@ -40,6 +94,23 @@ const Editor = ({
   const [openNode, setOpenNode] = useState(false);
   const [openLink, setOpenLink] = useState(false);
   const [editorRef, setEditorRef] = useState<EditorInstance | null>(null);
+  const menuContainerRef = useRef(null);
+
+  const shouldShow = useCallback(({ view, from, editor }: ShouldShowProps) => {
+    if (!view) {
+      return false;
+    }
+
+    const domAtPos = view.domAtPos(from || 0).node as HTMLElement;
+    const nodeDOM = view.nodeDOM(from || 0) as HTMLElement;
+    const node = nodeDOM || domAtPos;
+
+    if (isCustomNodeSelected(node)) {
+      return false;
+    }
+
+    return isTextSelected({ editor: editor! });
+  }, []);
 
   const debouncedUpdates = useDebouncedCallback((editor: EditorInstance) => {
     if (onChange) {
@@ -68,6 +139,7 @@ const Editor = ({
             className,
             disabled && "cursor-not-allowed opacity-70",
           )}
+          ref={menuContainerRef}
           editorProps={{
             handleDOMEvents: {
               keydown: (_view, event) => handleCommandNavigation(event),
@@ -116,6 +188,7 @@ const Editor = ({
               placement: "top",
             }}
             className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border border-muted bg-background shadow-xl"
+            shouldShow={shouldShow}
           >
             <Separator orientation="vertical" />
             <NodeSelector open={openNode} onOpenChange={setOpenNode} />
@@ -126,6 +199,8 @@ const Editor = ({
             <Separator orientation="vertical" />
             <TextButtons />
           </EditorBubble>
+
+          <TableMenus menuContainerRef={menuContainerRef} />
         </EditorContent>
       </EditorRoot>
     </div>
