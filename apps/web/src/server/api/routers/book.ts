@@ -4,7 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import type { Prisma } from "@usul-ocr/db";
-import { PageFlag } from "@usul-ocr/db";
+import { BookStatus, PageFlag } from "@usul-ocr/db";
 
 export const bookRouter = createTRPCRouter({
   searchUnassignedBooks: protectedProcedure
@@ -140,7 +140,18 @@ export const bookRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const page = await ctx.db.page.findUnique({
         where: { id: input.pageId },
-        select: { id: true, reviewed: true, flags: true },
+        select: {
+          id: true,
+          reviewed: true,
+          flags: true,
+          book: {
+            select: {
+              status: true,
+              totalPages: true,
+              reviewedPages: true,
+            },
+          },
+        },
       });
 
       if (!page) {
@@ -177,6 +188,12 @@ export const bookRouter = createTRPCRouter({
                   reviewedPages: {
                     increment: 1,
                   },
+                  ...(page.book.totalPages === page.book.reviewedPages + 1 &&
+                  page.book.status !== "COMPLETED"
+                    ? {
+                        status: BookStatus.COMPLETED,
+                      }
+                    : {}),
                 },
               },
             }
