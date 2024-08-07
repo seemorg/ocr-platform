@@ -1,6 +1,9 @@
 import { env } from "@/env";
 import Anthropic from "@anthropic-ai/sdk";
-import { TextBlock } from "@anthropic-ai/sdk/resources/messages.mjs";
+import {
+  TextBlock,
+  ToolUseBlock,
+} from "@anthropic-ai/sdk/resources/messages.mjs";
 import {
   ChatMessageImageContentItem,
   ChatMessageTextContentItem,
@@ -15,7 +18,7 @@ const anthropic = new Anthropic({
 export const getChatCompletions = async (
   params: (ChatRequestSystemMessage | ChatRequestUserMessage)[],
   extraOptions?: {
-    jsonSchema?: Schema;
+    jsonSchema?: JsonSchema;
   },
 ): Promise<string | null> => {
   const systemPrompt = params[0]?.role === "system" ? params[0]?.content : null;
@@ -52,13 +55,24 @@ export const getChatCompletions = async (
                 source: {
                   type: "base64",
                   media_type: "image/png",
-                  data: (block as ChatMessageImageContentItem).imageUrl.url,
+                  data: (
+                    block as ChatMessageImageContentItem
+                  ).imageUrl.url.replace("data:image/png;base64,", ""),
                 },
               };
             }),
     })),
   });
-  return (response.content[0] as TextBlock)?.text ?? null;
+
+  const content = response.content[0];
+
+  if (!content) return null;
+
+  // TODO: improve types for this case
+  if (extraOptions?.jsonSchema)
+    return ((content as ToolUseBlock).input as string) ?? null;
+
+  return (content as TextBlock).text ?? null;
 };
 
 type PropSchema =
@@ -85,7 +99,7 @@ type PropSchema =
       description?: string;
     };
 
-type Schema = {
+export type JsonSchema = {
   name: string;
   description?: string;
   input_schema: {

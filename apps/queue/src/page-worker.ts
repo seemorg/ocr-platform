@@ -4,8 +4,8 @@ import { BookStatus, PageFlag, PageOcrStatus } from "@usul-ocr/db";
 
 import type { PagesQueueData } from "./page-queue";
 import { db } from "./lib/db";
-import { pdfPipelineForPage } from "./lib/pipeline";
 import { PAGES_QUEUE_NAME, PAGES_QUEUE_REDIS } from "./page-queue";
+import { executePipelineForPage } from "./pipeline";
 
 export const pagesWorker = new Worker<PagesQueueData>(
   PAGES_QUEUE_NAME,
@@ -13,10 +13,12 @@ export const pagesWorker = new Worker<PagesQueueData>(
     const { bookId, pageIndex, pdfUrl } = job.data;
 
     let error;
-    const result = await pdfPipelineForPage(pdfUrl, pageIndex).catch((err) => {
-      error = err;
-      return null;
-    });
+    const result = await executePipelineForPage(pdfUrl, pageIndex).catch(
+      (err) => {
+        error = err;
+        return null;
+      },
+    );
 
     if (error) {
       job.log(JSON.stringify(error, null, 2));
