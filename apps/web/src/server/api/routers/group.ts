@@ -1,4 +1,5 @@
 import type { inferRouterContext } from "@trpc/server";
+import { clearUserCache } from "@/server/services/user";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -71,7 +72,7 @@ export const groupRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.db.group.create({
+      const group = await ctx.db.group.create({
         data: {
           name: input.name,
           groupMemberships: {
@@ -82,6 +83,10 @@ export const groupRouter = createTRPCRouter({
           },
         },
       });
+
+      clearUserCache(ctx.session.user.id);
+
+      return group;
     }),
   assignBook: adminProcedure
     .input(
@@ -186,6 +191,8 @@ export const groupRouter = createTRPCRouter({
           },
         });
 
+        clearUserCache(membership.userId);
+
         return membership;
       } catch (error) {
         if (
@@ -243,10 +250,14 @@ export const groupRouter = createTRPCRouter({
         });
       }
 
-      return ctx.db.groupMembership.delete({
+      const deleted = await ctx.db.groupMembership.delete({
         where: {
           id: membership.id,
         },
       });
+
+      clearUserCache(deleted.userId);
+
+      return deleted;
     }),
 });
