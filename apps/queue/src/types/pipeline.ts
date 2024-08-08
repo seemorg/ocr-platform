@@ -4,3 +4,5 @@ export type PipelinePage = {
 };
 
 export type PipelineMode = "azure" | "claude";
+
+export type PipelineOcrMode = "azure" | "google";

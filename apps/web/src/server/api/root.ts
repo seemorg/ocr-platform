@@ -4,7 +4,6 @@ import { authorsRouter } from "./routers/author";
 import { bookRouter } from "./routers/book";
 import { groupRouter } from "./routers/group";
 import { usersRouter } from "./routers/user";
-import { whitelistRouter } from "./routers/whitelist";
 
 /**
  * This is the primary router for your server.
@@ -13,7 +12,6 @@ import { whitelistRouter } from "./routers/whitelist";
  */
 export const appRouter = createTRPCRouter({
   book: bookRouter,
-  whitelist: whitelistRouter,
   group: groupRouter,
   user: usersRouter,
   author: authorsRouter,

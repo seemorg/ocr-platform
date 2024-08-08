@@ -76,13 +76,16 @@ export const segmentOcrResponse = async (
           ],
         },
       ],
-      mode === "azure"
-        ? {
-            responseFormat: { type: "json_object" },
-          }
-        : {
-            jsonSchema: Schema,
-          },
+      {
+        temperature: 0,
+        ...(mode === "azure"
+          ? {
+              responseFormat: { type: "json_object" },
+            }
+          : {
+              jsonSchema: Schema,
+            }),
+      },
     );
 
     if (!response) return null;

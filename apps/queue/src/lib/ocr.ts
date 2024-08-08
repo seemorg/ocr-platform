@@ -36,7 +36,7 @@ export async function getPdfPages(pdfUrl: string) {
   return pdfDoc.getPageCount();
 }
 
-async function getPdfPage(pdfUrl: string, pageIndex: number) {
+export async function getPdfPage(pdfUrl: string, pageIndex: number) {
   const pdfDoc = await getPdfDoc(pdfUrl);
 
   // Create a new PDF document for the single page

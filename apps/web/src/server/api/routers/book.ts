@@ -1,10 +1,18 @@
 import { env } from "@/env";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { stripHtml } from "string-strip-html";
 import { z } from "zod";
 
 import type { Prisma } from "@usul-ocr/db";
 import { BookStatus, PageFlag } from "@usul-ocr/db";
+
+function countWords(text: string): number {
+  const strippedText = stripHtml(text).result;
+
+  const words = strippedText.trim().match(/[\p{L}\p{M}\p{N}]+/gu);
+  return words ? words.length : 0;
+}
 
 export const bookRouter = createTRPCRouter({
   searchUnassignedBooks: protectedProcedure
@@ -208,9 +216,36 @@ export const bookRouter = createTRPCRouter({
         if (input.pageNumber) pageData.pageNumber = input.pageNumber;
       }
 
+      if (input.content || input.footnotesContent) {
+        // recount words
+        pageData.totalWords =
+          (input.content ? countWords(input.content) : 0) +
+          (input.footnotesContent ? countWords(input.footnotesContent) : 0);
+      }
+
       return ctx.db.page.update({
         where: { id: input.pageId },
         data: pageData,
       });
+    }),
+  countWordsForBook: protectedProcedure
+    .input(
+      z.object({
+        bookId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const result = await ctx.db.page.aggregate({
+        where: {
+          book: {
+            id: input.bookId,
+          },
+        },
+        _sum: {
+          totalWords: true,
+        },
+      });
+
+      return result._sum.totalWords ?? 0;
     }),
 });

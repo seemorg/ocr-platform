@@ -136,11 +136,11 @@ model Page {
     reviewedAt   DateTime?
     reviewedBy   User?     @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
     reviewedById String?
-}
 
-model UserWhitelist {
-    id    String @id @default(cuid())
-    email String @unique
+    totalWords Int @default(0)
+
+    @@unique([bookId, pdfPageNumber])
+    @@index([totalWords])
 }
 
 enum GroupRole {

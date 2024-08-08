@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { formatNumber } from "@/lib/utils";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 
@@ -11,6 +12,7 @@ export type Page = {
   id: string;
   bookId: string;
   pdfPageNumber: number;
+  totalWords: number;
   pageNumber?: number | null;
   reviewer?: {
     id: string;
@@ -63,6 +65,14 @@ export const columns: ColumnDef<Page>[] = [
     cell: ({ row }) => {
       const pageNumber = row.getValue("pageNumber") as Page["pageNumber"];
       return <span>{pageNumber ? pageNumber : "-"}</span>;
+    },
+  },
+  {
+    accessorKey: "totalWords",
+    header: "Total Words",
+    cell: ({ row }) => {
+      const totalWords = row.getValue("totalWords") as Page["totalWords"];
+      return <span>{totalWords ? formatNumber(totalWords) : 0}</span>;
     },
   },
   {

@@ -1,4 +1,5 @@
 import { Worker } from "bullmq";
+import { stripHtml } from "string-strip-html";
 
 import { BookStatus, PageFlag, PageOcrStatus } from "@usul-ocr/db";
 
@@ -6,6 +7,13 @@ import type { PagesQueueData } from "./page-queue";
 import { db } from "./lib/db";
 import { PAGES_QUEUE_NAME, PAGES_QUEUE_REDIS } from "./page-queue";
 import { executePipelineForPage } from "./pipeline";
+
+function countWords(text: string): number {
+  const strippedText = stripHtml(text).result;
+
+  const words = strippedText.trim().match(/[\p{L}\p{M}\p{N}]+/gu);
+  return words ? words.length : 0;
+}
 
 export const pagesWorker = new Worker<PagesQueueData>(
   PAGES_QUEUE_NAME,
@@ -34,6 +42,7 @@ export const pagesWorker = new Worker<PagesQueueData>(
               ? {
                   ocrContent: result.value,
                   flags: [PageFlag.NEEDS_ADDITIONAL_REVIEW],
+                  totalWords: result.value ? countWords(result.value) : 0,
                 }
               : {
                   pageNumber:
@@ -42,11 +51,17 @@ export const pagesWorker = new Worker<PagesQueueData>(
                       : null,
                   ocrContent: result.value.body,
                   ocrFootnotes: result.value.footnotes ?? null,
+                  totalWords:
+                    (result.value.body ? countWords(result.value.body) : 0) +
+                    (result.value.footnotes
+                      ? countWords(result.value.footnotes)
+                      : 0),
                 }
             : {
                 ocrContent: "",
                 pageNumber: null,
                 ocrFootnotes: null,
+                totalWords: 0,
               }),
         },
       });
@@ -68,6 +83,7 @@ export const pagesWorker = new Worker<PagesQueueData>(
             ? {
                 ocrContent: result.value,
                 flags: [PageFlag.NEEDS_ADDITIONAL_REVIEW],
+                totalWords: result.value ? countWords(result.value) : 0,
               }
             : {
                 pageNumber:
@@ -76,11 +92,17 @@ export const pagesWorker = new Worker<PagesQueueData>(
                     : null,
                 ocrContent: result.value.body,
                 ocrFootnotes: result.value.footnotes ?? null,
+                totalWords:
+                  (result.value.body ? countWords(result.value.body) : 0) +
+                  (result.value.footnotes
+                    ? countWords(result.value.footnotes)
+                    : 0),
               }
           : {
               ocrContent: "",
               pageNumber: null,
               ocrFootnotes: null,
+              totalWords: 0,
             }),
         // volumeNumber: 1, // TODO: change later
       },

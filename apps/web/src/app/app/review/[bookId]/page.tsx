@@ -9,6 +9,7 @@ import { UserRole } from "@usul-ocr/db";
 
 import { columns, Page } from "./columns";
 import { DataTable } from "./data-table";
+import TotalWords from "./total-words";
 
 async function getData(bookId: string): Promise<{
   book: {
@@ -47,6 +48,7 @@ async function getData(bookId: string): Promise<{
             pdfPageNumber: true,
             reviewedAt: true,
             reviewedById: true,
+            totalWords: true,
           },
         },
       },
@@ -103,6 +105,7 @@ export default async function BookPagesPage({
         </>
       }
     >
+      <TotalWords bookId={bookId} />
       <DataTable columns={columns} data={data.pages} />
     </PageLayout>
   );

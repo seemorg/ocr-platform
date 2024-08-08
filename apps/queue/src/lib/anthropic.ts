@@ -19,6 +19,7 @@ export const getChatCompletions = async (
   params: (ChatRequestSystemMessage | ChatRequestUserMessage)[],
   extraOptions?: {
     jsonSchema?: JsonSchema;
+    temperature?: number;
   },
 ): Promise<string | null> => {
   const systemPrompt = params[0]?.role === "system" ? params[0]?.content : null;
@@ -27,6 +28,7 @@ export const getChatCompletions = async (
   const response = await anthropic.messages.create({
     model: "claude-3-5-sonnet-20240620",
     max_tokens: 3000,
+    temperature: extraOptions?.temperature,
     tools: extraOptions?.jsonSchema ? [extraOptions.jsonSchema] : undefined,
     tool_choice: extraOptions?.jsonSchema
       ? {

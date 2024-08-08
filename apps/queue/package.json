@@ -31,6 +31,7 @@
     "openai": "^4.53.2",
     "pdf-lib": "^1.17.1",
     "pdf-to-img": "^4.0.0",
+    "string-strip-html": "^13.4.8",
     "zod": "catalog:"
   },
   "devDependencies": {

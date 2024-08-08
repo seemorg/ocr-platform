@@ -1,4 +1,4 @@
-import { ocrPage } from "../lib/ocr";
+import { ocrPage as azureOcr } from "../lib/ocr";
 import { PipelineMode } from "../types/pipeline";
 import { convertOcrResponseToHtml } from "./convert-to-html";
 import { correctOcrResponse } from "./correct";
@@ -16,9 +16,9 @@ export async function executePipelineForPage(
   const finalMode = options?.mode || "azure";
   const shouldFallback = options?.mode ? false : true;
 
-  const page = await ocrPage(url, pageIndex);
-  console.log(`[PIPELINE] Correcting page ${page.pageNumber}`);
+  const page = await azureOcr(url, pageIndex);
 
+  console.log(`[PIPELINE] Correcting page ${page.pageNumber}`);
   const corrected = await prepareCaller(correctOcrResponse, {
     params: page,
     mode: finalMode,

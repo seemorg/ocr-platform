@@ -31,6 +31,7 @@ const heliconeOpenai = new OpenAI({
 export const getChatCompletions = async (
   params: (ChatRequestSystemMessage | ChatRequestUserMessage)[],
   extraOptions?: {
+    temperature?: number;
     responseFormat?: {
       type: "json_object" | "text";
     };
@@ -47,6 +48,7 @@ export const getChatCompletions = async (
 
   const response = await heliconeOpenai.chat.completions.create({
     model: "gpt-4o",
+    temperature: extraOptions?.temperature,
     response_format: extraOptions?.responseFormat?.type
       ? { type: extraOptions?.responseFormat?.type }
       : undefined,
