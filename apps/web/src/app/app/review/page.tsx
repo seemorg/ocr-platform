@@ -21,8 +21,10 @@ async function getData(): Promise<Book[]> {
       user?.role === UserRole.ADMIN
         ? {}
         : {
-            assignedGroupId: {
-              in: user?.groupIds,
+            assignedGroup: {
+              id: {
+                in: user?.groupIds,
+              },
             },
           },
     include: {
