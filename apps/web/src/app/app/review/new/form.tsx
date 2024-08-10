@@ -29,18 +29,21 @@ import {
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { Check, ChevronsUpDown, FileIcon, XIcon } from "lucide-react";
+import { DropzoneOptions } from "react-dropzone";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
 
 import { AuthorsCombobox } from "./author-selector";
+import { FileInput, FileUploader } from "./file-upload";
 
 const schema = z.object({
   airtableId: z.string().optional(),
   arabicName: z.string().min(1),
   englishName: z.string(),
-  pdfUrl: z.string().url(),
+  pdfUrl: z.string().url().optional(),
   author: z.object({
     id: z.string().optional(),
     airtableId: z.string().optional(),
@@ -49,12 +52,49 @@ const schema = z.object({
   }),
 });
 
+const dropzoneOptions = {
+  accept: {
+    "application/pdf": [".pdf"],
+  },
+  multiple: false,
+  maxFiles: 1,
+  maxSize: 50 * 1024 * 1024, // 50 MB
+} satisfies DropzoneOptions;
+
 export default function NewBookForm({
   airtableTexts,
 }: {
   airtableTexts: AirtableText[];
 }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+
+  const { isPending: isCreatingUploadUrl, mutateAsync: createUploadUrl } =
+    api.upload.createUploadUrl.useMutation({
+      onError: (error) => {
+        if (error.data?.code === "CONFLICT") {
+          toast.error("A file with the same name already exists");
+        } else {
+          toast.error("Something went wrong!");
+        }
+      },
+    });
+
+  const { isPending: isUploading, mutateAsync: uploadFile } = useMutation({
+    mutationFn: async (url: string) => {
+      await fetch(url, {
+        method: "PUT",
+        body: file,
+      });
+    },
+    onError: (error) => {
+      toast.error("Something went wrong!");
+    },
+  });
+
   const [isNewAuthor, setIsNewAuthor] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+
   const [selectedAuthor, setSelectedAuthor] = useState<
     | {
         id: string;
@@ -68,8 +108,6 @@ export default function NewBookForm({
     resolver: zodResolver(schema),
     defaultValues: {},
   });
-
-  console.log(form.formState.errors);
 
   const router = useRouter();
   const [selectedAirtableIndex, setSelectedAirtableIndex] = useState<
@@ -111,11 +149,40 @@ export default function NewBookForm({
     },
   });
 
+  const onUpload = async () => {
+    if (!file) {
+      toast.error("No file selected");
+      return;
+    }
+
+    if (!fileName) {
+      toast.error("File name is required");
+      return;
+    }
+
+    const { url, publicUrl } = await createUploadUrl({
+      fileName,
+    });
+
+    await uploadFile(url);
+
+    return publicUrl;
+  };
+
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof schema>) {
+  async function onSubmit(values: z.infer<typeof schema>) {
+    let pdfUrl: string | undefined;
+    if (showUpload) {
+      pdfUrl = await onUpload();
+    } else {
+      pdfUrl = values.pdfUrl;
+    }
+
+    if (!pdfUrl) return;
+
     mutateAsync({
       airtableId: values.airtableId,
-      pdfUrl: values.pdfUrl,
+      pdfUrl,
       arabicName: values.arabicName,
       englishName: values.englishName,
       author: values.author.id
@@ -302,16 +369,80 @@ export default function NewBookForm({
             </div>
 
             <div className="w-full">
-              {/* <Label>PDF URL</Label>
-              <Input value={airtableText?.pdfUrl ?? ""} /> */}
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowUpload(!showUpload);
+                }}
+              >
+                {showUpload ? "From URL" : "Upload new pdf"}
+              </Button>
+
               <FormField
                 control={form.control}
                 name="pdfUrl"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="mt-4">
                     <FormLabel>PDF URL</FormLabel>
+
+                    {file ? (
+                      <p className="flex w-full max-w-[300px] items-center gap-2">
+                        <FileIcon className="h-6 w-6" />
+                        <Input
+                          type="text"
+                          value={fileName ?? ""}
+                          onChange={(e) => setFileName(e.target.value)}
+                          disabled={isCreatingUploadUrl || isUploading}
+                        />
+
+                        <span className="flex-shrink-0">
+                          ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                        </span>
+
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setFile(null);
+                            setFileName(null);
+                          }}
+                        >
+                          <XIcon className="size-4" />
+                        </Button>
+                      </p>
+                    ) : null}
+
                     <FormControl>
-                      <Input {...field} />
+                      {!showUpload ? (
+                        <Input {...field} />
+                      ) : (
+                        <FileUploader
+                          value={file ? [file] : []}
+                          onValueChange={(files) => {
+                            if (isCreatingUploadUrl || isUploading) return;
+
+                            const newFile = files ? files[0]! : null;
+                            setFile(newFile);
+
+                            if (newFile) {
+                              setFileName(newFile.name);
+                            } else {
+                              setFileName(null);
+                            }
+                          }}
+                          dropzoneOptions={{
+                            ...dropzoneOptions,
+                            disabled: isCreatingUploadUrl || isUploading,
+                          }}
+                        >
+                          <FileInput>
+                            <div className="flex h-32 w-full items-center justify-center rounded-md border bg-background">
+                              <p className="text-gray-400">Drop files here</p>
+                            </div>
+                          </FileInput>
+                        </FileUploader>
+                      )}
                     </FormControl>
 
                     <FormMessage />
@@ -322,8 +453,15 @@ export default function NewBookForm({
           </div>
 
           <div>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Submitting..." : "Submit"}
+            <Button
+              type="submit"
+              disabled={isPending || isCreatingUploadUrl || isUploading}
+            >
+              {isCreatingUploadUrl || isUploading
+                ? "Upload files..."
+                : isPending
+                  ? "Submitting..."
+                  : "Submit"}
             </Button>
           </div>
         </form>

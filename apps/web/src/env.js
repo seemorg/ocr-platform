@@ -30,6 +30,11 @@ export const env = createEnv({
     OCR_SERVER_API_KEY: z.string(),
     AIRTABLE_API_TOKEN: z.string(),
     AIRTABLE_APP_ID: z.string(),
+    CLOUDFLARE_ACCOUNT_ID: z.string(),
+    CLOUDFLARE_R2_ID: z.string(),
+    CLOUDFLARE_R2_SECRET: z.string(),
+    CLOUDFLARE_R2_BUCKET: z.string(),
+    CLOUDFLARE_R2_BUCKET_URL: z.string(),
   },
 
   /**
@@ -61,6 +66,11 @@ export const env = createEnv({
     AIRTABLE_API_TOKEN: process.env.AIRTABLE_API_TOKEN,
     AIRTABLE_APP_ID: process.env.AIRTABLE_APP_ID,
     NEXT_PUBLIC_PARTYKIT_HOST: process.env.NEXT_PUBLIC_PARTYKIT_HOST,
+    CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,
+    CLOUDFLARE_R2_ID: process.env.CLOUDFLARE_R2_ID,
+    CLOUDFLARE_R2_SECRET: process.env.CLOUDFLARE_R2_SECRET,
+    CLOUDFLARE_R2_BUCKET: process.env.CLOUDFLARE_R2_BUCKET,
+    CLOUDFLARE_R2_BUCKET_URL: process.env.CLOUDFLARE_R2_BUCKET_URL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
