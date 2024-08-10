@@ -15,9 +15,11 @@ export default async function AppPage() {
       ...(user?.role === UserRole.ADMIN
         ? {}
         : {
-            assignedGroup: {
-              id: {
-                in: user?.groupIds,
+            book: {
+              assignedGroup: {
+                id: {
+                  in: user?.groupIds,
+                },
               },
             },
           }),
