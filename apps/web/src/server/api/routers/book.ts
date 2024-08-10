@@ -73,9 +73,8 @@ export const bookRouter = createTRPCRouter({
 
       if (
         !input.author.id &&
-        (!input.author.airtableId ||
-          !input.author.arabicName ||
-          !input.author.englishName)
+        !input.author.arabicName &&
+        !input.author.englishName
       ) {
         throw new TRPCError({
           code: "BAD_REQUEST",
