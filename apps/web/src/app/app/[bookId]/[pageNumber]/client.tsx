@@ -68,8 +68,6 @@ export default function AppPage({
     return value ? generateJSON(value, defaultExtensions) : undefined;
   }, [page]);
 
-  const [hasChanges, setHasChanges] = useState(false);
-
   const [value, setValue] = useState<JSONContent | undefined>(parsedValue);
   const [footnotesValue, setFootnotesValue] = useState<JSONContent | undefined>(
     parsedFootnotesValue,
@@ -103,7 +101,6 @@ export default function AppPage({
     toast.success("Page updated successfully");
     router.refresh();
     router.push(`/app/${page.bookId}/${page.pdfPageNumber + 1}`);
-    setHasChanges(false);
   };
 
   const handleMarkAsEmpty = async () => {
@@ -115,7 +112,6 @@ export default function AppPage({
     toast.success("Page updated successfully");
     router.refresh();
     router.push(`/app/${page.bookId}/${page.pdfPageNumber + 1}`);
-    setHasChanges(false);
   };
 
   const handleRedoOCR = async () => {
@@ -177,7 +173,7 @@ export default function AppPage({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button onClick={submit} disabled={isPending || !hasChanges}>
+          <Button onClick={submit} disabled={isPending}>
             {isPending ? "Submitting..." : "Submit"}
           </Button>
 
@@ -202,7 +198,7 @@ export default function AppPage({
 
       <Container className="mt-5 flex flex-col gap-3">
         <Alerts page={page} />
-        {/* <Presence pageId={page.id} session={session} /> */}
+        <Presence pageId={page.id} session={session} />
       </Container>
 
       <Container className="mt-8 flex h-full flex-1 justify-between gap-10">
@@ -223,10 +219,7 @@ export default function AppPage({
               className="sm:rounded-none sm:border-none sm:shadow-none"
               initialValue={value}
               disabled={isRegenerating}
-              onChange={(newValue) => {
-                setHasChanges(true);
-                setValue(newValue);
-              }}
+              onChange={(newValue) => setValue(newValue)}
             />
           </ScrollArea>
 
@@ -235,10 +228,7 @@ export default function AppPage({
               className="min-h-[200px] sm:rounded-none sm:border-none sm:shadow-none"
               initialValue={footnotesValue}
               disabled={isRegenerating}
-              onChange={(newValue) => {
-                setHasChanges(true);
-                setFootnotesValue(newValue);
-              }}
+              onChange={(newValue) => setFootnotesValue(newValue)}
             />
             <ScrollBar orientation="vertical" />
           </ScrollArea>
@@ -251,10 +241,7 @@ export default function AppPage({
               type="number"
               value={pageNumber}
               disabled={isRegenerating}
-              onChange={(e) => {
-                setHasChanges(true);
-                setPageNumber(Number(e.target.value));
-              }}
+              onChange={(e) => setPageNumber(Number(e.target.value))}
             />
           </div>
         </div>
