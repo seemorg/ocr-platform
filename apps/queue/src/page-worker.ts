@@ -30,7 +30,7 @@ export const pagesWorker = new Worker<PagesQueueData>(
 
     if (error || result?.error) {
       const errorBody = error ? error : result?.error ? result : null;
-      job.log(JSON.stringify({ error: errorBody }, null, 2));
+      await job.log(JSON.stringify({ error: errorBody }, null, 2));
     }
 
     const pageData: Prisma.PageUpdateInput = {
@@ -43,11 +43,15 @@ export const pagesWorker = new Worker<PagesQueueData>(
         pageData.flags = [PageFlag.NEEDS_ADDITIONAL_REVIEW];
         pageData.totalWords = result.value ? countWords(result.value) : 0;
       } else {
+        if (!result.value.body) {
+          await job.log(JSON.stringify({ result }, null, 2));
+        }
+
         pageData.pageNumber =
           typeof result.value.pageNumber === "number"
             ? result.value.pageNumber
             : null;
-        pageData.ocrContent = result.value.body;
+        pageData.ocrContent = result.value.body ?? "";
         pageData.ocrFootnotes = result.value.footnotes ?? null;
         pageData.totalWords =
           (result.value.body ? countWords(result.value.body) : 0) +
