@@ -1,7 +1,7 @@
 import { Worker } from "bullmq";
 import { stripHtml } from "string-strip-html";
 
-import { BookStatus, PageFlag, PageOcrStatus } from "@usul-ocr/db";
+import { BookStatus, PageFlag, PageOcrStatus, Prisma } from "@usul-ocr/db";
 
 import type { PagesQueueData } from "./page-queue";
 import { db } from "./lib/db";
@@ -28,42 +28,42 @@ export const pagesWorker = new Worker<PagesQueueData>(
       },
     );
 
-    if (error) {
-      job.log(JSON.stringify(error, null, 2));
+    if (error || result?.error) {
+      const errorBody = error ? error : result?.error ? result : null;
+      job.log(JSON.stringify({ error: errorBody }, null, 2));
+    }
+
+    const pageData: Prisma.PageUpdateInput = {
+      ocrStatus: error ? PageOcrStatus.FAILED : PageOcrStatus.COMPLETED,
+    };
+
+    if (result) {
+      if (result.error) {
+        pageData.ocrContent = result.value ?? "";
+        pageData.flags = [PageFlag.NEEDS_ADDITIONAL_REVIEW];
+        pageData.totalWords = result.value ? countWords(result.value) : 0;
+      } else {
+        pageData.pageNumber =
+          typeof result.value.pageNumber === "number"
+            ? result.value.pageNumber
+            : null;
+        pageData.ocrContent = result.value.body;
+        pageData.ocrFootnotes = result.value.footnotes ?? null;
+        pageData.totalWords =
+          (result.value.body ? countWords(result.value.body) : 0) +
+          (result.value.footnotes ? countWords(result.value.footnotes) : 0);
+      }
+    } else {
+      pageData.ocrContent = "";
+      pageData.pageNumber = null;
+      pageData.ocrFootnotes = null;
+      pageData.totalWords = 0;
     }
 
     if (job.data.isRedo) {
       await db.page.update({
         where: { id: job.data.pageId },
-        data: {
-          ocrStatus: error ? PageOcrStatus.FAILED : PageOcrStatus.COMPLETED,
-          ...(result
-            ? result.error
-              ? {
-                  ocrContent: result.value,
-                  flags: [PageFlag.NEEDS_ADDITIONAL_REVIEW],
-                  totalWords: result.value ? countWords(result.value) : 0,
-                }
-              : {
-                  pageNumber:
-                    typeof result.value.pageNumber === "number"
-                      ? result.value.pageNumber
-                      : null,
-                  ocrContent: result.value.body,
-                  ocrFootnotes: result.value.footnotes ?? null,
-                  totalWords:
-                    (result.value.body ? countWords(result.value.body) : 0) +
-                    (result.value.footnotes
-                      ? countWords(result.value.footnotes)
-                      : 0),
-                }
-            : {
-                ocrContent: "",
-                pageNumber: null,
-                ocrFootnotes: null,
-                totalWords: 0,
-              }),
-        },
+        data: pageData,
       });
 
       return {};
@@ -77,33 +77,7 @@ export const pagesWorker = new Worker<PagesQueueData>(
           },
         },
         pdfPageNumber: pageIndex + 1,
-        ocrStatus: error ? PageOcrStatus.FAILED : PageOcrStatus.COMPLETED,
-        ...(result
-          ? result.error
-            ? {
-                ocrContent: result.value,
-                flags: [PageFlag.NEEDS_ADDITIONAL_REVIEW],
-                totalWords: result.value ? countWords(result.value) : 0,
-              }
-            : {
-                pageNumber:
-                  typeof result.value.pageNumber === "number"
-                    ? result.value.pageNumber
-                    : null,
-                ocrContent: result.value.body,
-                ocrFootnotes: result.value.footnotes ?? null,
-                totalWords:
-                  (result.value.body ? countWords(result.value.body) : 0) +
-                  (result.value.footnotes
-                    ? countWords(result.value.footnotes)
-                    : 0),
-              }
-          : {
-              ocrContent: "",
-              pageNumber: null,
-              ocrFootnotes: null,
-              totalWords: 0,
-            }),
+        ...(pageData as any),
         // volumeNumber: 1, // TODO: change later
       },
     });

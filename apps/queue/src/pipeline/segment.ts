@@ -1,6 +1,5 @@
 import type { JsonSchema } from "../lib/anthropic";
-import { PipelineMode, PipelinePage } from "../types/pipeline";
-import { getCallerByMode, isOpenAIContentPolicyError } from "./utils";
+import { createPipelineStage } from "./utils";
 
 const Schema: JsonSchema = {
   name: "segment_ocr",
@@ -37,13 +36,8 @@ const parseResponse = (json: string) => {
   }
 };
 
-export const segmentOcrResponse = async (
-  page: PipelinePage,
-  mode: PipelineMode = "azure",
-) => {
-  const caller = getCallerByMode(mode);
-
-  try {
+export const segmentOcrResponse = createPipelineStage(
+  async ({ page, caller, mode }) => {
     const response = await caller(
       [
         {
@@ -93,8 +87,5 @@ export const segmentOcrResponse = async (
     return mode === "azure"
       ? parseResponse(response)
       : (response as unknown as ReturnType<typeof parseResponse>);
-  } catch (e) {
-    if (isOpenAIContentPolicyError(e)) return null;
-    throw e;
-  }
-};
+  },
+);

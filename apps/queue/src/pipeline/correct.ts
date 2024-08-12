@@ -1,13 +1,7 @@
-import { PipelineMode, PipelinePage } from "../types/pipeline";
-import { getCallerByMode, isOpenAIContentPolicyError } from "./utils";
+import { createPipelineStage } from "./utils";
 
-export const correctOcrResponse = async (
-  page: PipelinePage,
-  mode: PipelineMode = "azure",
-) => {
-  const caller = getCallerByMode(mode);
-
-  try {
+export const correctOcrResponse = createPipelineStage(
+  async ({ page, caller }) => {
     const response = await caller(
       [
         {
@@ -20,8 +14,8 @@ export const correctOcrResponse = async (
           // Given the following image and the student transcription, create the perfect transcription.
           //                     `.trim(),
           content: `
-          You are a perfect Arabic OCR model that never makes mistakes, you take an image and a less accurate OCR model output, and generate the perfect transcription.
-                    `.trim(),
+You are a perfect Arabic OCR model that never makes mistakes, you take an image and a less accurate OCR model output, and generate the perfect transcription.
+`.trim(),
           // content: `
           // Please take the provided image that contains text, and accurately transcribe the written text using Optical Character Recognition (OCR) technology. Overwrite any existing inaccurate transcriptions with the corrected and precise text.
           //           `.trim(),
@@ -51,8 +45,5 @@ export const correctOcrResponse = async (
     );
 
     return response;
-  } catch (e) {
-    if (isOpenAIContentPolicyError(e)) return null;
-    throw e;
-  }
-};
+  },
+);
