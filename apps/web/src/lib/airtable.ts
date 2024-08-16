@@ -27,7 +27,6 @@ enum TextField {
 }
 
 enum AuthorField {
-  ID = "id",
   NAME_ARABIC = "Name (Arabic)",
   TRANSLITERATION = "Transliteration",
   OTHER_NAMES = "Other Names (comma separated)",
@@ -75,7 +74,6 @@ export const getAirtableTexts = unstable_cache(
       airtable("Authors")
         .select({
           fields: [
-            AuthorField.ID,
             AuthorField.NAME_ARABIC,
             AuthorField.TRANSLITERATION,
             AuthorField.USUL,
