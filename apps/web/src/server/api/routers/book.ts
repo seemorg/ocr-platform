@@ -53,6 +53,7 @@ export const bookRouter = createTRPCRouter({
           arabicName: z.string().optional(),
           englishName: z.string().optional(),
         }),
+        groupId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -109,6 +110,15 @@ export const bookRouter = createTRPCRouter({
           arabicName: input.arabicName,
           englishName: input.englishName,
           airtableId: input.airtableId,
+          ...(input.groupId
+            ? {
+                assignedGroup: {
+                  connect: {
+                    id: input.groupId,
+                  },
+                },
+              }
+            : {}),
         },
       });
 

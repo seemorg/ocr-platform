@@ -1,29 +1,16 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import DataCombobox from "@/components/data-combobox";
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { appRouter } from "@/server/api/root";
 import { api } from "@/trpc/react";
 import { inferRouterOutputs } from "@trpc/server";
-import { Check, ChevronsUpDown } from "lucide-react";
 import toast from "react-hot-toast";
-import { useDebounce } from "use-debounce";
 
 export default function AddMemberForm({ groupId }: { groupId: string }) {
-  const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const router = useRouter();
   const utils = api.useUtils();
@@ -31,7 +18,7 @@ export default function AddMemberForm({ groupId }: { groupId: string }) {
     onSuccess: () => {
       toast.success("User added to group");
       router.refresh();
-      setSelectedUser(undefined);
+      setSelectedUser(null);
       utils.user.searchUsers.reset();
     },
     onError: (error) => {
@@ -62,113 +49,37 @@ export default function AddMemberForm({ groupId }: { groupId: string }) {
 
 type User = inferRouterOutputs<typeof appRouter>["user"]["searchUsers"][number];
 
-const POPOVER_WIDTH = "w-[350px]";
-
 function UsersCombobox({
   selected,
   onSelect,
   groupId,
 }: {
-  selected: User | undefined;
-  onSelect: (user: User) => void;
+  selected: User | null;
+  onSelect: (user: User | null) => void;
   groupId: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const handleSetActive = useCallback(
-    (user: User) => {
-      onSelect(user);
-    },
-    [onSelect],
-  );
-
-  const displayName = selected
-    ? selected.name || selected.email
-    : "Select user";
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          className={cn("justify-between", POPOVER_WIDTH)}
-        >
-          {displayName}
-
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-
-      <PopoverContent side="bottom" className={cn("p-0", POPOVER_WIDTH)}>
-        <Command
-          shouldFilter={false}
-          className="h-auto rounded-lg border border-b-0 shadow-md"
-        >
-          <CommandInput
-            value={searchQuery}
-            onValueChange={setSearchQuery}
-            placeholder="Search for user"
-          />
-
-          <SearchResults
-            query={searchQuery}
-            selectedResult={selected}
-            onSelectResult={handleSetActive}
-            groupId={groupId}
-          />
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-interface SearchResultsProps {
-  query: string;
-  groupId: string;
-  selectedResult: User | undefined;
-  onSelectResult: (user: User) => void;
-}
-
-function SearchResults({
-  query,
-  groupId,
-  selectedResult,
-  onSelectResult,
-}: SearchResultsProps) {
-  const [debouncedSearchQuery] = useDebounce(query, 500);
-
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const { data, isLoading, isError } = api.user.searchUsers.useQuery({
     query: debouncedSearchQuery,
     groupId,
   });
 
   return (
-    <CommandList>
-      {isLoading && <div className="p-4 text-sm">Searching...</div>}
-      {!isError && !isLoading && !data?.length && (
-        <div className="p-4 text-sm">No users found</div>
-      )}
-      {isError && <div className="p-4 text-sm">Something went wrong</div>}
-
-      {data?.map(({ id, name, email }) => {
-        return (
-          <CommandItem
-            key={id}
-            onSelect={() => onSelectResult({ id, name, email })}
-            value={id}
-          >
-            <Check
-              className={cn(
-                "mr-2 h-4 w-4",
-                selectedResult?.id === id ? "opacity-100" : "opacity-0",
-              )}
-            />
-            {name || email}
-          </CommandItem>
-        );
-      })}
-    </CommandList>
+    <DataCombobox
+      data={data}
+      isLoading={isLoading}
+      isError={isError}
+      onQueryChange={setDebouncedSearchQuery}
+      selected={selected}
+      onChange={onSelect}
+      itemName={(user) => user.name || user.email}
+      messages={{
+        placeholder: "Search for a user",
+        loading: "Searching...",
+        empty: "No users found",
+        error: "Something went wrong",
+      }}
+      widthClassName="w-[350px]"
+    />
   );
 }

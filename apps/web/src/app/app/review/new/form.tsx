@@ -38,6 +38,7 @@ import { z } from "zod";
 
 import { AuthorsCombobox } from "./author-selector";
 import { FileInput, FileUploader } from "./file-upload";
+import GroupsCombobox from "./group-selector";
 
 const schema = z.object({
   airtableId: z.string().optional(),
@@ -50,6 +51,7 @@ const schema = z.object({
     arabicName: z.string().optional(),
     englishName: z.string().optional(),
   }),
+  groupId: z.string().optional(),
 });
 
 const dropzoneOptions = {
@@ -95,14 +97,16 @@ export default function NewBookForm({
   const [isNewAuthor, setIsNewAuthor] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
 
-  const [selectedAuthor, setSelectedAuthor] = useState<
-    | {
-        id: string;
-        arabicName: string;
-        englishName: string | null;
-      }
-    | undefined
-  >();
+  const [selectedAuthor, setSelectedAuthor] = useState<{
+    id: string;
+    arabicName: string;
+    englishName: string | null;
+  } | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<{
+    id: string;
+    name: string;
+    createdAt: Date;
+  } | null>(null);
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -121,16 +125,22 @@ export default function NewBookForm({
 
   useEffect(() => {
     if (airtableText) {
-      form.setValue("airtableId", airtableText.id);
+      form.setValue("airtableId", airtableText._airtableReference);
       form.setValue("arabicName", airtableText.arabicName ?? "");
       form.setValue("englishName", airtableText.transliteration ?? "");
       form.setValue("pdfUrl", airtableText.pdfUrl ?? "");
 
-      form.setValue(
-        "author.airtableId",
-        airtableText.author?.airtableId ?? undefined,
-      );
-      form.setValue("author.arabicName", airtableText.author?.arabicName ?? "");
+      if (airtableText.author) {
+        form.setValue(
+          "author.airtableId",
+          airtableText.author._airtableReference,
+        );
+
+        form.setValue(
+          "author.arabicName",
+          airtableText.author.arabicName ?? undefined,
+        );
+      }
     }
   }, [airtableText]);
 
@@ -185,6 +195,7 @@ export default function NewBookForm({
       pdfUrl,
       arabicName: values.arabicName,
       englishName: values.englishName,
+      groupId: values.groupId,
       author: values.author.id
         ? {
             id: values.author.id,
@@ -359,9 +370,17 @@ export default function NewBookForm({
                     selected={selectedAuthor}
                     onSelect={(author) => {
                       setSelectedAuthor(author);
-                      form.setValue("author", {
-                        id: author.id,
-                      });
+                      if (author) {
+                        form.setValue("author", {
+                          id: author.id,
+                        });
+                      } else {
+                        form.setValue("author", {
+                          airtableId: undefined,
+                          arabicName: undefined,
+                          englishName: undefined,
+                        });
+                      }
                     }}
                   />
                 )}
@@ -450,6 +469,20 @@ export default function NewBookForm({
                 )}
               />
             </div>
+          </div>
+
+          <div className="w-full">
+            <GroupsCombobox
+              selected={selectedGroup}
+              onChange={(group) => {
+                setSelectedGroup(group);
+                if (group) {
+                  form.setValue("groupId", group.id);
+                } else {
+                  form.setValue("groupId", undefined);
+                }
+              }}
+            />
           </div>
 
           <div>

@@ -52,6 +52,22 @@ const validateAdminOrGroupMember = async (
 };
 
 export const groupRouter = createTRPCRouter({
+  search: protectedProcedure
+    .input(
+      z.object({
+        query: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.db.group.findMany({
+        where: {
+          name: {
+            mode: "insensitive",
+            contains: input.query,
+          },
+        },
+      });
+    }),
   myGroups: protectedProcedure.query(async ({ ctx }) => {
     const memberships = await ctx.db.groupMembership.findMany({
       where: {

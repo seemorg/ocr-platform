@@ -198,7 +198,9 @@ export default function AppPage({
 
       <Container className="mt-5 flex flex-col gap-3">
         <Alerts page={page} />
-        <Presence pageId={page.id} session={session} />
+        {process.env.NODE_ENV !== "development" && (
+          <Presence pageId={page.id} session={session} />
+        )}
       </Container>
 
       <Container className="mt-8 flex h-full flex-1 justify-between gap-10">
