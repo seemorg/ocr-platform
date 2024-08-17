@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
@@ -31,6 +32,7 @@ import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Check, ChevronsUpDown, FileIcon, XIcon } from "lucide-react";
+import { PDFDocument } from "pdf-lib";
 import { DropzoneOptions } from "react-dropzone";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
@@ -39,6 +41,10 @@ import { z } from "zod";
 import { AuthorsCombobox } from "./author-selector";
 import { FileInput, FileUploader } from "./file-upload";
 import GroupsCombobox from "./group-selector";
+
+const removeDiacritics = (str: string) => {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
 
 const schema = z.object({
   airtableId: z.string().optional(),
@@ -54,21 +60,73 @@ const schema = z.object({
   groupId: z.string().optional(),
 });
 
+const mergePdfAndGetSplits = async (files: File[]) => {
+  const mergedPdf = await PDFDocument.create();
+  const splitsData: { start: number; end: number }[] = [];
+  let currentPage = 0;
+
+  for (let file of files) {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await PDFDocument.load(arrayBuffer);
+    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+    copiedPages.forEach((page) => {
+      mergedPdf.addPage(page);
+    });
+
+    const start = currentPage + 1;
+    const end = currentPage + copiedPages.length;
+    splitsData.push({ start, end });
+    currentPage = end;
+  }
+
+  return { mergedPdf: await mergedPdf.save(), splitsData };
+};
+
 const dropzoneOptions = {
   accept: {
     "application/pdf": [".pdf"],
   },
-  multiple: false,
-  maxFiles: 1,
-  maxSize: 50 * 1024 * 1024, // 50 MB
+  multiple: true,
+  maxFiles: 10,
+  maxSize: 70 * 1024 * 1024, // 70 MB
 } satisfies DropzoneOptions;
+
+const Toggle = ({
+  value,
+  onChange,
+  renderLabel,
+}: {
+  value: boolean;
+  onChange: (newValue: boolean) => void;
+  renderLabel: (v: boolean) => string;
+}) => {
+  return (
+    <div className="flex items-center">
+      {new Array(2).fill(null).map((_, idx) => (
+        <button
+          key={idx}
+          type="button"
+          className={cn(
+            "w-full px-3 py-2 text-xs font-medium",
+            value === (idx === 0)
+              ? "rounded-full bg-primary text-primary-foreground"
+              : "text-muted-foreground",
+          )}
+          onClick={() => onChange(idx === 0)}
+        >
+          {renderLabel(idx === 0)}
+        </button>
+      ))}
+    </div>
+  );
+};
 
 export default function NewBookForm({
   airtableTexts,
 }: {
   airtableTexts: AirtableText[];
 }) {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
 
   const { isPending: isCreatingUploadUrl, mutateAsync: createUploadUrl } =
@@ -77,25 +135,34 @@ export default function NewBookForm({
         if (error.data?.code === "CONFLICT") {
           toast.error("A file with the same name already exists");
         } else {
-          toast.error("Something went wrong!");
+          toast.error("Could not create upload url!");
         }
       },
     });
 
   const { isPending: isUploading, mutateAsync: uploadFile } = useMutation({
-    mutationFn: async (url: string) => {
+    mutationFn: async ({ url, file }: { url: string; file: File }) => {
       await fetch(url, {
         method: "PUT",
         body: file,
       });
     },
     onError: (error) => {
-      toast.error("Something went wrong!");
+      toast.error("Could not upload file!");
+    },
+  });
+
+  const { isPending: isMerging, mutateAsync: mergeFiles } = useMutation({
+    mutationFn: async (files: File[]) => {
+      return await mergePdfAndGetSplits(files);
+    },
+    onError: (error) => {
+      toast.error("Could not merge files!");
     },
   });
 
   const [isNewAuthor, setIsNewAuthor] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
+  // const [showUpload, setShowUpload] = useState(false);
 
   const [selectedAuthor, setSelectedAuthor] = useState<{
     id: string;
@@ -160,8 +227,8 @@ export default function NewBookForm({
   });
 
   const onUpload = async () => {
-    if (!file) {
-      toast.error("No file selected");
+    if (files.length === 0) {
+      toast.error("No files uploaded");
       return;
     }
 
@@ -174,25 +241,40 @@ export default function NewBookForm({
       fileName,
     });
 
-    await uploadFile(url);
+    let file: File | undefined;
+    let splitsData: { start: number; end: number }[] | undefined;
 
-    return publicUrl;
+    if (files.length > 1) {
+      const { mergedPdf, splitsData: s } = await mergeFiles(files);
+      file = new File([mergedPdf], fileName, { type: "application/pdf" });
+      splitsData = s;
+    } else {
+      file = files[0]!;
+    }
+
+    await uploadFile({ url, file });
+
+    return { url: publicUrl, splitsData };
   };
 
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof schema>) {
-    let pdfUrl: string | undefined;
-    if (showUpload) {
-      pdfUrl = await onUpload();
-    } else {
-      pdfUrl = values.pdfUrl;
-    }
+    // let pdfUrl: string | undefined;
+    // if (showUpload) {
+    //   pdfUrl = await onUpload();
+    // } else {
+    //   pdfUrl = values.pdfUrl;
+    // }
+    const pdfData = await onUpload();
 
-    if (!pdfUrl) return;
+    if (!pdfData) return;
 
     mutateAsync({
       airtableId: values.airtableId,
-      pdfUrl,
+      pdfUrl: pdfData.url,
+      splitsData: pdfData.splitsData
+        ? { splits: pdfData.splitsData }
+        : undefined,
       arabicName: values.arabicName,
       englishName: values.englishName,
       groupId: values.groupId,
@@ -328,13 +410,18 @@ export default function NewBookForm({
 
           <div className="flex flex-col gap-10 sm:flex-row">
             <div className="w-full">
-              <Button type="button" onClick={toggleAuthorMode}>
-                {isNewAuthor ? "New Author" : "Existing Author"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Label>Author</Label>
+                <Toggle
+                  value={isNewAuthor}
+                  onChange={toggleAuthorMode}
+                  renderLabel={(v) => (v ? "New" : "Existing")}
+                />
+              </div>
 
               <div className="mt-4">
                 {isNewAuthor ? (
-                  <>
+                  <div className="flex flex-col gap-4">
                     <FormField
                       control={form.control}
                       name="author.arabicName"
@@ -364,7 +451,7 @@ export default function NewBookForm({
                         </FormItem>
                       )}
                     />
-                  </>
+                  </div>
                 ) : (
                   <AuthorsCombobox
                     selected={selectedAuthor}
@@ -388,34 +475,35 @@ export default function NewBookForm({
             </div>
 
             <div className="w-full">
-              <Button
-                type="button"
-                onClick={() => {
+              {/* <Toggle
+                value={showUpload}
+                onChange={(v) => {
                   setShowUpload(!showUpload);
                 }}
               >
                 {showUpload ? "From URL" : "Upload new pdf"}
-              </Button>
+              </Toggle> */}
 
-              <FormField
-                control={form.control}
-                name="pdfUrl"
-                render={({ field }) => (
-                  <FormItem className="mt-4">
-                    <FormLabel>PDF URL</FormLabel>
+              <Label htmlFor="pdfUrl">PDF</Label>
 
-                    {file ? (
-                      <p className="flex w-full max-w-[300px] items-center gap-2">
-                        <FileIcon className="h-6 w-6" />
-                        <Input
-                          type="text"
-                          value={fileName ?? ""}
-                          onChange={(e) => setFileName(e.target.value)}
-                          disabled={isCreatingUploadUrl || isUploading}
-                        />
+              {files.length > 0 ? (
+                <div className="mt-4">
+                  <div className="flex w-full max-w-[300px] items-center gap-2">
+                    <FileIcon className="h-6 w-6" />
+                    <Input
+                      type="text"
+                      value={fileName ?? ""}
+                      onChange={(e) => setFileName(e.target.value)}
+                      disabled={isCreatingUploadUrl || isUploading || isMerging}
+                    />
+                  </div>
 
+                  <div className="my-4 flex flex-col">
+                    {files.map((file, idx) => (
+                      <div key={idx}>
                         <span className="flex-shrink-0">
-                          ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                          {file.name} ({(file.size / 1024 / 1024).toFixed(1)}{" "}
+                          MB)
                         </span>
 
                         <Button
@@ -423,55 +511,67 @@ export default function NewBookForm({
                           size="icon"
                           variant="ghost"
                           onClick={() => {
-                            setFile(null);
-                            setFileName(null);
+                            const newFiles = files.filter(
+                              (f, fIdx) => fIdx !== idx,
+                            );
+                            setFiles(newFiles);
+                            if (newFiles.length === 0) {
+                              setFileName(null);
+                            }
                           }}
                         >
                           <XIcon className="size-4" />
                         </Button>
-                      </p>
-                    ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
 
-                    <FormControl>
-                      {!showUpload ? (
-                        <Input {...field} />
-                      ) : (
-                        <FileUploader
-                          value={file ? [file] : []}
-                          onValueChange={(files) => {
-                            if (isCreatingUploadUrl || isUploading) return;
+              <FileUploader
+                id="pdfUrl"
+                value={files}
+                onValueChange={(newFiles) => {
+                  if (isCreatingUploadUrl || isUploading || isMerging) return;
 
-                            const newFile = files ? files[0]! : null;
-                            setFile(newFile);
+                  setFiles(newFiles ?? []);
 
-                            if (newFile) {
-                              setFileName(newFile.name);
-                            } else {
-                              setFileName(null);
-                            }
-                          }}
-                          dropzoneOptions={{
-                            ...dropzoneOptions,
-                            disabled: isCreatingUploadUrl || isUploading,
-                          }}
-                        >
-                          <FileInput>
-                            <div className="flex h-32 w-full items-center justify-center rounded-md border bg-background">
-                              <p className="text-gray-400">Drop files here</p>
-                            </div>
-                          </FileInput>
-                        </FileUploader>
-                      )}
-                    </FormControl>
+                  if (newFiles && newFiles.length > 0) {
+                    let name: string = form.getValues("englishName");
+                    if (name) {
+                      name =
+                        removeDiacritics(name.trim())
+                          .toLowerCase()
+                          .split(" ")
+                          .join("-") + ".pdf";
+                    } else {
+                      name = newFiles[0]!.name?.trim();
+                    }
 
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    setFileName(name);
+                  } else {
+                    setFileName(null);
+                  }
+                }}
+                dropzoneOptions={{
+                  ...dropzoneOptions,
+                  disabled: isCreatingUploadUrl || isUploading || isMerging,
+                }}
+              >
+                <FileInput>
+                  <div className="mt-4 flex h-32 w-full items-center justify-center rounded-md border bg-background">
+                    <p className="text-gray-400">Drop files here</p>
+                  </div>
+                </FileInput>
+              </FileUploader>
             </div>
           </div>
 
-          <div className="w-full">
+          <div className="w-full space-y-2">
+            <div>
+              <Label>Group (optional)</Label>
+            </div>
+
             <GroupsCombobox
               selected={selectedGroup}
               onChange={(group) => {
@@ -488,10 +588,12 @@ export default function NewBookForm({
           <div>
             <Button
               type="submit"
-              disabled={isPending || isCreatingUploadUrl || isUploading}
+              disabled={
+                isPending || isCreatingUploadUrl || isUploading || isMerging
+              }
             >
-              {isCreatingUploadUrl || isUploading
-                ? "Upload files..."
+              {isCreatingUploadUrl || isUploading || isMerging
+                ? "Uploading files..."
                 : isPending
                   ? "Submitting..."
                   : "Submit"}

@@ -87,6 +87,7 @@ enum BookStatus {
 
 model Book {
     id            String     @id @default(cuid())
+    splitsData    Json       @default("{}")
     arabicName    String?
     englishName   String?
     airtableId    String?    @unique

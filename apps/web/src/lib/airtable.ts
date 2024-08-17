@@ -64,11 +64,8 @@ export const getAirtableTexts = unstable_cache(
             TextField.TRANSLITERATION,
             TextField.AUTHOR,
           ],
-          // make sure `Usul` is not checked AND `Core` is checked
-          filterByFormula: `AND(
-            {Usul} = 0,
-            {Core} = 1
-          )`,
+          // make sure `Usul` is not checked
+          filterByFormula: `{Usul} = 0`,
         })
         .all(),
       airtable("Authors")

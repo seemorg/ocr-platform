@@ -34,6 +34,7 @@ type FileUploaderContextType = {
   setActiveIndex: Dispatch<SetStateAction<number>>;
   orientation: "horizontal" | "vertical";
   direction: DirectionOptions;
+  inputId?: string;
 };
 
 const FileUploaderContext = createContext<FileUploaderContextType | null>(null);
@@ -68,6 +69,7 @@ export const FileUploader = forwardRef<
       orientation = "vertical",
       children,
       dir,
+      id,
       ...props
     },
     ref,
@@ -225,6 +227,7 @@ export const FileUploader = forwardRef<
           setActiveIndex,
           orientation,
           direction,
+          inputId: id,
         }}
       >
         <div
@@ -321,7 +324,7 @@ export const FileInput = forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, children, ...props }, ref) => {
-  const { dropzoneState, isFileTooBig, isLOF } = useFileUpload();
+  const { dropzoneState, isFileTooBig, isLOF, inputId } = useFileUpload();
   const rootProps = isLOF ? {} : dropzoneState.getRootProps();
   return (
     <div
@@ -347,6 +350,7 @@ export const FileInput = forwardRef<
         {children}
       </div>
       <Input
+        id={inputId}
         ref={dropzoneState.inputRef}
         disabled={isLOF}
         {...dropzoneState.getInputProps()}
