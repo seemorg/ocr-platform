@@ -3,6 +3,7 @@
 import type { AirtableText } from "@/lib/airtable";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -31,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { Check, ChevronsUpDown, FileIcon, XIcon } from "lucide-react";
+import { Check, ChevronsUpDown, FileIcon, InfoIcon, XIcon } from "lucide-react";
 import { PDFDocument } from "pdf-lib";
 import { DropzoneOptions } from "react-dropzone";
 import { useForm } from "react-hook-form";
@@ -195,9 +196,10 @@ export default function NewBookForm({
       form.setValue("airtableId", airtableText._airtableReference);
       form.setValue("arabicName", airtableText.arabicName ?? "");
       form.setValue("englishName", airtableText.transliteration ?? "");
-      form.setValue("pdfUrl", airtableText.pdfUrl ?? "");
 
       if (airtableText.author) {
+        setIsNewAuthor(true);
+
         form.setValue(
           "author.airtableId",
           airtableText.author._airtableReference,
@@ -206,6 +208,11 @@ export default function NewBookForm({
         form.setValue(
           "author.arabicName",
           airtableText.author.arabicName ?? undefined,
+        );
+
+        form.setValue(
+          "author.englishName",
+          airtableText.author.transliteration ?? undefined,
         );
       }
     }
@@ -422,6 +429,26 @@ export default function NewBookForm({
               <div className="mt-4">
                 {isNewAuthor ? (
                   <div className="flex flex-col gap-4">
+                    <FormField
+                      control={form.control}
+                      name="author.airtableId"
+                      render={({ field }) =>
+                        field.value ? (
+                          <Alert
+                            className="[&>svg+div]:translate-y-0"
+                            variant="info"
+                          >
+                            <InfoIcon className="!top-3 size-4" />
+                            <AlertTitle className="mb-0">
+                              Author exists in Airtable
+                            </AlertTitle>
+                          </Alert>
+                        ) : (
+                          <></>
+                        )
+                      }
+                    />
+
                     <FormField
                       control={form.control}
                       name="author.arabicName"
