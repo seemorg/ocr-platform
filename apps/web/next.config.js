@@ -2,6 +2,7 @@ import { fileURLToPath } from "url";
 // @ts-ignore
 import { PrismaPlugin } from "@prisma/nextjs-monorepo-workaround-plugin";
 import createJiti from "jiti";
+import { withAxiom } from "next-axiom";
 
 // Import env files to validate at build time. Use jiti so we can load .ts files in here.
 createJiti(fileURLToPath(import.meta.url))("./src/env");
@@ -26,4 +27,4 @@ const config = {
   },
 };
 
-export default config;
+export default withAxiom(config);

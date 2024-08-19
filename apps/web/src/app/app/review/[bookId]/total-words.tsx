@@ -4,7 +4,7 @@ import { formatNumber } from "@/lib/utils";
 import { api } from "@/trpc/react";
 
 export default function TotalWords({ bookId }: { bookId: string }) {
-  const { isPending, data } = api.book.countWordsForBook.useQuery({ bookId });
+  const { isPending, data } = api.book.countWords.useQuery({ bookId });
 
   return (
     <div className="py-5">

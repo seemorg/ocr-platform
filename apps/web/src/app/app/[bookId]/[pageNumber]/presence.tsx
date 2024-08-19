@@ -11,10 +11,10 @@ import { PageAlert } from "./page-alert";
 
 export default function Presence({
   pageId,
-  session,
+  user,
 }: {
   pageId: string;
-  session: Session;
+  user: Session["user"];
 }) {
   const [emails, setEmails] = useState<string[]>([]);
 
@@ -31,8 +31,8 @@ export default function Presence({
       conn.send(
         JSON.stringify({
           type: "join",
-          userId: session.user.id,
-          email: session.user.email,
+          userId: user.id,
+          email: user.email,
           pageId: pageId,
         }),
       );
@@ -48,9 +48,7 @@ export default function Presence({
 
       if (data.type === "update") {
         setEmails(
-          data.members
-            .map((m) => m.email)
-            .filter((e) => e !== session.user.email),
+          data.members.map((m) => m.email).filter((e) => e !== user.email),
         );
       }
     });

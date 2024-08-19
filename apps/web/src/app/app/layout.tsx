@@ -1,5 +1,7 @@
-import { getServerAuthSession } from "@/server/auth";
 import { redirect } from "next/navigation";
+import { getServerAuthSession } from "@/server/auth";
+
+import AppContextProvider from "./providers";
 
 export default async function AppLayout({
   children,
@@ -12,5 +14,7 @@ export default async function AppLayout({
     redirect("/login");
   }
 
-  return children;
+  return (
+    <AppContextProvider user={session.user}>{children}</AppContextProvider>
+  );
 }
