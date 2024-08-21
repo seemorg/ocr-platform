@@ -195,13 +195,20 @@ ocrRoutes.post(
       },
     });
 
-    await pagesQueue.add(`${page.book.id}-page-${pageIndex}`, {
-      pageId,
-      bookId: page.book.id,
-      pdfUrl: page.book.pdfUrl,
-      pageIndex,
-      isRedo: true,
-    });
+    await pagesQueue.add(
+      `${page.book.id}-page-${pageIndex}`,
+      {
+        pageId,
+        bookId: page.book.id,
+        pdfUrl: page.book.pdfUrl,
+        pageIndex,
+        isRedo: true,
+      },
+      {
+        // prioritize redo jobs
+        lifo: true,
+      },
+    );
 
     return c.json({ ok: true });
   },

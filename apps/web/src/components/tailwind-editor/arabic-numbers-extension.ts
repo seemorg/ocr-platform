@@ -53,12 +53,8 @@ export const ArabicNumbers = Extension.create({
               const end = Math.min(to - pos, node.nodeSize);
               const selectedText = node.text?.slice(start, end);
 
-              console.log({ selectedText });
-
               if (selectedText) {
                 const newText = selectedText.replace(/\d+/g, (match) => {
-                  console.log(match);
-
                   modified = true;
                   return arabicFormatter.format(parseInt(match));
                 });

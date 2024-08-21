@@ -219,6 +219,8 @@ const InnerPage = ({
           cause: error.cause,
           stack: error.stack,
           digest: error.digest,
+          content: value,
+          footnotesContent: footnotesValue,
         },
       );
     }
