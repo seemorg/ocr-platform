@@ -43,8 +43,31 @@ import { useAppContext } from "../../providers";
 import Alerts from "./alerts";
 import Presence from "./presence";
 
+// recursively loop over `value` and remove all `textStyle` marks
+const removeTextStyleMarks = (value: JSONContent) => {
+  let newValue = structuredClone(value);
+
+  if (Array.isArray(newValue)) {
+    newValue = newValue.map(removeTextStyleMarks);
+  }
+
+  if (Array.isArray(newValue.content)) {
+    newValue.content = newValue.content.map(removeTextStyleMarks);
+  }
+
+  if (newValue.marks) {
+    newValue.marks = newValue.marks.filter((mark) => mark.type !== "textStyle");
+
+    if (newValue.marks.length === 0) {
+      newValue.marks = undefined;
+    }
+  }
+
+  return newValue;
+};
+
 const serializeTipTapValue = (value: JSONContent) => {
-  return generateHTML(value, defaultExtensions);
+  return generateHTML(removeTextStyleMarks(value), defaultExtensions);
 };
 
 export default function AppPage({
