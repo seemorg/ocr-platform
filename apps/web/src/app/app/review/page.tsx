@@ -45,6 +45,7 @@ async function getData(): Promise<Book[]> {
     pdfUrl: book.pdfUrl,
     totalPages: book.totalPages,
     reviewedPages: book.reviewedPages,
+    createdAt: book.createdAt,
   }));
 }
 

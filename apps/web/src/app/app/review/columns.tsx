@@ -1,10 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ColumnDef } from "@tanstack/react-table";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import { ArrowUpDown } from "lucide-react";
 
 import { BookStatus } from "@usul-ocr/db";
+
+dayjs.extend(relativeTime);
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
@@ -21,6 +27,7 @@ export type Book = {
   pdfUrl: string;
   totalPages: number;
   reviewedPages: number;
+  createdAt: Date;
 };
 
 export const bookStatusToName = {
@@ -100,6 +107,24 @@ export const columns: ColumnDef<Book>[] = [
           View
         </a>
       );
+    },
+  },
+  {
+    accessorKey: "createdAt",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Created At
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const dateString = row.getValue("createdAt") as string;
+      const date = dayjs(dateString).fromNow();
+
+      return <time dateTime={dateString}>{date}</time>;
     },
   },
 ];

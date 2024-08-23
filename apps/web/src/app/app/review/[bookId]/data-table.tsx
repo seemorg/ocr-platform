@@ -51,7 +51,6 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
-
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onColumnVisibilityChange: setColumnVisibility,

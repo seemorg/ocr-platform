@@ -99,6 +99,8 @@ model Book {
     authorId      String
     status        BookStatus @default(UNPROCESSED)
 
+    createdAt DateTime @default(now())
+
     assignedGroupId String?
     assignedGroup   Group?  @relation(fields: [assignedGroupId], references: [id], onDelete: SetNull)
 }
