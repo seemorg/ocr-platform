@@ -21,8 +21,8 @@
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
-    "@usul-ocr/prettier-config": "workspace:*",
     "@turbo/gen": "^2.0.8",
+    "@usul-ocr/prettier-config": "workspace:*",
     "prettier": "catalog:",
     "turbo": "^2.0.8",
     "typescript": "catalog:"

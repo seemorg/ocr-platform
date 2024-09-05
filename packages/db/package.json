@@ -23,15 +23,15 @@
     "@t3-oss/env-core": "^0.10.1"
   },
   "devDependencies": {
-    "prisma": "^5.17.0",
     "@usul-ocr/eslint-config": "workspace:*",
     "@usul-ocr/prettier-config": "workspace:*",
     "@usul-ocr/tsconfig": "workspace:*",
     "dotenv-cli": "^7.4.2",
     "eslint": "catalog:",
     "prettier": "catalog:",
-    "typescript": "catalog:",
-    "tsup": "^8.0.2"
+    "prisma": "^5.17.0",
+    "tsup": "^8.0.2",
+    "typescript": "catalog:"
   },
   "prettier": "@usul-ocr/prettier-config"
 }
