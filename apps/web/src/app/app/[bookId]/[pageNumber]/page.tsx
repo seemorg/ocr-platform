@@ -391,7 +391,7 @@ const InnerPage = ({
               className="min-h-[200px] sm:rounded-none sm:border-none sm:shadow-none"
               initialValue={editorialNotesValue}
               onChange={(newValue) => setEditorialNotesValue(newValue)}
-              placeholderText="تعليقات اصول"
+              placeholderText="تعليقات موقع اصول"
             />
             <ScrollBar orientation="vertical" />
           </ScrollArea>
@@ -413,7 +413,7 @@ const InnerPage = ({
               initialValue={footnotesValue}
               disabled={isRegenerating}
               onChange={(newValue) => setFootnotesValue(newValue)}
-              placeholderText="هوامش النص"
+              placeholderText="هوامش الصفحة"
             />
             <ScrollBar orientation="vertical" />
           </ScrollArea>
