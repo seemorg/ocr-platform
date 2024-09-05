@@ -66,8 +66,14 @@ const removeTextStyleMarks = (value: JSONContent) => {
   return newValue;
 };
 
-const serializeTipTapValue = (value: JSONContent) => {
-  return generateHTML(removeTextStyleMarks(value), defaultExtensions);
+const extensions = defaultExtensions();
+
+const deserializeTipTapValue = (value: JSONContent) => {
+  return generateHTML(removeTextStyleMarks(value), extensions);
+};
+
+const serializeTipTapValue = (value?: string | null) => {
+  return value ? generateJSON(value, extensions) : undefined;
 };
 
 export default function AppPage({
@@ -145,7 +151,11 @@ export default function AppPage({
         </Container>
 
         <Container className="mt-8 flex h-full flex-1 justify-between gap-10">
-          <div className="aspect-[1/1.5] h-full w-[40%] flex-shrink-0 animate-pulse bg-secondary" />
+          <div className="aspect-[1/1.5] w-[40%] flex-shrink-0">
+            <div className="h-full w-full animate-pulse bg-secondary" />
+
+            <div className="mt-5 h-[200px] w-full animate-pulse rounded-md border border-muted bg-secondary shadow-sm" />
+          </div>
 
           <div className="flex-1">
             <div className="h-[500px] w-full animate-pulse rounded-md border border-muted bg-secondary shadow-sm" />
@@ -191,17 +201,24 @@ const InnerPage = ({
 
   const parsedValue = useMemo(() => {
     const value = page.content ?? page.ocrContent;
-    return value ? generateJSON(value, defaultExtensions) : undefined;
+    return serializeTipTapValue(value);
   }, [page]);
   const parsedFootnotesValue = useMemo(() => {
     const value = page.footnotes ?? page.ocrFootnotes;
-    return value ? generateJSON(value, defaultExtensions) : undefined;
+    return serializeTipTapValue(value);
+  }, [page]);
+  const parsedEditorialNotesValue = useMemo(() => {
+    const value = page.editorialNotes;
+    return serializeTipTapValue(value);
   }, [page]);
 
   const [value, setValue] = useState<JSONContent | undefined>(parsedValue);
   const [footnotesValue, setFootnotesValue] = useState<JSONContent | undefined>(
     parsedFootnotesValue,
   );
+  const [editorialNotesValue, setEditorialNotesValue] = useState<
+    JSONContent | undefined
+  >(parsedEditorialNotesValue);
   const [pageNumber, setPageNumber] = useState(page.pageNumber ?? undefined);
   const [isRegenerating, setIsRegenerating] = useState(
     page.ocrStatus === PageOcrStatus.PROCESSING,
@@ -218,9 +235,12 @@ const InnerPage = ({
     try {
       await mutateAsync({
         pageId: page.id,
-        content: value ? serializeTipTapValue(value) : undefined,
+        content: value ? deserializeTipTapValue(value) : undefined,
         footnotesContent: footnotesValue
-          ? serializeTipTapValue(footnotesValue)
+          ? deserializeTipTapValue(footnotesValue)
+          : undefined,
+        editorialNotesContent: editorialNotesValue
+          ? deserializeTipTapValue(editorialNotesValue)
           : undefined,
         pageNumber,
       });
@@ -354,15 +374,27 @@ const InnerPage = ({
       </Container>
 
       <Container className="mt-8 flex h-full flex-1 justify-between gap-10">
-        <div className="aspect-[1/1.5] h-full w-[40%] flex-shrink-0 bg-secondary">
-          {/* <img src="/sample.png" className="h-full w-full object-cover" /> */}
-          <Zoom
-            src={`${env.NEXT_PUBLIC_OCR_SERVER_URL}book/${page.book.id}/${page.pdfPageNumber}`}
-            width="100%"
-            height="100%"
-            className="object-cover"
-            zoomScale={2}
-          />
+        <div className="aspect-[1/1.5] w-[40%] flex-shrink-0">
+          <div className="h-full w-full bg-secondary">
+            {/* <img src="/sample.png" className="h-full w-full object-cover" /> */}
+            <Zoom
+              src={`${env.NEXT_PUBLIC_OCR_SERVER_URL}book/${page.book.id}/${page.pdfPageNumber}`}
+              width="100%"
+              height="100%"
+              className="object-cover"
+              zoomScale={2}
+            />
+          </div>
+
+          <ScrollArea className="mt-5 h-[200px] w-full rounded-md border border-muted shadow-sm">
+            <Editor
+              className="min-h-[200px] sm:rounded-none sm:border-none sm:shadow-none"
+              initialValue={editorialNotesValue}
+              onChange={(newValue) => setEditorialNotesValue(newValue)}
+              placeholderText="تعليقات اصول"
+            />
+            <ScrollBar orientation="vertical" />
+          </ScrollArea>
         </div>
 
         <div className="flex-1">
@@ -381,6 +413,7 @@ const InnerPage = ({
               initialValue={footnotesValue}
               disabled={isRegenerating}
               onChange={(newValue) => setFootnotesValue(newValue)}
+              placeholderText="هوامش النص"
             />
             <ScrollBar orientation="vertical" />
           </ScrollArea>

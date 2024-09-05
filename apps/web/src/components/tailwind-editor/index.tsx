@@ -1,7 +1,13 @@
 "use client";
 
 import type { EditorInstance, JSONContent } from "novel";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { cn } from "@/lib/utils";
 import { ShouldShowProps } from "@/types/menus";
 import { isTextSelection } from "@tiptap/core";
@@ -24,10 +30,6 @@ import { NodeSelector } from "./selectors/node-selector";
 import { TextButtons } from "./selectors/text-buttons";
 import { slashCommand, suggestionItems } from "./slash-command";
 import { TableMenus } from "./table";
-import isColumnGripSelected from "./table/menus/TableColumn/utils";
-import isRowGripSelected from "./table/menus/TableRow/utils";
-
-const extensions = [...defaultExtensions, slashCommand];
 
 export const isTableGripSelected = (node: HTMLElement) => {
   let container = node;
@@ -83,6 +85,7 @@ interface EditorProps {
   onChange?: (value: JSONContent) => void;
   className?: string;
   disabled?: boolean;
+  placeholderText?: string;
 }
 
 const Editor = ({
@@ -90,7 +93,12 @@ const Editor = ({
   onChange,
   className,
   disabled,
+  placeholderText,
 }: EditorProps) => {
+  const extensions = useMemo(
+    () => [...defaultExtensions(placeholderText), slashCommand],
+    [],
+  );
   const [openNode, setOpenNode] = useState(false);
   const [openLink, setOpenLink] = useState(false);
   const [editorRef, setEditorRef] = useState<EditorInstance | null>(null);

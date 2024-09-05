@@ -57,6 +57,7 @@ export const pageRouter = createTRPCRouter({
         pageId: z.string().min(1),
         content: z.string().optional(),
         footnotesContent: z.string().optional(),
+        editorialNotesContent: z.string().optional(),
         pageNumber: z.number().optional(),
         flags: z
           .array(z.enum([PageFlag.EMPTY]))
@@ -134,6 +135,8 @@ export const pageRouter = createTRPCRouter({
         if (input.content) pageData.content = input.content;
         if (input.footnotesContent) pageData.footnotes = input.footnotesContent;
         if (input.pageNumber) pageData.pageNumber = input.pageNumber;
+        if (input.editorialNotesContent)
+          pageData.editorialNotes = input.editorialNotesContent;
       }
 
       if (input.content || input.footnotesContent) {

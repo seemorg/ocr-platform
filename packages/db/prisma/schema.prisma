@@ -123,8 +123,9 @@ model Page {
     volumeNumber  Int?
     pdfPageNumber Int
 
-    content   String? @db.Text
-    footnotes String? @db.Text
+    content        String? @db.Text
+    footnotes      String? @db.Text
+    editorialNotes String? @db.Text
 
     ocrContent   String  @db.Text
     ocrFootnotes String? @db.Text
