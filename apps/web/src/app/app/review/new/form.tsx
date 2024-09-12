@@ -28,6 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { commandScore } from "@/lib/command-score";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -333,7 +334,17 @@ export default function NewBookForm({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[500px] max-w-full p-0">
-          <Command disablePointerSelection={false}>
+          <Command
+            disablePointerSelection={false}
+            filter={(_, search, keywords) => {
+              if (!keywords) return 0;
+              if (keywords.includes(search)) return 1;
+
+              return Math.max(
+                ...keywords.map((keyword) => commandScore(keyword, search)),
+              );
+            }}
+          >
             <CommandInput placeholder="Search text..." />
             <CommandEmpty>No text found.</CommandEmpty>
             <CommandList>
