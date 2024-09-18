@@ -3,7 +3,7 @@ import { clearUserCache } from "@/server/services/user";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { GroupRole, Prisma } from "@usul-ocr/db";
+import { GroupRole, Prisma, UserRole } from "@usul-ocr/db";
 
 import { type AppRouter } from "../root";
 import { adminProcedure, createTRPCRouter, protectedProcedure } from "../trpc";
@@ -21,34 +21,31 @@ const validateAdminOrGroupMember = async (
     },
   });
 
-  if (membership) {
-    if (requiredRole && membership.role !== requiredRole) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "You are not authorized to add members to this group",
-      });
-    }
-
+  if (
+    membership &&
+    (!requiredRole || (requiredRole && membership.role === requiredRole))
+  ) {
     return membership;
-  } else {
-    const user = await ctx.db.user.findUnique({
-      where: {
-        id: session.user.id,
-      },
-      select: {
-        role: true,
-      },
-    });
-
-    if (!user || user.role !== GroupRole.ADMIN) {
-      throw new TRPCError({
-        code: "UNAUTHORIZED",
-        message: "You are not authorized to add members to this group",
-      });
-    }
-
-    return null;
   }
+
+  // not a group member, so check if user is admin
+  const user = await ctx.db.user.findUnique({
+    where: {
+      id: session.user.id,
+    },
+    select: {
+      role: true,
+    },
+  });
+
+  if (!user || user.role !== UserRole.ADMIN) {
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "You are not authorized to add members to this group",
+    });
+  }
+
+  return null;
 };
 
 export const groupRouter = createTRPCRouter({
