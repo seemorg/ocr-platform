@@ -81,7 +81,7 @@ export const groupRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
-        name: z.string(),
+        name: z.string().min(1),
       }),
     )
     .mutation(async ({ ctx, input }) => {

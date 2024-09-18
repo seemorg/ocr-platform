@@ -23,7 +23,9 @@ export default function AddGroupForm() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    mutateAsync({ name });
+    const preparedName = name.trim();
+    if (!preparedName) return;
+    mutateAsync({ name: preparedName });
   };
 
   return (
