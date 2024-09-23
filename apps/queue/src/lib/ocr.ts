@@ -14,7 +14,7 @@ const client = (
 
 const cache = new LRUCache<string, PDFDocument>({
   max: 20, // Maximum number of items to store in the cache
-  ttl: 60 * 60 * 1000 * 2, // 2 hour
+  ttl: 60 * 60 * 1000 * 2, // 2 hours
 });
 
 async function getPdfDoc(pdfUrl: string) {
