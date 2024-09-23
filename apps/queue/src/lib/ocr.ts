@@ -4,8 +4,8 @@ import DocumentIntelligence, {
   isUnexpected,
 } from "@azure-rest/ai-document-intelligence";
 import { AzureKeyCredential } from "@azure/core-auth";
+import { PDFDocument } from "@cantoo/pdf-lib";
 import { LRUCache } from "lru-cache";
-import { PDFDocument } from "pdf-lib";
 import { pdf as pdfToImg } from "pdf-to-img";
 
 const client = (
@@ -24,6 +24,7 @@ async function getPdfDoc(pdfUrl: string) {
     const buffer = await fetch(pdfUrl).then((res) => res.arrayBuffer());
     pdfDoc = await PDFDocument.load(buffer, {
       ignoreEncryption: true,
+      password: "",
     });
     cache.set(pdfUrl, pdfDoc);
   }
