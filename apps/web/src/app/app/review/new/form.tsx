@@ -84,13 +84,15 @@ const mergePdfAndGetSplits = async (files: File[]) => {
   return { mergedPdf: await mergedPdf.save(), splitsData };
 };
 
+const MAX_FILE_SIZE_IN_MB = 150;
+
 const dropzoneOptions = {
   accept: {
     "application/pdf": [".pdf"],
   },
   multiple: true,
   maxFiles: 10,
-  maxSize: 70 * 1024 * 1024, // 70 MB
+  maxSize: MAX_FILE_SIZE_IN_MB * 1024 * 1024,
 } satisfies DropzoneOptions;
 
 const Toggle = ({
