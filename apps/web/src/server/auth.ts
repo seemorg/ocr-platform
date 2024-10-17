@@ -42,24 +42,32 @@ export const authOptions: NextAuthOptions = {
 
       return session;
     },
-    // TODO: uncomment if we want to add whitelists
-    // async signIn(user) {
-    //   console.log(user);
+    async signIn(user) {
+      const email = user.profile?.email || user.user.email || "";
 
-    //   const email = user.profile?.email || user.user.email || "";
+      // TODO: uncomment if we want to add whitelists
+      // const whitelisted = await db.userWhitelist.findUnique({
+      //   where: {
+      //     email,
+      //   },
+      // });
 
-    //   const whitelisted = await db.userWhitelist.findUnique({
-    //     where: {
-    //       email,
-    //     },
-    //   });
+      if (email.endsWith("@usul.ai") || email.endsWith("@digitalseem.org")) {
+        return true;
+      }
 
-    //   if (whitelisted) {
-    //     return true;
-    //   }
+      const whitelisted = await db.user.findUnique({
+        where: {
+          email,
+        },
+      });
 
-    //   return false;
-    // },
+      if (whitelisted) {
+        return true;
+      }
+
+      return false;
+    },
   },
   adapter: PrismaAdapter(db) as Adapter,
   session: {

@@ -86,7 +86,10 @@ function DataCombobox<DataT extends { id: string }>({
           role="combobox"
           className={cn("justify-between", widthClassName)}
         >
-          <span title={typeof displayName === "string" ? displayName : ""}>
+          <span
+            title={typeof displayName === "string" ? displayName : ""}
+            className="truncate"
+          >
             {displayName as string}
           </span>
 
