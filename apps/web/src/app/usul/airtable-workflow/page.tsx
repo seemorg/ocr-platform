@@ -280,21 +280,22 @@ export default function AddTextFromAirtable() {
             name="author.transliteratedName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Author Transliterated Name</FormLabel>
+                <div className="flex items-center gap-2">
+                  <FormLabel>Author Transliterated Name</FormLabel>
+                  {!isUsulAuthor && (
+                    <TransliterationHelper
+                      getText={() => form.getValues("author.arabicName")}
+                      setTransliteration={(text) => field.onChange(text)}
+                      disabled={allFieldsDisabled}
+                    />
+                  )}
+                </div>
                 <FormControl>
                   <Input
                     {...field}
                     disabled={isUsulAuthor || allFieldsDisabled}
                   />
                 </FormControl>
-
-                {!isUsulAuthor && (
-                  <TransliterationHelper
-                    getText={() => form.getValues("author.arabicName")}
-                    setTransliteration={(text) => field.onChange(text)}
-                    disabled={allFieldsDisabled}
-                  />
-                )}
 
                 <FormMessage />
               </FormItem>
@@ -348,16 +349,18 @@ export default function AddTextFromAirtable() {
             disabled={allFieldsDisabled}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Transliterated Name</FormLabel>
+                <div className="flex items-center gap-2">
+                  <FormLabel>Transliterated Name</FormLabel>
+
+                  <TransliterationHelper
+                    getText={() => form.getValues("arabicName")}
+                    setTransliteration={(text) => field.onChange(text)}
+                    disabled={allFieldsDisabled}
+                  />
+                </div>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
-
-                <TransliterationHelper
-                  getText={() => form.getValues("arabicName")}
-                  setTransliteration={(text) => field.onChange(text)}
-                  disabled={allFieldsDisabled}
-                />
 
                 <FormMessage />
               </FormItem>

@@ -172,17 +172,18 @@ export default function AddTextPage() {
             disabled={isMutating}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Transliterated Name</FormLabel>
+                <div className="flex items-center gap-2">
+                  <FormLabel>Transliterated Name</FormLabel>
+                  <TransliterationHelper
+                    getText={() => form.getValues("arabicName")}
+                    setTransliteration={(text) => field.onChange(text)}
+                    disabled={isMutating}
+                  />
+                </div>
+
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
-
-                <TransliterationHelper
-                  getText={() => form.getValues("arabicName")}
-                  setTransliteration={(text) => field.onChange(text)}
-                  disabled={isMutating}
-                />
-
                 <FormMessage />
               </FormItem>
             )}

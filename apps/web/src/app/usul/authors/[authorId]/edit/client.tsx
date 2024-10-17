@@ -4,6 +4,7 @@ import type { AppRouter } from "@/server/api/root";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useRouter } from "next/navigation";
 import TextArrayInput from "@/components/text-array-input";
+import TransliterationHelper from "@/components/transliteration-helper";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -112,39 +113,23 @@ export default function EditTextClientPage({ author }: { author: Author }) {
           name="transliteration"
           disabled={isMutating}
           render={({ field }) => (
-            <FormItem
-            // onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            //   const slug = textToSlug(e.target.value);
-            //   form.setValue("slug", slug, {
-            //     shouldValidate: true,
-            //     shouldDirty: true,
-            //   });
-            // }}
-            >
-              <FormLabel>Transliterated Name</FormLabel>
+            <FormItem>
+              <div className="flex items-center gap-2">
+                <FormLabel>Transliterated Name</FormLabel>
+                <TransliterationHelper
+                  getText={() => form.getValues("arabicName")}
+                  setTransliteration={(text) => field.onChange(text)}
+                  disabled={isMutating}
+                />
+              </div>
+
               <FormControl>
                 <Input {...field} />
               </FormControl>
-
               <FormMessage />
             </FormItem>
           )}
         />
-
-        {/* <FormField
-            control={form.control}
-            name="slug"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Slug</FormLabel>
-                <FormControl>
-                  <Input {...field} disabled />
-                </FormControl>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          /> */}
 
         <FormField
           control={form.control}

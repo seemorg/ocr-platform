@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import PageLayout from "@/components/page-layout";
 import TextArrayInput from "@/components/text-array-input";
+import TransliterationHelper from "@/components/transliteration-helper";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -105,7 +106,15 @@ export default function AddAuthorPage() {
             disabled={isMutating}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Transliterated Name</FormLabel>
+                <div className="flex items-center gap-2">
+                  <FormLabel>Transliterated Name</FormLabel>
+                  <TransliterationHelper
+                    getText={() => form.getValues("arabicName")}
+                    setTransliteration={(text) => field.onChange(text)}
+                    disabled={isMutating}
+                  />
+                </div>
+
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
