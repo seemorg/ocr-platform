@@ -1,1 +1,1 @@
-export * from '@prisma/client';
+export * from '@usul-ocr/client/db';

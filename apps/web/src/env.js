@@ -8,6 +8,7 @@ export const env = createEnv({
    */
   server: {
     DATABASE_URL: z.string().url(),
+    USUL_DATABASE_URL: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -35,6 +36,9 @@ export const env = createEnv({
     CLOUDFLARE_R2_SECRET: z.string(),
     CLOUDFLARE_R2_BUCKET: z.string(),
     CLOUDFLARE_R2_BUCKET_URL: z.string(),
+    AZURE_OPENAI_DEPLOYMENT_NAME: z.string(),
+    AZURE_OPENAI_KEY: z.string(),
+    AZURE_OPENAI_RESOURCE_NAME: z.string(),
   },
 
   /**
@@ -53,6 +57,7 @@ export const env = createEnv({
    */
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
+    USUL_DATABASE_URL: process.env.USUL_DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
@@ -71,6 +76,9 @@ export const env = createEnv({
     CLOUDFLARE_R2_SECRET: process.env.CLOUDFLARE_R2_SECRET,
     CLOUDFLARE_R2_BUCKET: process.env.CLOUDFLARE_R2_BUCKET,
     CLOUDFLARE_R2_BUCKET_URL: process.env.CLOUDFLARE_R2_BUCKET_URL,
+    AZURE_OPENAI_DEPLOYMENT_NAME: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
+    AZURE_OPENAI_KEY: process.env.AZURE_OPENAI_KEY,
+    AZURE_OPENAI_RESOURCE_NAME: process.env.AZURE_OPENAI_RESOURCE_NAME,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

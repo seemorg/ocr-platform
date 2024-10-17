@@ -86,7 +86,9 @@ function DataCombobox<DataT extends { id: string }>({
           role="combobox"
           className={cn("justify-between", widthClassName)}
         >
-          {displayName as string}
+          <span title={typeof displayName === "string" ? displayName : ""}>
+            {displayName as string}
+          </span>
 
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>

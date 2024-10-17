@@ -65,6 +65,7 @@
   },
   "globalEnv": [
     "DATABASE_URL",
+    "USUL_DATABASE_URL",
     "NEXTAUTH_SECRET",
     "NEXTAUTH_URL",
     "EMAIL_SERVER_USER",

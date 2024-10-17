@@ -1,0 +1,36 @@
+{
+  "name": "@usul-ocr/usul-db",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "postinstall": "pnpm generate",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "generate": "prisma generate",
+    "push": "pnpm with-env prisma db push --skip-generate",
+    "studio": "pnpm with-env prisma studio",
+    "with-env": "dotenv -e ../../.env --",
+    "clean": "rm -rf .turbo dist node_modules",
+    "format": "prettier --check . --ignore-path ../../.gitignore",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.21.0",
+    "@t3-oss/env-core": "^0.10.1"
+  },
+  "devDependencies": {
+    "@usul-ocr/eslint-config": "workspace:*",
+    "@usul-ocr/prettier-config": "workspace:*",
+    "@usul-ocr/tsconfig": "workspace:*",
+    "dotenv-cli": "^7.4.2",
+    "eslint": "catalog:",
+    "prettier": "catalog:",
+    "prisma": "^5.21.0",
+    "prisma-json-types-generator": "^3.0.4",
+    "tsup": "^8.0.2",
+    "typescript": "catalog:"
+  },
+  "prettier": "@usul-ocr/prettier-config"
+}

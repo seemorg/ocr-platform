@@ -8,7 +8,7 @@
  */
 
 import { getServerAuthSession } from "@/server/auth";
-import { db } from "@/server/db";
+import { db, usulDb } from "@/server/db";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
@@ -32,6 +32,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
 
   return {
     db,
+    usulDb,
     session,
     ...opts,
   };

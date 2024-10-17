@@ -11,3 +11,7 @@ export const formatNumber = (num: number) => {
   if (!formatter) formatter = new Intl.NumberFormat("en-US");
   return formatter.format(num);
 };
+
+export const removeDiacritics = (str: string) => {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};

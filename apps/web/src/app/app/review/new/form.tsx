@@ -13,6 +13,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { FileInput, FileUploader } from "@/components/ui/file-upload";
 import {
   Form,
   FormControl,
@@ -28,25 +29,20 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useUploadPdfs } from "@/hooks/useUploadPdfs";
 import { commandScore } from "@/lib/command-score";
+import { textToSlug } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 import { Check, ChevronsUpDown, FileIcon, InfoIcon, XIcon } from "lucide-react";
-import { PDFDocument } from "pdf-lib";
 import { DropzoneOptions } from "react-dropzone";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
 
 import { AuthorsCombobox } from "./author-selector";
-import { FileInput, FileUploader } from "./file-upload";
 import GroupsCombobox from "./group-selector";
-
-const removeDiacritics = (str: string) => {
-  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-};
 
 const schema = z.object({
   airtableId: z.string().optional(),
@@ -61,28 +57,6 @@ const schema = z.object({
   }),
   groupId: z.string().optional(),
 });
-
-const mergePdfAndGetSplits = async (files: File[]) => {
-  const mergedPdf = await PDFDocument.create();
-  const splitsData: { start: number; end: number }[] = [];
-  let currentPage = 0;
-
-  for (let file of files) {
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await PDFDocument.load(arrayBuffer);
-    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-    copiedPages.forEach((page) => {
-      mergedPdf.addPage(page);
-    });
-
-    const start = currentPage + 1;
-    const end = currentPage + copiedPages.length;
-    splitsData.push({ start, end });
-    currentPage = end;
-  }
-
-  return { mergedPdf: await mergedPdf.save(), splitsData };
-};
 
 const MAX_FILE_SIZE_IN_MB = 150;
 
@@ -132,38 +106,6 @@ export default function NewBookForm({
 }) {
   const [files, setFiles] = useState<File[]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
-
-  const { isPending: isCreatingUploadUrl, mutateAsync: createUploadUrl } =
-    api.upload.createUploadUrl.useMutation({
-      onError: (error) => {
-        if (error.data?.code === "CONFLICT") {
-          toast.error("A file with the same name already exists");
-        } else {
-          toast.error("Could not create upload url!");
-        }
-      },
-    });
-
-  const { isPending: isUploading, mutateAsync: uploadFile } = useMutation({
-    mutationFn: async ({ url, file }: { url: string; file: File }) => {
-      await fetch(url, {
-        method: "PUT",
-        body: file,
-      });
-    },
-    onError: (error) => {
-      toast.error("Could not upload file!");
-    },
-  });
-
-  const { isPending: isMerging, mutateAsync: mergeFiles } = useMutation({
-    mutationFn: async (files: File[]) => {
-      return await mergePdfAndGetSplits(files);
-    },
-    onError: (error) => {
-      toast.error("Could not merge files!");
-    },
-  });
 
   const [isNewAuthor, setIsNewAuthor] = useState(false);
   // const [showUpload, setShowUpload] = useState(false);
@@ -236,36 +178,7 @@ export default function NewBookForm({
     },
   });
 
-  const onUpload = async () => {
-    if (files.length === 0) {
-      toast.error("No files uploaded");
-      return;
-    }
-
-    if (!fileName) {
-      toast.error("File name is required");
-      return;
-    }
-
-    const { url, publicUrl } = await createUploadUrl({
-      fileName,
-    });
-
-    let file: File | undefined;
-    let splitsData: { start: number; end: number }[] | undefined;
-
-    if (files.length > 1) {
-      const { mergedPdf, splitsData: s } = await mergeFiles(files);
-      file = new File([mergedPdf], fileName, { type: "application/pdf" });
-      splitsData = s;
-    } else {
-      file = files[0]!;
-    }
-
-    await uploadFile({ url, file });
-
-    return { url: publicUrl, splitsData };
-  };
+  const { uploadFiles, isUploading } = useUploadPdfs();
 
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof schema>) {
@@ -275,7 +188,7 @@ export default function NewBookForm({
     // } else {
     //   pdfUrl = values.pdfUrl;
     // }
-    const pdfData = await onUpload();
+    const pdfData = await uploadFiles(files, fileName);
 
     if (!pdfData) return;
 
@@ -318,6 +231,8 @@ export default function NewBookForm({
   const createLabel = (text: AirtableText) => {
     return `[${text.id}] ${text.arabicName}`;
   };
+
+  const isLoading = isPending || isUploading;
 
   return (
     <div className="mt-20">
@@ -534,7 +449,7 @@ export default function NewBookForm({
                       type="text"
                       value={fileName ?? ""}
                       onChange={(e) => setFileName(e.target.value)}
-                      disabled={isCreatingUploadUrl || isUploading || isMerging}
+                      disabled={isLoading}
                     />
                   </div>
 
@@ -572,18 +487,14 @@ export default function NewBookForm({
                 id="pdfUrl"
                 value={files}
                 onValueChange={(newFiles) => {
-                  if (isCreatingUploadUrl || isUploading || isMerging) return;
+                  if (isLoading) return;
 
                   setFiles(newFiles ?? []);
 
                   if (newFiles && newFiles.length > 0) {
                     let name: string = form.getValues("englishName");
                     if (name) {
-                      name =
-                        removeDiacritics(name.trim())
-                          .toLowerCase()
-                          .split(" ")
-                          .join("-") + ".pdf";
+                      name = textToSlug(name) + ".pdf";
                     } else {
                       name = newFiles[0]!.name?.trim();
                     }
@@ -595,7 +506,7 @@ export default function NewBookForm({
                 }}
                 dropzoneOptions={{
                   ...dropzoneOptions,
-                  disabled: isCreatingUploadUrl || isUploading || isMerging,
+                  disabled: isLoading,
                 }}
               >
                 <FileInput>
@@ -626,13 +537,8 @@ export default function NewBookForm({
           </div>
 
           <div>
-            <Button
-              type="submit"
-              disabled={
-                isPending || isCreatingUploadUrl || isUploading || isMerging
-              }
-            >
-              {isCreatingUploadUrl || isUploading || isMerging
+            <Button type="submit" disabled={isLoading}>
+              {isUploading
                 ? "Uploading files..."
                 : isPending
                   ? "Submitting..."
