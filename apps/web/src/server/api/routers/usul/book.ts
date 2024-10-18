@@ -154,18 +154,20 @@ export const usulBookRouter = createTRPCRouter({
             ...publicationDetailsSchema,
           })
           .optional(),
-        pdfVersion: z.object({
-          url: z.string().url(),
-          splitsData: z
-            .array(
-              z.object({
-                start: z.number(),
-                end: z.number(),
-              }),
-            )
-            .optional(),
-          ...publicationDetailsSchema,
-        }),
+        pdfVersion: z
+          .object({
+            url: z.string().url().optional(),
+            splitsData: z
+              .array(
+                z.object({
+                  start: z.number(),
+                  end: z.number(),
+                }),
+              )
+              .optional(),
+            ...publicationDetailsSchema,
+          })
+          .optional(),
         author: z.discriminatedUnion("isUsul", [
           z.object({
             isUsul: z.literal(true),
@@ -182,7 +184,10 @@ export const usulBookRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (!input.pdfVersion.url.startsWith("https://assets.usul.ai/pdfs/")) {
+      if (
+        input.pdfVersion?.url &&
+        !input.pdfVersion.url.startsWith("https://assets.usul.ai/pdfs/")
+      ) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "PDF URL must start with https://assets.usul.ai/pdfs/",
@@ -413,27 +418,33 @@ export const usulBookRouter = createTRPCRouter({
                     },
                   ]
                 : []),
-              {
-                source: "pdf",
-                value: input.pdfVersion.url,
-                publicationDetails: {
-                  ...(input.pdfVersion.investigator
-                    ? { investigator: input.pdfVersion.investigator }
-                    : {}),
-                  ...(input.pdfVersion.publisher
-                    ? { publisher: input.pdfVersion.publisher }
-                    : {}),
-                  ...(input.pdfVersion.editionNumber
-                    ? { editionNumber: input.pdfVersion.editionNumber }
-                    : {}),
-                  ...(input.pdfVersion.publicationYear
-                    ? { publicationYear: input.pdfVersion.publicationYear }
-                    : {}),
-                },
-              },
+              ...(input.pdfVersion?.url
+                ? [
+                    {
+                      source: "pdf" as const,
+                      value: input.pdfVersion.url,
+                      publicationDetails: {
+                        ...(input.pdfVersion.investigator
+                          ? { investigator: input.pdfVersion.investigator }
+                          : {}),
+                        ...(input.pdfVersion.publisher
+                          ? { publisher: input.pdfVersion.publisher }
+                          : {}),
+                        ...(input.pdfVersion.editionNumber
+                          ? { editionNumber: input.pdfVersion.editionNumber }
+                          : {}),
+                        ...(input.pdfVersion.publicationYear
+                          ? {
+                              publicationYear: input.pdfVersion.publicationYear,
+                            }
+                          : {}),
+                      },
+                    },
+                  ]
+                : []),
             ],
             extraProperties: {
-              ...(input.pdfVersion.splitsData &&
+              ...(input.pdfVersion?.splitsData &&
               input.pdfVersion.splitsData.length > 0
                 ? { splitsData: input.pdfVersion.splitsData }
                 : {}),
@@ -470,22 +481,27 @@ export const usulBookRouter = createTRPCRouter({
             ...publicationDetailsSchema,
           })
           .optional(),
-        pdfVersion: z.object({
-          url: z.string().url(),
-          splitsData: z
-            .array(
-              z.object({
-                start: z.number(),
-                end: z.number(),
-              }),
-            )
-            .optional(),
-          ...publicationDetailsSchema,
-        }),
+        pdfVersion: z
+          .object({
+            url: z.string().url().optional(),
+            splitsData: z
+              .array(
+                z.object({
+                  start: z.number(),
+                  end: z.number(),
+                }),
+              )
+              .optional(),
+            ...publicationDetailsSchema,
+          })
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (!input.pdfVersion.url.startsWith("https://assets.usul.ai/pdfs/")) {
+      if (
+        input.pdfVersion?.url &&
+        !input.pdfVersion.url.startsWith("https://assets.usul.ai/pdfs/")
+      ) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "PDF URL must start with https://assets.usul.ai/pdfs/",
@@ -625,27 +641,33 @@ export const usulBookRouter = createTRPCRouter({
                     },
                   ]
                 : []),
-              {
-                source: "pdf",
-                value: input.pdfVersion.url,
-                publicationDetails: {
-                  ...(input.pdfVersion.investigator
-                    ? { investigator: input.pdfVersion.investigator }
-                    : {}),
-                  ...(input.pdfVersion.publisher
-                    ? { publisher: input.pdfVersion.publisher }
-                    : {}),
-                  ...(input.pdfVersion.editionNumber
-                    ? { editionNumber: input.pdfVersion.editionNumber }
-                    : {}),
-                  ...(input.pdfVersion.publicationYear
-                    ? { publicationYear: input.pdfVersion.publicationYear }
-                    : {}),
-                },
-              },
+              ...(input.pdfVersion?.url
+                ? [
+                    {
+                      source: "pdf" as const,
+                      value: input.pdfVersion.url,
+                      publicationDetails: {
+                        ...(input.pdfVersion.investigator
+                          ? { investigator: input.pdfVersion.investigator }
+                          : {}),
+                        ...(input.pdfVersion.publisher
+                          ? { publisher: input.pdfVersion.publisher }
+                          : {}),
+                        ...(input.pdfVersion.editionNumber
+                          ? { editionNumber: input.pdfVersion.editionNumber }
+                          : {}),
+                        ...(input.pdfVersion.publicationYear
+                          ? {
+                              publicationYear: input.pdfVersion.publicationYear,
+                            }
+                          : {}),
+                      },
+                    },
+                  ]
+                : []),
             ],
             extraProperties: {
-              ...(input.pdfVersion.splitsData &&
+              ...(input.pdfVersion?.splitsData &&
               input.pdfVersion.splitsData.length > 0
                 ? { splitsData: input.pdfVersion.splitsData }
                 : {}),

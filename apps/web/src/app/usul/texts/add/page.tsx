@@ -90,18 +90,21 @@ export default function AddTextPage() {
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
     const inferredSlug = textToSlug(data.transliteration);
+
     let finalPdfUrl: string | undefined;
     let finalSplitsData: { start: number; end: number }[] | undefined;
     if (pdfMode === "upload") {
-      const response = await uploadFiles(files, inferredSlug);
-      finalPdfUrl = response?.url;
-      finalSplitsData = response?.splitsData;
+      if (files.length > 0) {
+        const response = await uploadFiles(files, inferredSlug);
+        finalPdfUrl = response?.url;
+        finalSplitsData = response?.splitsData;
+      }
     } else {
-      const response = await uploadFromUrl(pdfUrl, inferredSlug);
-      finalPdfUrl = response?.url;
+      if (pdfUrl) {
+        const response = await uploadFromUrl(pdfUrl, inferredSlug);
+        finalPdfUrl = response?.url;
+      }
     }
-
-    if (!finalPdfUrl) return;
 
     await createBook({
       arabicName: data.arabicName,
@@ -112,8 +115,8 @@ export default function AddTextPage() {
       authorSlug: data.author.slug,
       externalVersion: data.externalVersion,
       pdfVersion: {
-        url: finalPdfUrl,
-        splitsData: finalSplitsData ?? [],
+        ...(finalPdfUrl ? { url: finalPdfUrl } : {}),
+        ...(finalSplitsData ? { splitsData: finalSplitsData } : {}),
         ...data.pdfVersion,
       },
     });
@@ -389,9 +392,7 @@ export default function AddTextPage() {
                       <FileUploader
                         id="pdfUrl"
                         value={files}
-                        onValueChange={(f) => {
-                          setFiles(f ?? []);
-                        }}
+                        onValueChange={onFilesChange}
                         dropzoneOptions={{
                           ...dropzoneOptions,
                           disabled: isMutating || isMutating,
