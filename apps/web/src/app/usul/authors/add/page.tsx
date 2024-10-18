@@ -27,7 +27,7 @@ const schema = z.object({
   englishName: z.string().optional(),
   transliteration: z.string().min(1),
   otherNames: z.array(z.string()),
-  deathYear: z.number(),
+  deathYear: z.coerce.number(),
   bio: z.string().optional(),
 });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdvancedGenresSelector from "@/components/advanced-genres-selector";
 import { AuthorsCombobox } from "@/components/author-selector";
@@ -21,9 +21,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUploadPdfs } from "@/hooks/useUploadPdfs";
 import { textToSlug } from "@/lib/slug";
+import {
+  publicationDetailsSchema,
+  zEmptyUrlToUndefined,
+} from "@/lib/validation";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileIcon, XIcon } from "lucide-react";
+import { XIcon } from "lucide-react";
 import { DropzoneOptions } from "react-dropzone";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
@@ -34,14 +38,16 @@ const schema = z.object({
   transliteration: z.string().min(1),
   otherNames: z.array(z.string()),
   advancedGenres: z.array(z.string()),
-  investigator: z.string().optional(),
-  publisher: z.string().optional(),
-  editionNumber: z.string().optional(),
-  publicationYear: z.number().optional(),
+  externalVersion: z.object({
+    url: zEmptyUrlToUndefined,
+    ...publicationDetailsSchema,
+  }),
+  pdfVersion: z.object(publicationDetailsSchema),
   author: z.object({
-    id: z.string(),
-    name: z.string(),
     slug: z.string(),
+    arabicName: z.string(),
+    transliteratedName: z.string(),
+    year: z.coerce.number(),
   }),
 });
 
@@ -100,19 +106,28 @@ export default function AddTextPage() {
     await createBook({
       arabicName: data.arabicName,
       transliteratedName: data.transliteration,
-      investigator: data.investigator,
-      publisher: data.publisher,
-      editionNumber: data.editionNumber,
-      publicationYear: data.publicationYear,
+
       advancedGenres: data.advancedGenres,
       otherNames: data.otherNames,
-      authorId: data.author.id,
-      pdfUrl: finalPdfUrl,
-      splitsData: finalSplitsData ?? [],
+      authorSlug: data.author.slug,
+      externalVersion: data.externalVersion,
+      pdfVersion: {
+        url: finalPdfUrl,
+        splitsData: finalSplitsData ?? [],
+        ...data.pdfVersion,
+      },
     });
   };
 
   const isMutating = isUploading || isCreatingBook;
+
+  const onFilesChange = useCallback(
+    (newFiles: File[] | null) => {
+      if (isMutating) return;
+      setFiles(newFiles ?? []);
+    },
+    [isMutating],
+  );
 
   return (
     <PageLayout title="Add Text" backHref="/usul/texts">
@@ -233,155 +248,250 @@ export default function AddTextPage() {
           <div className="my-10 h-[2px] w-full bg-border" />
 
           <div>
-            <h2 className="text-2xl font-bold">Publication Details</h2>
-            <div className="mt-10 grid grid-cols-2 gap-10">
-              <FormField
-                control={form.control}
-                name="investigator"
-                disabled={isMutating}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Investigator (المحقق)</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
+            <h2 className="text-2xl font-bold">Versions</h2>
 
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="mt-5 flex flex-col gap-5">
+              <div className="rounded-md bg-gray-50 px-8 py-4">
+                <FormField
+                  control={form.control}
+                  name="externalVersion.url"
+                  disabled={isMutating}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>External URL</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
 
-              <FormField
-                control={form.control}
-                name="publisher"
-                disabled={isMutating}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Publisher (دار النشر)</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <h3 className="mt-10 text-lg font-semibold">
+                  Publication Details
+                </h3>
+                <div className="mt-5 grid grid-cols-2 gap-10">
+                  <FormField
+                    control={form.control}
+                    name="externalVersion.investigator"
+                    disabled={isMutating}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Investigator (المحقق)</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
 
-              <FormField
-                control={form.control}
-                name="editionNumber"
-                disabled={isMutating}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Edition Number (رقم الطبعة)</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="externalVersion.publisher"
+                    disabled={isMutating}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Publisher (دار النشر)</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
 
-              <FormField
-                control={form.control}
-                name="publicationYear"
-                disabled={isMutating}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Publication Year (سنة النشر)</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="externalVersion.editionNumber"
+                    disabled={isMutating}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Edition Number (رقم الطبعة)</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="externalVersion.publicationYear"
+                    disabled={isMutating}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Publication Year (سنة النشر)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" />
+                        </FormControl>
+
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-md bg-gray-50 px-8 py-4">
+                <div className="flex items-center gap-2">
+                  <Label className="text-lg font-semibold" htmlFor="pdfUrl">
+                    PDF
+                  </Label>
+
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    type="button"
+                    onClick={() =>
+                      setPdfMode((prev) =>
+                        prev === "upload" ? "url" : "upload",
+                      )
+                    }
+                    disabled={isMutating}
+                  >
+                    {pdfMode === "upload" ? "Mode: Upload" : "Mode: URL"}
+                  </Button>
+                </div>
+                <div>
+                  {pdfMode === "upload" ? (
+                    <>
+                      {files.length > 0 ? (
+                        <div className="my-4 flex flex-col">
+                          {files.map((file, idx) => (
+                            <div key={idx}>
+                              <span className="flex-shrink-0">
+                                {file.name} (
+                                {(file.size / 1024 / 1024).toFixed(1)} MB)
+                              </span>
+
+                              <Button
+                                type="button"
+                                onClick={() => {
+                                  const newFiles = files.filter(
+                                    (f, fIdx) => fIdx !== idx,
+                                  );
+                                  setFiles(newFiles);
+                                }}
+                              >
+                                <XIcon className="size-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      <FileUploader
+                        id="pdfUrl"
+                        value={files}
+                        onValueChange={(f) => {
+                          setFiles(f ?? []);
+                        }}
+                        dropzoneOptions={{
+                          ...dropzoneOptions,
+                          disabled: isMutating || isMutating,
+                        }}
+                      >
+                        <FileInput>
+                          <div className="mt-4 flex h-32 w-full items-center justify-center rounded-md border bg-background">
+                            <p className="text-gray-400">Drop files here</p>
+                          </div>
+                        </FileInput>
+                      </FileUploader>
+                    </>
+                  ) : (
+                    <div className="mt-4">
+                      <Input
+                        id="pdfUrl"
+                        placeholder="Enter PDF Url"
+                        type="url"
+                        value={pdfUrl}
+                        onChange={(e) => setPdfUrl(e.target.value)}
+                        required
+                        disabled={isMutating || isMutating}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <h3 className="mt-10 text-lg font-semibold">
+                  Publication Details
+                </h3>
+                <div className="mt-5 grid grid-cols-2 gap-10">
+                  <FormField
+                    control={form.control}
+                    name="externalVersion.investigator"
+                    disabled={isMutating}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Investigator (المحقق)</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="externalVersion.publisher"
+                    disabled={isMutating}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Publisher (دار النشر)</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="externalVersion.editionNumber"
+                    disabled={isMutating}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Edition Number (رقم الطبعة)</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="externalVersion.publicationYear"
+                    disabled={isMutating}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Publication Year (سنة النشر)</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" />
+                        </FormControl>
+
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="my-10 h-[2px] w-full bg-border" />
-
-          <div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="pdfUrl">PDF</Label>
-              <Button
-                size="sm"
-                variant="secondary"
-                type="button"
-                onClick={() =>
-                  setPdfMode((prev) => (prev === "upload" ? "url" : "upload"))
-                }
-                disabled={isMutating}
-              >
-                {pdfMode === "upload" ? "Mode: Upload" : "Mode: URL"}
-              </Button>
-            </div>
-
-            {pdfMode === "upload" ? (
-              <>
-                {files.length > 0 ? (
-                  <div className="my-4 flex flex-col">
-                    {files.map((file, idx) => (
-                      <div key={idx}>
-                        <span className="flex-shrink-0">
-                          {file.name} ({(file.size / 1024 / 1024).toFixed(1)}{" "}
-                          MB)
-                        </span>
-
-                        <Button
-                          type="button"
-                          // size='icon'
-                          // variant='ghost'
-                          onClick={() => {
-                            const newFiles = files.filter(
-                              (f, fIdx) => fIdx !== idx,
-                            );
-                            setFiles(newFiles);
-                          }}
-                        >
-                          <XIcon className="size-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-
-                <FileUploader
-                  id="pdfUrl"
-                  value={files}
-                  onValueChange={(newFiles) => {
-                    if (isMutating) return;
-
-                    setFiles(newFiles ?? []);
-                  }}
-                  dropzoneOptions={{
-                    ...dropzoneOptions,
-                    disabled: isMutating,
-                  }}
-                >
-                  <FileInput>
-                    <div className="mt-4 flex h-32 w-full items-center justify-center rounded-md border bg-background">
-                      <p className="text-gray-400">Drop files here</p>
-                    </div>
-                  </FileInput>
-                </FileUploader>
-              </>
-            ) : (
-              <div className="mt-4">
-                <Input
-                  id="pdfUrl"
-                  placeholder="Enter PDF Url"
-                  type="url"
-                  value={pdfUrl}
-                  onChange={(e) => setPdfUrl(e.target.value)}
-                  required
-                  disabled={isMutating}
-                />
-              </div>
-            )}
-          </div>
 
           <div>
             <Button type="submit" disabled={isMutating}>

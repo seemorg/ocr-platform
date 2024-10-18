@@ -10,6 +10,13 @@ import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "../../trpc";
 
+const publicationDetailsSchema = {
+  publisher: z.string().optional(),
+  editionNumber: z.string().optional(),
+  publicationYear: z.number().optional(),
+  investigator: z.string().optional(),
+};
+
 export const usulBookRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -23,11 +30,10 @@ export const usulBookRouter = createTRPCRouter({
               id: true,
               slug: true,
               transliteration: true,
+              year: true,
               primaryNameTranslations: {
                 where: {
-                  locale: {
-                    in: ["ar", "en"],
-                  },
+                  locale: "ar",
                 },
               },
             },
@@ -56,7 +62,12 @@ export const usulBookRouter = createTRPCRouter({
         return null;
       }
 
-      const version = book.versions.find((version) => version.source === "pdf");
+      const pdfVersion = book.versions.find(
+        (version) => version.source === "pdf",
+      );
+      const externalVersion = book.versions.find(
+        (version) => version.source === "external",
+      );
 
       const preparedBook = {
         id: book.id,
@@ -70,16 +81,13 @@ export const usulBookRouter = createTRPCRouter({
         otherNames: book.otherNameTranslations[0]?.texts,
         advancedGenres: book.advancedGenres.map((genre) => genre.id),
         author: {
-          id: book.author.id,
           slug: book.author.slug,
-          name: (book.author.primaryNameTranslations[0]?.text ??
-            book.author.transliteration)!,
+          arabicName: book.author.primaryNameTranslations[0]?.text,
+          transliteratedName: book.author.transliteration,
+          diedYear: book.author.year,
         },
-        pdfUrl: version?.value,
-        investigator: version?.publicationDetails?.investigator,
-        publisher: version?.publicationDetails?.publisher,
-        editionNumber: version?.publicationDetails?.editionNumber,
-        publicationYear: version?.publicationDetails?.publicationYear,
+        pdfVersion: pdfVersion,
+        externalVersion: externalVersion,
       };
 
       return preparedBook;
@@ -118,12 +126,17 @@ export const usulBookRouter = createTRPCRouter({
               equals: input.authorAirtableReference,
             },
           },
+          select: {
+            id: true,
+          },
         }),
       ]);
 
       return {
         bookExists: !!book,
         authorExists: !!author,
+        bookId: book?.id,
+        authorId: author?.id,
       };
     }),
   importFromAirtable: protectedProcedure
@@ -135,10 +148,24 @@ export const usulBookRouter = createTRPCRouter({
         slug: z.string().optional(),
         advancedGenres: z.array(z.string()),
         otherNames: z.array(z.string()).optional(),
-        investigator: z.string().optional(),
-        publisher: z.string().optional(),
-        editionNumber: z.string().optional(),
-        publicationYear: z.number().optional(),
+        externalVersion: z
+          .object({
+            url: z.string().url().optional(),
+            ...publicationDetailsSchema,
+          })
+          .optional(),
+        pdfVersion: z.object({
+          url: z.string().url(),
+          splitsData: z
+            .array(
+              z.object({
+                start: z.number(),
+                end: z.number(),
+              }),
+            )
+            .optional(),
+          ...publicationDetailsSchema,
+        }),
         author: z.discriminatedUnion("isUsul", [
           z.object({
             isUsul: z.literal(true),
@@ -152,19 +179,10 @@ export const usulBookRouter = createTRPCRouter({
             diedYear: z.number().optional(),
           }),
         ]),
-        pdfUrl: z.string(),
-        splitsData: z
-          .array(
-            z.object({
-              start: z.number(),
-              end: z.number(),
-            }),
-          )
-          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (!input.pdfUrl.startsWith("https://assets.usul.ai/pdfs/")) {
+      if (!input.pdfVersion.url.startsWith("https://assets.usul.ai/pdfs/")) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "PDF URL must start with https://assets.usul.ai/pdfs/",
@@ -367,26 +385,57 @@ export const usulBookRouter = createTRPCRouter({
             },
             author: { connect: { id: authorId } },
             versions: [
+              ...(input.externalVersion?.url
+                ? [
+                    {
+                      source: "external" as const,
+                      value: input.externalVersion.url,
+                      publicationDetails: {
+                        ...(input.externalVersion.investigator
+                          ? { investigator: input.externalVersion.investigator }
+                          : {}),
+                        ...(input.externalVersion.publisher
+                          ? { publisher: input.externalVersion.publisher }
+                          : {}),
+                        ...(input.externalVersion.editionNumber
+                          ? {
+                              editionNumber:
+                                input.externalVersion.editionNumber,
+                            }
+                          : {}),
+                        ...(input.externalVersion.publicationYear
+                          ? {
+                              publicationYear:
+                                input.externalVersion.publicationYear,
+                            }
+                          : {}),
+                      },
+                    },
+                  ]
+                : []),
               {
                 source: "pdf",
-                value: input.pdfUrl,
+                value: input.pdfVersion.url,
                 publicationDetails: {
-                  ...(input.investigator
-                    ? { investigator: input.investigator }
+                  ...(input.pdfVersion.investigator
+                    ? { investigator: input.pdfVersion.investigator }
                     : {}),
-                  ...(input.publisher ? { publisher: input.publisher } : {}),
-                  ...(input.editionNumber
-                    ? { editionNumber: input.editionNumber }
+                  ...(input.pdfVersion.publisher
+                    ? { publisher: input.pdfVersion.publisher }
                     : {}),
-                  ...(input.publicationYear
-                    ? { publicationYear: input.publicationYear }
+                  ...(input.pdfVersion.editionNumber
+                    ? { editionNumber: input.pdfVersion.editionNumber }
+                    : {}),
+                  ...(input.pdfVersion.publicationYear
+                    ? { publicationYear: input.pdfVersion.publicationYear }
                     : {}),
                 },
               },
             ],
             extraProperties: {
-              ...(input.splitsData && input.splitsData.length > 0
-                ? { splitsData: input.splitsData }
+              ...(input.pdfVersion.splitsData &&
+              input.pdfVersion.splitsData.length > 0
+                ? { splitsData: input.pdfVersion.splitsData }
                 : {}),
               _airtableReference: input._airtableReference,
             },
@@ -414,31 +463,36 @@ export const usulBookRouter = createTRPCRouter({
         slug: z.string().optional(),
         advancedGenres: z.array(z.string()),
         otherNames: z.array(z.string()).optional(),
-        authorId: z.string(),
-        pdfUrl: z.string(),
-        investigator: z.string().optional(),
-        publisher: z.string().optional(),
-        editionNumber: z.string().optional(),
-        publicationYear: z.number().optional(),
-        splitsData: z
-          .array(
-            z.object({
-              start: z.number(),
-              end: z.number(),
-            }),
-          )
+        authorSlug: z.string(),
+        externalVersion: z
+          .object({
+            url: z.string().url().optional(),
+            ...publicationDetailsSchema,
+          })
           .optional(),
+        pdfVersion: z.object({
+          url: z.string().url(),
+          splitsData: z
+            .array(
+              z.object({
+                start: z.number(),
+                end: z.number(),
+              }),
+            )
+            .optional(),
+          ...publicationDetailsSchema,
+        }),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (!input.pdfUrl.startsWith("https://assets.usul.ai/pdfs/")) {
+      if (!input.pdfVersion.url.startsWith("https://assets.usul.ai/pdfs/")) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "PDF URL must start with https://assets.usul.ai/pdfs/",
         });
       }
 
-      const author = await getAuthor({ id: input.authorId }, ctx.usulDb);
+      const author = await getAuthor({ slug: input.authorSlug }, ctx.usulDb);
 
       if (!author) {
         throw new TRPCError({
@@ -504,7 +558,7 @@ export const usulBookRouter = createTRPCRouter({
 
         await tx.author.update({
           where: {
-            id: input.authorId,
+            id: author.id,
           },
           data: {
             numberOfBooks: {
@@ -541,28 +595,59 @@ export const usulBookRouter = createTRPCRouter({
             advancedGenres: {
               connect: advancedGenres.map((genre) => ({ id: genre.id })),
             },
-            author: { connect: { id: input.authorId } },
+            author: { connect: { id: author.id } },
             versions: [
+              ...(input.externalVersion?.url
+                ? [
+                    {
+                      source: "external" as const,
+                      value: input.externalVersion.url,
+                      publicationDetails: {
+                        ...(input.externalVersion.investigator
+                          ? { investigator: input.externalVersion.investigator }
+                          : {}),
+                        ...(input.externalVersion.publisher
+                          ? { publisher: input.externalVersion.publisher }
+                          : {}),
+                        ...(input.externalVersion.editionNumber
+                          ? {
+                              editionNumber:
+                                input.externalVersion.editionNumber,
+                            }
+                          : {}),
+                        ...(input.externalVersion.publicationYear
+                          ? {
+                              publicationYear:
+                                input.externalVersion.publicationYear,
+                            }
+                          : {}),
+                      },
+                    },
+                  ]
+                : []),
               {
                 source: "pdf",
-                value: input.pdfUrl,
+                value: input.pdfVersion.url,
                 publicationDetails: {
-                  ...(input.investigator
-                    ? { investigator: input.investigator }
+                  ...(input.pdfVersion.investigator
+                    ? { investigator: input.pdfVersion.investigator }
                     : {}),
-                  ...(input.publisher ? { publisher: input.publisher } : {}),
-                  ...(input.editionNumber
-                    ? { editionNumber: input.editionNumber }
+                  ...(input.pdfVersion.publisher
+                    ? { publisher: input.pdfVersion.publisher }
                     : {}),
-                  ...(input.publicationYear
-                    ? { publicationYear: input.publicationYear }
+                  ...(input.pdfVersion.editionNumber
+                    ? { editionNumber: input.pdfVersion.editionNumber }
+                    : {}),
+                  ...(input.pdfVersion.publicationYear
+                    ? { publicationYear: input.pdfVersion.publicationYear }
                     : {}),
                 },
               },
             ],
             extraProperties: {
-              ...(input.splitsData && input.splitsData.length > 0
-                ? { splitsData: input.splitsData }
+              ...(input.pdfVersion.splitsData &&
+              input.pdfVersion.splitsData.length > 0
+                ? { splitsData: input.pdfVersion.splitsData }
                 : {}),
             },
           },

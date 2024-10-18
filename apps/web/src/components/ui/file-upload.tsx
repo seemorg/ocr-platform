@@ -193,7 +193,7 @@ export const FileUploader = forwardRef<
           }
         }
       },
-      [reSelectAll, value],
+      [reSelectAll, value, onValueChange],
     );
 
     useEffect(() => {

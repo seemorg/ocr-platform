@@ -1,4 +1,3 @@
-import { cn } from "@/lib/utils";
 import { XIcon } from "lucide-react";
 
 import { Button } from "./ui/button";
@@ -48,7 +47,7 @@ export default function TextArrayInput({
         type="button"
         variant="secondary"
         onClick={() => setValues([...values, ""])}
-        className={cn(values.length > 0 ? "mt-4" : "")}
+        className="mt-4"
         disabled={disabled}
       >
         Add

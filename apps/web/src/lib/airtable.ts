@@ -47,6 +47,7 @@ export type AirtableText = {
   _airtableReference: string;
   id: string;
   pdfUrl: string | null;
+  digitizedUrl: string | null;
   arabicName: string | null;
   transliteration: string;
   notes: string | null;
@@ -73,6 +74,7 @@ export const getAirtableTexts = unstable_cache(
           fields: [
             TextField.ID,
             TextField.PDF_URL,
+            TextField.DIGITIZED_URL,
             TextField.NAME_ARABIC,
             TextField.OTHER_NAMES,
             TextField.TRANSLITERATION,
@@ -120,7 +122,9 @@ export const getAirtableTexts = unstable_cache(
           [author.id]: {
             _airtableReference: author.id as string,
             arabicName: arabicName,
-            transliteration: transliteratedName,
+            transliteration: transliteratedName?.startsWith("*")
+              ? transliteratedName.slice(1)
+              : transliteratedName,
             isUsul,
             usulUrl,
             diedYear: diedYear ? parseInt(diedYear) : null,
@@ -161,6 +165,8 @@ export const getAirtableTexts = unstable_cache(
       const notes = (fields[TextField.NOTES] as string | undefined) ?? null;
       const advancedGenres =
         (fields[TextField.ADVANCED_GENRES] as string[] | undefined) ?? [];
+      const digitizedUrl =
+        (fields[TextField.DIGITIZED_URL] as string | undefined) ?? null;
 
       const authorId = (fields[TextField.AUTHOR] as string[])?.[0] ?? null;
       const author = authorId ? authorsById[authorId] : null;
@@ -169,8 +175,11 @@ export const getAirtableTexts = unstable_cache(
         _airtableReference: t.id,
         id: fields.id as string,
         pdfUrl,
+        digitizedUrl,
         arabicName,
-        transliteration: transliteratedName,
+        transliteration: transliteratedName?.startsWith("*")
+          ? transliteratedName.slice(1)
+          : transliteratedName,
         author,
         notes,
         advancedGenres: advancedGenres.map((g) => advancedGenresById[g]),
