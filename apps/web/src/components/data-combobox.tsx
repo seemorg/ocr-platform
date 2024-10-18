@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -19,7 +19,7 @@ import { useDebounce } from "use-debounce";
 
 const DEFAULT_POPOVER_WIDTH = "w-[250px]";
 
-function DataCombobox<DataT extends { id: string }>({
+function DataCombobox<DataT extends { id: string } | { slug: string }>({
   data,
   isLoading,
   isError,
@@ -65,11 +65,20 @@ function DataCombobox<DataT extends { id: string }>({
     onQueryChange(debouncedSearchQuery);
   }, [debouncedSearchQuery, onQueryChange]);
 
+  const selectedId = !selected
+    ? null
+    : "id" in selected
+      ? selected.id
+      : selected.slug;
+
   const handleClick = useCallback(
     (group: DataT) => {
-      onChange(selected?.id === group.id ? null : group);
+      if (!selectedId) return onChange(group);
+
+      const id = "id" in group ? group.id : group.slug;
+      onChange(selectedId === id ? null : group);
     },
-    [onChange, selected],
+    [onChange, selectedId],
   );
 
   const displayName = selected
@@ -77,6 +86,19 @@ function DataCombobox<DataT extends { id: string }>({
       ? itemName(selected)
       : selected[itemName]
     : placeholder;
+
+  const renderSelectedItemSeparately = useMemo(() => {
+    if (!selectedId) return false;
+    if (
+      data?.find((group) => {
+        const id = "id" in group ? group.id : group.slug;
+        return selectedId === id;
+      })
+    )
+      return false;
+
+    return true;
+  }, [selectedId, data]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -115,22 +137,39 @@ function DataCombobox<DataT extends { id: string }>({
             )}
             {isError && <div className="p-4 text-sm">{errorMessage}</div>}
 
+            {renderSelectedItemSeparately && (
+              <CommandItem
+                value={selectedId!}
+                onSelect={() => handleClick(selected!)}
+              >
+                <Check className={cn("mr-2 h-4 w-4 opacity-100")} />
+
+                {
+                  (typeof itemName === "function"
+                    ? itemName(selected!)
+                    : selected![itemName]) as string
+                }
+              </CommandItem>
+            )}
+
             {data?.map((group) => {
               const name =
                 typeof itemName === "function"
                   ? itemName(group)
                   : group[itemName];
 
+              const id = "id" in group ? group.id : group.slug;
+
               return (
                 <CommandItem
-                  key={group.id}
-                  value={group.id}
+                  key={id}
+                  value={id}
                   onSelect={() => handleClick(group)}
                 >
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      selected?.id === group.id ? "opacity-100" : "opacity-0",
+                      selectedId === id ? "opacity-100" : "opacity-0",
                     )}
                   />
 

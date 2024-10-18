@@ -28,7 +28,7 @@ export function AuthorsCombobox({
       onQueryChange={setDebouncedSearchQuery}
       selected={selected}
       onChange={onSelect}
-      itemName={(item) => item.name}
+      itemName={(item) => item.arabicName || item.transliteratedName}
       messages={{
         placeholder: "Select author",
         loading: "Loading authors...",

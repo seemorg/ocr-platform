@@ -1,19 +1,14 @@
-import type { usulDb } from "@/server/db";
-import { textToSlug } from "@/lib/slug";
+import { addAuthorToPipeline, addBookToPipeline } from "@/lib/usul-pipeline";
+import {
+  createUniqueAuthorSlug,
+  getAuthor,
+} from "@/server/services/usul/author";
+import { createUniqueBookSlug } from "@/server/services/usul/book";
 import { createId } from "@paralleldrive/cuid2";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "../../trpc";
-
-const doesSlugExist = async (slug: string, db: typeof usulDb) => {
-  const book = await db.book.findFirst({
-    where: { slug },
-    select: { id: true },
-  });
-
-  return !!book;
-};
 
 export const usulBookRouter = createTRPCRouter({
   getById: protectedProcedure
@@ -144,14 +139,19 @@ export const usulBookRouter = createTRPCRouter({
         publisher: z.string().optional(),
         editionNumber: z.string().optional(),
         publicationYear: z.number().optional(),
-        author: z.object({
-          _airtableReference: z.string(),
-          isUsul: z.boolean(),
-          usulUrl: z.string().url().optional(),
-          arabicName: z.string(),
-          transliteratedName: z.string().optional(),
-          diedYear: z.number().optional(),
-        }),
+        author: z.discriminatedUnion("isUsul", [
+          z.object({
+            isUsul: z.literal(true),
+            slug: z.string(),
+          }),
+          z.object({
+            isUsul: z.literal(false),
+            _airtableReference: z.string(),
+            arabicName: z.string(),
+            transliteratedName: z.string(),
+            diedYear: z.number().optional(),
+          }),
+        ]),
         pdfUrl: z.string(),
         splitsData: z
           .array(
@@ -192,48 +192,36 @@ export const usulBookRouter = createTRPCRouter({
         }
       }
 
+      let newAuthorParams: {
+        slug: string;
+        arabicName: string;
+      } | null = null;
+      let authorArabicName: string;
+      let createAuthor = false;
+
       let authorId: string;
       if (input.author.isUsul) {
-        if (!input.author.usulUrl) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "Usul URL is required",
-          });
-        }
-
-        const authorSlug = input.author.usulUrl?.split("/").pop();
-        const author = await ctx.usulDb.author.findFirst({
-          where: {
-            slug: authorSlug,
-          },
-          select: {
-            id: true,
-          },
-        });
-
+        const author = await getAuthor({ slug: input.author.slug }, ctx.usulDb);
         if (!author) {
           throw new TRPCError({
             code: "NOT_FOUND",
-            message: "Author not found while marked as usul author",
+            message: "Author not found",
           });
         }
 
+        authorArabicName = author.name;
         authorId = author.id;
       } else {
-        const result = await ctx.usulDb.author.findFirst({
-          where: {
-            extraProperties: {
-              path: ["_airtableReference"],
-              equals: input.author._airtableReference,
-            },
-          },
-          select: {
-            id: true,
-          },
-        });
+        const author = await getAuthor(
+          { _airtableReference: input.author._airtableReference },
+          ctx.usulDb,
+        );
 
-        if (result) {
-          authorId = result.id;
+        if (author) {
+          authorId = author.id;
+          authorArabicName = author.name;
+        } else {
+          createAuthor = true;
         }
       }
 
@@ -261,16 +249,23 @@ export const usulBookRouter = createTRPCRouter({
       if (input.slug) {
         slug = input.slug;
       } else {
-        slug = textToSlug(input.transliteratedName);
-        let increment = 0;
-        while (await doesSlugExist(slug, ctx.usulDb)) {
-          increment++;
-          slug = textToSlug(input.transliteratedName + "-" + increment);
-        }
+        slug = await createUniqueBookSlug(input.transliteratedName, ctx.usulDb);
+      }
+
+      let authorSlug: string | undefined;
+      if (createAuthor) {
+        authorSlug = await createUniqueAuthorSlug(
+          (
+            input.author as {
+              transliteratedName: string;
+            }
+          ).transliteratedName,
+          ctx.usulDb,
+        );
       }
 
       const book = await ctx.usulDb.$transaction(async (tx) => {
-        if (authorId) {
+        if (!createAuthor) {
           await tx.author.update({
             where: {
               id: authorId,
@@ -282,26 +277,36 @@ export const usulBookRouter = createTRPCRouter({
             },
           });
         } else {
+          const validatedAuthor = input.author as {
+            _airtableReference: string;
+            arabicName: string;
+            transliteratedName: string;
+            diedYear: number;
+          };
           const newAuthor = await tx.author.create({
             data: {
               id: createId(),
-              slug: textToSlug(
-                input.author.transliteratedName || input.author.arabicName,
-              ),
+              slug: authorSlug!,
               primaryNameTranslations: {
                 create: {
                   locale: "ar",
-                  text: input.author.arabicName,
+                  text: validatedAuthor.arabicName,
                 },
               },
-              transliteration: input.author.transliteratedName,
-              year: input.author.diedYear!,
+              transliteration: validatedAuthor.transliteratedName,
+              year: validatedAuthor.diedYear,
               extraProperties: {
-                _airtableReference: input.author._airtableReference,
+                _airtableReference: validatedAuthor._airtableReference,
               },
               numberOfBooks: 1,
             },
           });
+
+          newAuthorParams = {
+            slug: newAuthor.slug,
+            arabicName: validatedAuthor.arabicName,
+          };
+          authorArabicName = validatedAuthor.arabicName;
           authorId = newAuthor.id;
         }
 
@@ -389,6 +394,16 @@ export const usulBookRouter = createTRPCRouter({
         });
       });
 
+      if (newAuthorParams) {
+        await addAuthorToPipeline(newAuthorParams);
+      }
+
+      await addBookToPipeline({
+        slug,
+        arabicName: input.arabicName,
+        authorArabicName: authorArabicName!,
+      });
+
       return book;
     }),
   create: protectedProcedure
@@ -423,6 +438,15 @@ export const usulBookRouter = createTRPCRouter({
         });
       }
 
+      const author = await getAuthor({ id: input.authorId }, ctx.usulDb);
+
+      if (!author) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Author not found",
+        });
+      }
+
       const advancedGenres = await ctx.usulDb.advancedGenre.findMany({
         where: {
           id: {
@@ -447,12 +471,7 @@ export const usulBookRouter = createTRPCRouter({
       if (input.slug) {
         slug = input.slug;
       } else {
-        slug = textToSlug(input.transliteratedName);
-        let increment = 0;
-        while (await doesSlugExist(slug, ctx.usulDb)) {
-          increment++;
-          slug = textToSlug(input.transliteratedName + "-" + increment);
-        }
+        slug = await createUniqueBookSlug(input.transliteratedName, ctx.usulDb);
       }
 
       const book = await ctx.usulDb.$transaction(async (tx) => {
@@ -475,6 +494,17 @@ export const usulBookRouter = createTRPCRouter({
             id: {
               in: simpleGenreIds,
             },
+          },
+          data: {
+            numberOfBooks: {
+              increment: 1,
+            },
+          },
+        });
+
+        await tx.author.update({
+          where: {
+            id: input.authorId,
           },
           data: {
             numberOfBooks: {
@@ -537,6 +567,12 @@ export const usulBookRouter = createTRPCRouter({
             },
           },
         });
+      });
+
+      await addBookToPipeline({
+        slug,
+        arabicName: input.arabicName,
+        authorArabicName: author.name,
       });
 
       return book;

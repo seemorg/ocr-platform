@@ -1,13 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import AdvancedGenresSelector from "@/components/advanced-genres-selector";
+import { AuthorsCombobox } from "@/components/author-selector";
 import PageLayout from "@/components/page-layout";
 import TextArrayInput from "@/components/text-array-input";
 import TransliterationHelper from "@/components/transliteration-helper";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FileInput, FileUploader } from "@/components/ui/file-upload";
 import {
   Form,
@@ -32,6 +33,11 @@ import { z } from "zod";
 
 import AirtableSelector from "./airtable-selector";
 
+const getSlugFromUrl = (url: string) => {
+  if (!url) return null;
+  return url.split("/").pop();
+};
+
 const schema = z.object({
   _airtableReference: z.string().optional(),
   arabicName: z.string().min(1),
@@ -44,17 +50,26 @@ const schema = z.object({
   publicationYear: z.number().optional(),
   author: z
     .object({
-      _airtableReference: z.string(),
       isUsul: z.boolean(),
-      usulUrl: z.string().url().optional(),
+      _airtableReference: z.string(),
+      slug: z.string().optional(),
       arabicName: z.string(),
       transliteratedName: z.string(),
       diedYear: z.number().optional(),
     })
     .superRefine((data, ctx) => {
       if (data.isUsul) {
+        if (!data.slug) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Author slug is required when author is usul`,
+            path: ["slug"],
+          });
+        }
+
         return;
       }
+
       // make it required when isUsul is false
       if (data.diedYear === undefined) {
         ctx.addIssue({
@@ -146,7 +161,12 @@ export default function AddTextFromAirtable() {
         form.resetField("author.diedYear");
       }
       form.setValue("author.isUsul", author?.isUsul ?? false);
-      form.setValue("author.usulUrl", author?.usulUrl ?? undefined);
+      form.setValue(
+        "author.slug",
+        author?.usulUrl
+          ? (getSlugFromUrl(author.usulUrl) ?? undefined)
+          : undefined,
+      );
       form.setValue("author._airtableReference", author?._airtableReference!);
     }
   }, [airtableText, advancedGenres]);
@@ -182,33 +202,61 @@ export default function AddTextFromAirtable() {
     if (!finalPdfUrl) return;
 
     await createBook({
+      _airtableReference: data._airtableReference,
       arabicName: data.arabicName,
       transliteratedName: data.transliteration,
       advancedGenres: data.advancedGenres,
       otherNames: data.otherNames,
-      author: {
-        _airtableReference: data.author._airtableReference,
-        isUsul: data.author.isUsul,
-        usulUrl: data.author.usulUrl,
-        arabicName: data.author.arabicName,
-        transliteratedName: data.author.transliteratedName,
-        diedYear: data.author.diedYear,
-      },
+      author: data.author.isUsul
+        ? {
+            isUsul: true,
+            slug: data.author.slug!,
+          }
+        : {
+            isUsul: false,
+            _airtableReference: data.author._airtableReference,
+            arabicName: data.author.arabicName,
+            transliteratedName: data.author.transliteratedName,
+            diedYear: data.author.diedYear,
+          },
       pdfUrl: finalPdfUrl,
       splitsData: finalSplitsData ?? [],
+      investigator: data.investigator,
+      publisher: data.publisher,
+      editionNumber: data.editionNumber,
+      publicationYear: data.publicationYear,
     });
   };
 
   const isMutating = isUploading || isCreatingBook;
+  const isUsulBook = airtableReferenceCheck?.bookExists;
+
   const isUsulAuthor =
-    form.getValues("author.isUsul") ||
-    isLoadingAirtableReferenceCheck ||
-    airtableReferenceCheck?.authorExists;
+    form.getValues("author.isUsul") || airtableReferenceCheck?.authorExists;
+  // || airtableReferenceCheck?.authorExists
 
   const allFieldsDisabled =
-    isLoadingAirtableReferenceCheck ||
-    airtableReferenceCheck?.bookExists ||
-    !airtableText;
+    isLoadingAirtableReferenceCheck || isUsulBook || !airtableText;
+
+  const author = form.watch("author");
+  const selectedAuthor = useMemo(() => {
+    if (!author || !author.isUsul || !author.slug) return null;
+    return {
+      slug: author.slug,
+      arabicName: author.arabicName,
+      transliteratedName: author.transliteratedName,
+      year: author.diedYear,
+    };
+  }, [form.watch("author.slug")]);
+
+  const toggleIsUsul = () => {
+    form.setValue("author.isUsul", !author.isUsul);
+    form.resetField("author.slug");
+    form.resetField("author.arabicName");
+    form.resetField("author.transliteratedName");
+    form.resetField("author.diedYear");
+    form.resetField("author._airtableReference");
+  };
 
   return (
     <PageLayout title="Import Text From Airtable" backHref="/usul">
@@ -223,6 +271,12 @@ export default function AddTextFromAirtable() {
           />
         )}
       </div>
+
+      {isUsulBook ? (
+        <Alert variant="info" className="mt-10">
+          This book is already on Usul. You can add it to the pipeline.
+        </Alert>
+      ) : null}
 
       <div className="mt-10 w-full">
         <div className="mb-2 text-2xl font-bold">Notes</div>
@@ -249,6 +303,12 @@ export default function AddTextFromAirtable() {
                     isUsulAuthor ? "text-green-500" : "text-red-500",
                   )}
                 >
+                  <Checkbox
+                    checked={isUsulAuthor}
+                    onCheckedChange={toggleIsUsul}
+                    className="mr-2"
+                  />
+
                   {isUsulAuthor
                     ? "This author is on Usul"
                     : "The author is not on Usul"}
@@ -256,6 +316,30 @@ export default function AddTextFromAirtable() {
               )
             ) : null}
           </div>
+
+          {isUsulAuthor ? (
+            <AuthorsCombobox
+              selected={selectedAuthor as any}
+              onSelect={(author) => {
+                console.log(author);
+
+                if (author) {
+                  form.setValue("author.slug", author.slug);
+                  form.setValue("author.arabicName", author.arabicName!);
+                  form.setValue(
+                    "author.transliteratedName",
+                    author.transliteratedName!,
+                  );
+                  form.setValue("author.diedYear", author.year!);
+                } else {
+                  form.resetField("author.slug");
+                  form.resetField("author.arabicName");
+                  form.resetField("author.transliteratedName");
+                  form.resetField("author.diedYear");
+                }
+              }}
+            />
+          ) : null}
 
           <FormField
             control={form.control}

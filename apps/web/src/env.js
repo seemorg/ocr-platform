@@ -39,6 +39,8 @@ export const env = createEnv({
     AZURE_OPENAI_DEPLOYMENT_NAME: z.string(),
     AZURE_OPENAI_KEY: z.string(),
     AZURE_OPENAI_RESOURCE_NAME: z.string(),
+    USUL_PIPELINE_API_KEY: z.string(),
+    USUL_PIPELINE_BASE_URL: z.string(),
   },
 
   /**
@@ -79,6 +81,8 @@ export const env = createEnv({
     AZURE_OPENAI_DEPLOYMENT_NAME: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
     AZURE_OPENAI_KEY: process.env.AZURE_OPENAI_KEY,
     AZURE_OPENAI_RESOURCE_NAME: process.env.AZURE_OPENAI_RESOURCE_NAME,
+    USUL_PIPELINE_API_KEY: process.env.USUL_PIPELINE_API_KEY,
+    USUL_PIPELINE_BASE_URL: process.env.USUL_PIPELINE_BASE_URL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

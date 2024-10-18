@@ -1,18 +1,9 @@
-import type { usulDb } from "@/server/db";
-import { textToSlug } from "@/lib/slug";
+import { addAuthorToPipeline } from "@/lib/usul-pipeline";
+import { createUniqueAuthorSlug } from "@/server/services/usul/author";
 import { createId } from "@paralleldrive/cuid2";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "../../trpc";
-
-const doesSlugExist = async (slug: string, db: typeof usulDb) => {
-  const author = await db.author.findUnique({
-    where: { slug },
-    select: { id: true },
-  });
-
-  return !!author;
-};
 
 export const usulAuthorRouter = createTRPCRouter({
   delete: protectedProcedure
@@ -78,28 +69,24 @@ export const usulAuthorRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const authors = await ctx.usulDb.author.findMany({
         where: {
-          ...(input.query
-            ? {
-                OR: [
-                  {
-                    transliteration: {
-                      contains: input.query,
-                      mode: "insensitive",
-                    },
+          OR: [
+            {
+              transliteration: {
+                contains: input.query,
+                mode: "insensitive",
+              },
+            },
+            {
+              primaryNameTranslations: {
+                some: {
+                  text: {
+                    mode: "insensitive",
+                    contains: input.query,
                   },
-                  {
-                    primaryNameTranslations: {
-                      some: {
-                        text: {
-                          mode: "insensitive",
-                          contains: input.query,
-                        },
-                      },
-                    },
-                  },
-                ],
-              }
-            : {}),
+                },
+              },
+            },
+          ],
         },
         ...(!input.query
           ? {
@@ -110,6 +97,7 @@ export const usulAuthorRouter = createTRPCRouter({
           id: true,
           transliteration: true,
           slug: true,
+          year: true,
           primaryNameTranslations: {
             where: {
               locale: {
@@ -125,10 +113,10 @@ export const usulAuthorRouter = createTRPCRouter({
 
       const preparedAuthors = authors.map((author) => {
         return {
-          id: author.id,
           slug: author.slug,
-          name:
-            author.primaryNameTranslations[0]?.text ?? author.transliteration,
+          arabicName: author.primaryNameTranslations[0]?.text ?? null,
+          transliteratedName: author.transliteration,
+          year: author.year,
         };
       });
 
@@ -152,15 +140,10 @@ export const usulAuthorRouter = createTRPCRouter({
       if (input.slug) {
         slug = input.slug;
       } else {
-        slug = textToSlug(input.transliteration);
-        let increment = 0;
-        while (await doesSlugExist(slug, ctx.usulDb)) {
-          increment++;
-          slug = textToSlug(`${input.transliteration}-${increment}`);
-        }
+        slug = await createUniqueAuthorSlug(input.transliteration, ctx.usulDb);
       }
 
-      return ctx.usulDb.author.create({
+      const newAuthor = await ctx.usulDb.author.create({
         data: {
           id: createId(),
           slug,
@@ -200,6 +183,13 @@ export const usulAuthorRouter = createTRPCRouter({
             : {}),
         },
       });
+
+      await addAuthorToPipeline({
+        slug: newAuthor.slug,
+        arabicName: input.arabicName,
+      });
+
+      return { id: newAuthor.id };
     }),
   update: protectedProcedure
     .input(
