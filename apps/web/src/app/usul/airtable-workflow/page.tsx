@@ -313,7 +313,7 @@ export default function AddTextFromAirtable() {
         <Alert variant="info" className="mt-10">
           This book has been added to Usul previously. You can delete or edit it
           <Link
-            href={`/usul/texts/edit/${airtableReferenceCheck.bookId!}`}
+            href={`/usul/texts/${airtableReferenceCheck.bookId!}/edit`}
             className="mx-1 underline"
           >
             here
