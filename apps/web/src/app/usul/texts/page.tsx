@@ -34,6 +34,9 @@ export default async function TextsPage({
           },
         },
       },
+      orderBy: {
+        createdAt: "desc",
+      },
       skip: (pagination.page - 1) * pagination.pageSize,
       take: pagination.pageSize,
     }),

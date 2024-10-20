@@ -6,7 +6,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AdvancedGenresSelector from "@/components/advanced-genres-selector";
 import { AuthorsCombobox } from "@/components/author-selector";
-import PageLayout from "@/components/page-layout";
 import TextArrayInput from "@/components/text-array-input";
 import { Button } from "@/components/ui/button";
 import { FileInput, FileUploader } from "@/components/ui/file-upload";
@@ -274,7 +273,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
                 disabled={isMutating}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>External URL</FormLabel>
+                    <FormLabel>External Digitized Book URL</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
@@ -439,7 +438,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
               <div className="mt-5 grid grid-cols-2 gap-10">
                 <FormField
                   control={form.control}
-                  name="externalVersion.investigator"
+                  name="pdfVersion.investigator"
                   disabled={isMutating}
                   render={({ field }) => (
                     <FormItem>
@@ -455,7 +454,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
 
                 <FormField
                   control={form.control}
-                  name="externalVersion.publisher"
+                  name="pdfVersion.publisher"
                   disabled={isMutating}
                   render={({ field }) => (
                     <FormItem>
@@ -471,7 +470,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
 
                 <FormField
                   control={form.control}
-                  name="externalVersion.editionNumber"
+                  name="pdfVersion.editionNumber"
                   disabled={isMutating}
                   render={({ field }) => (
                     <FormItem>
@@ -487,7 +486,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
 
                 <FormField
                   control={form.control}
-                  name="externalVersion.publicationYear"
+                  name="pdfVersion.publicationYear"
                   disabled={isMutating}
                   render={({ field }) => (
                     <FormItem>

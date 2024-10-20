@@ -346,10 +346,7 @@ export default function AddTextFromAirtable() {
                     checked={isUsulAuthor}
                     onCheckedChange={toggleIsUsul}
                   />
-
-                  {isUsulAuthor
-                    ? "This author is on Usul"
-                    : "The author is not on Usul"}
+                  This author is on Usul
                 </p>
               )
             ) : null}
@@ -558,7 +555,7 @@ export default function AddTextFromAirtable() {
                   name="externalVersion.url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>External URL</FormLabel>
+                      <FormLabel>External Digitized Book URL</FormLabel>
                       <FormControl>
                         <Input disabled={allFieldsDisabled} {...field} />
                       </FormControl>

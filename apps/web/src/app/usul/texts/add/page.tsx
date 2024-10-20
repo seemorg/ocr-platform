@@ -261,7 +261,7 @@ export default function AddTextPage() {
                   disabled={isMutating}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>External URL</FormLabel>
+                      <FormLabel>External Digitized Book URL</FormLabel>
                       <FormControl>
                         <Input {...field} />
                       </FormControl>
