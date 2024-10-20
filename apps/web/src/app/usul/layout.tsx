@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/server/auth";
 
+import UsulProviders from "./providers";
+
 export default async function UsulLayout({
   children,
 }: {
@@ -12,5 +14,5 @@ export default async function UsulLayout({
     redirect("/login");
   }
 
-  return <>{children}</>;
+  return <UsulProviders>{children}</UsulProviders>;
 }
