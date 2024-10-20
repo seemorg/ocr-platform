@@ -1,4 +1,4 @@
-import { unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { env } from "@/env";
 import Airtable from "airtable";
 
@@ -193,3 +193,7 @@ export const getAirtableTexts = unstable_cache(
     revalidate: 60 * 60 * 24, // 1 day
   },
 );
+
+export const invalidateAirtableTexts = () => {
+  revalidateTag("texts");
+};

@@ -8,6 +8,7 @@ import PageLayout from "@/components/page-layout";
 import TextArrayInput from "@/components/text-array-input";
 import TransliterationHelper from "@/components/transliteration-helper";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FileInput, FileUploader } from "@/components/ui/file-upload";
 import {
   Form,
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useUploadPdfs } from "@/hooks/useUploadPdfs";
 import { textToSlug } from "@/lib/slug";
 import {
@@ -49,6 +51,7 @@ const schema = z.object({
     transliteratedName: z.string(),
     year: z.coerce.number(),
   }),
+  physicalDetails: z.string().optional(),
 });
 
 const MAX_FILE_SIZE_IN_MB = 150;
@@ -77,6 +80,7 @@ export default function AddTextPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [pdfUrl, setPdfUrl] = useState("");
   const { isUploading, uploadFiles, uploadFromUrl } = useUploadPdfs();
+  const [hasPhysicalDetails, setHasPhysicalDetails] = useState(false);
 
   const router = useRouter();
 
@@ -109,7 +113,7 @@ export default function AddTextPage() {
     await createBook({
       arabicName: data.arabicName,
       transliteratedName: data.transliteration,
-
+      physicalDetails: hasPhysicalDetails ? data.physicalDetails : undefined,
       advancedGenres: data.advancedGenres,
       otherNames: data.otherNames,
       authorSlug: data.author.slug,
@@ -492,6 +496,45 @@ export default function AddTextPage() {
             </div>
           </div>
 
+          <div className="my-10 h-[2px] w-full bg-border" />
+
+          <div>
+            <h2 className="text-2xl font-bold">Physical Details</h2>
+
+            <div className="mt-5 flex gap-2">
+              <Checkbox
+                id="hasPhysicalDetails"
+                checked={hasPhysicalDetails}
+                disabled={isMutating}
+                onCheckedChange={() =>
+                  setHasPhysicalDetails(!hasPhysicalDetails)
+                }
+              />
+              <Label htmlFor="hasPhysicalDetails">
+                This book doesn't have digitized copies or PDFs online
+              </Label>
+            </div>
+
+            {hasPhysicalDetails && (
+              <FormField
+                control={form.control}
+                name="physicalDetails"
+                render={({ field }) => (
+                  <FormItem className="mt-5">
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter physical details"
+                        disabled={isMutating}
+                        {...field}
+                      />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+          </div>
           <div className="my-10 h-[2px] w-full bg-border" />
 
           <div>

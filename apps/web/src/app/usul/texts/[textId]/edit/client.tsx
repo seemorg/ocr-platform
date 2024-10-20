@@ -8,6 +8,7 @@ import AdvancedGenresSelector from "@/components/advanced-genres-selector";
 import { AuthorsCombobox } from "@/components/author-selector";
 import TextArrayInput from "@/components/text-array-input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FileInput, FileUploader } from "@/components/ui/file-upload";
 import {
   Form,
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useUploadPdfs } from "@/hooks/useUploadPdfs";
 import { textToSlug } from "@/lib/slug";
 import { zEmptyUrlToUndefined } from "@/lib/validation";
@@ -43,6 +45,7 @@ const schema = z.object({
   transliteration: z.string().min(1),
   otherNames: z.array(z.string()),
   advancedGenres: z.array(z.string()),
+  physicalDetails: z.string().optional(),
   externalVersion: z.object({
     url: zEmptyUrlToUndefined,
     ...publicationDetailsSchema,
@@ -102,6 +105,9 @@ export default function EditTextClientPage({ text }: { text: Text }) {
   const [files, setFiles] = useState<File[]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
   const { isUploading, uploadFiles, uploadFromUrl } = useUploadPdfs();
+  const [hasPhysicalDetails, setHasPhysicalDetails] = useState(
+    !!text.physicalDetails,
+  );
 
   const router = useRouter();
 
@@ -504,6 +510,41 @@ export default function EditTextClientPage({ text }: { text: Text }) {
           </div>
         </div>
 
+        <div className="my-10 h-[2px] w-full bg-border" />
+        <div>
+          <h2 className="text-2xl font-bold">Physical Details</h2>
+          <div className="mt-5 flex gap-2">
+            <Checkbox
+              id="hasPhysicalDetails"
+              checked={hasPhysicalDetails}
+              disabled={isMutating}
+              onCheckedChange={() => setHasPhysicalDetails(!hasPhysicalDetails)}
+            />
+            <Label htmlFor="hasPhysicalDetails">
+              This book doesn't have digitized copies or PDFs online
+            </Label>
+          </div>
+
+          {hasPhysicalDetails && (
+            <FormField
+              control={form.control}
+              name="physicalDetails"
+              render={({ field }) => (
+                <FormItem className="mt-5">
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter physical details"
+                      disabled={isMutating}
+                      {...field}
+                    />
+                  </FormControl>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+        </div>
         <div className="my-10 h-[2px] w-full bg-border" />
 
         <div>

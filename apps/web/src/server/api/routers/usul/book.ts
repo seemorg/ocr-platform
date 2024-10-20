@@ -17,6 +17,82 @@ const publicationDetailsSchema = {
   investigator: z.string().optional(),
 };
 
+const externalVersionSchema = z
+  .object({
+    url: z.string().url().optional(),
+    ...publicationDetailsSchema,
+  })
+  .optional();
+
+const pdfVersionSchema = z
+  .object({
+    url: z.string().url().optional(),
+    splitsData: z
+      .array(
+        z.object({
+          start: z.number(),
+          end: z.number(),
+        }),
+      )
+      .optional(),
+    ...publicationDetailsSchema,
+  })
+  .optional();
+
+const prepareVersions = (
+  externalVersion: z.infer<typeof externalVersionSchema>,
+  pdfVersion: z.infer<typeof pdfVersionSchema>,
+) => {
+  const final: PrismaJson.BookVersion[] = [];
+  if (externalVersion?.url) {
+    final.push({
+      source: "external" as const,
+      value: externalVersion.url,
+      publicationDetails: {
+        ...(externalVersion.investigator
+          ? { investigator: externalVersion.investigator }
+          : {}),
+        ...(externalVersion.publisher
+          ? { publisher: externalVersion.publisher }
+          : {}),
+        ...(externalVersion.editionNumber
+          ? {
+              editionNumber: externalVersion.editionNumber,
+            }
+          : {}),
+        ...(externalVersion.publicationYear
+          ? {
+              publicationYear: externalVersion.publicationYear,
+            }
+          : {}),
+      },
+    });
+  }
+
+  if (pdfVersion?.url) {
+    final.push({
+      source: "pdf" as const,
+      value: pdfVersion.url,
+      publicationDetails: {
+        ...(pdfVersion.investigator
+          ? { investigator: pdfVersion.investigator }
+          : {}),
+        ...(pdfVersion.publisher ? { publisher: pdfVersion.publisher } : {}),
+        ...(pdfVersion.editionNumber
+          ? { editionNumber: pdfVersion.editionNumber }
+          : {}),
+        ...(pdfVersion.publicationYear
+          ? {
+              publicationYear: pdfVersion.publicationYear,
+            }
+          : {}),
+      },
+    });
+  }
+
+  return final;
+};
+
 export const usulBookRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -25,6 +101,7 @@ export const usulBookRouter = createTRPCRouter({
         where: { id: input.id },
         select: {
           id: true,
+          physicalDetails: true,
           author: {
             select: {
               id: true,
@@ -88,6 +165,7 @@ export const usulBookRouter = createTRPCRouter({
         },
         pdfVersion: pdfVersion,
         externalVersion: externalVersion,
+        physicalDetails: book.physicalDetails,
       };
 
       return preparedBook;
@@ -148,26 +226,9 @@ export const usulBookRouter = createTRPCRouter({
         slug: z.string().optional(),
         advancedGenres: z.array(z.string()),
         otherNames: z.array(z.string()).optional(),
-        externalVersion: z
-          .object({
-            url: z.string().url().optional(),
-            ...publicationDetailsSchema,
-          })
-          .optional(),
-        pdfVersion: z
-          .object({
-            url: z.string().url().optional(),
-            splitsData: z
-              .array(
-                z.object({
-                  start: z.number(),
-                  end: z.number(),
-                }),
-              )
-              .optional(),
-            ...publicationDetailsSchema,
-          })
-          .optional(),
+        physicalDetails: z.string().optional(),
+        externalVersion: externalVersionSchema,
+        pdfVersion: pdfVersionSchema,
         author: z.discriminatedUnion("isUsul", [
           z.object({
             isUsul: z.literal(true),
@@ -360,6 +421,11 @@ export const usulBookRouter = createTRPCRouter({
           },
         });
 
+        const versions = prepareVersions(
+          input.externalVersion,
+          input.pdfVersion,
+        );
+
         return tx.book.create({
           select: { id: true },
           data: {
@@ -389,60 +455,9 @@ export const usulBookRouter = createTRPCRouter({
               connect: advancedGenres.map((genre) => ({ id: genre.id })),
             },
             author: { connect: { id: authorId } },
-            versions: [
-              ...(input.externalVersion?.url
-                ? [
-                    {
-                      source: "external" as const,
-                      value: input.externalVersion.url,
-                      publicationDetails: {
-                        ...(input.externalVersion.investigator
-                          ? { investigator: input.externalVersion.investigator }
-                          : {}),
-                        ...(input.externalVersion.publisher
-                          ? { publisher: input.externalVersion.publisher }
-                          : {}),
-                        ...(input.externalVersion.editionNumber
-                          ? {
-                              editionNumber:
-                                input.externalVersion.editionNumber,
-                            }
-                          : {}),
-                        ...(input.externalVersion.publicationYear
-                          ? {
-                              publicationYear:
-                                input.externalVersion.publicationYear,
-                            }
-                          : {}),
-                      },
-                    },
-                  ]
-                : []),
-              ...(input.pdfVersion?.url
-                ? [
-                    {
-                      source: "pdf" as const,
-                      value: input.pdfVersion.url,
-                      publicationDetails: {
-                        ...(input.pdfVersion.investigator
-                          ? { investigator: input.pdfVersion.investigator }
-                          : {}),
-                        ...(input.pdfVersion.publisher
-                          ? { publisher: input.pdfVersion.publisher }
-                          : {}),
-                        ...(input.pdfVersion.editionNumber
-                          ? { editionNumber: input.pdfVersion.editionNumber }
-                          : {}),
-                        ...(input.pdfVersion.publicationYear
-                          ? {
-                              publicationYear: input.pdfVersion.publicationYear,
-                            }
-                          : {}),
-                      },
-                    },
-                  ]
-                : []),
-            ],
+            versions,
+            numberOfVersions: versions.length,
+            physicalDetails: input.physicalDetails,
             extraProperties: {
               ...(input.pdfVersion?.splitsData &&
               input.pdfVersion.splitsData.length > 0
@@ -474,6 +489,7 @@ export const usulBookRouter = createTRPCRouter({
         slug: z.string().optional(),
         advancedGenres: z.array(z.string()),
         otherNames: z.array(z.string()).optional(),
+        physicalDetails: z.string().optional(),
         authorSlug: z.string(),
         externalVersion: z
           .object({
@@ -583,6 +599,11 @@ export const usulBookRouter = createTRPCRouter({
           },
         });
 
+        const versions = prepareVersions(
+          input.externalVersion,
+          input.pdfVersion,
+        );
+
         return tx.book.create({
           select: { id: true },
           data: {
@@ -612,60 +633,9 @@ export const usulBookRouter = createTRPCRouter({
               connect: advancedGenres.map((genre) => ({ id: genre.id })),
             },
             author: { connect: { id: author.id } },
-            versions: [
-              ...(input.externalVersion?.url
-                ? [
-                    {
-                      source: "external" as const,
-                      value: input.externalVersion.url,
-                      publicationDetails: {
-                        ...(input.externalVersion.investigator
-                          ? { investigator: input.externalVersion.investigator }
-                          : {}),
-                        ...(input.externalVersion.publisher
-                          ? { publisher: input.externalVersion.publisher }
-                          : {}),
-                        ...(input.externalVersion.editionNumber
-                          ? {
-                              editionNumber:
-                                input.externalVersion.editionNumber,
-                            }
-                          : {}),
-                        ...(input.externalVersion.publicationYear
-                          ? {
-                              publicationYear:
-                                input.externalVersion.publicationYear,
-                            }
-                          : {}),
-                      },
-                    },
-                  ]
-                : []),
-              ...(input.pdfVersion?.url
-                ? [
-                    {
-                      source: "pdf" as const,
-                      value: input.pdfVersion.url,
-                      publicationDetails: {
-                        ...(input.pdfVersion.investigator
-                          ? { investigator: input.pdfVersion.investigator }
-                          : {}),
-                        ...(input.pdfVersion.publisher
-                          ? { publisher: input.pdfVersion.publisher }
-                          : {}),
-                        ...(input.pdfVersion.editionNumber
-                          ? { editionNumber: input.pdfVersion.editionNumber }
-                          : {}),
-                        ...(input.pdfVersion.publicationYear
-                          ? {
-                              publicationYear: input.pdfVersion.publicationYear,
-                            }
-                          : {}),
-                      },
-                    },
-                  ]
-                : []),
-            ],
+            versions,
+            numberOfVersions: versions.length,
+            physicalDetails: input.physicalDetails,
             extraProperties: {
               ...(input.pdfVersion?.splitsData &&
               input.pdfVersion.splitsData.length > 0

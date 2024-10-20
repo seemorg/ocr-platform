@@ -22,12 +22,19 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import useAirtableTexts from "@/hooks/useAirtableTexts";
 import { useUploadPdfs } from "@/hooks/useUploadPdfs";
 import { textToSlug } from "@/lib/slug";
 import { zEmptyUrlToUndefined } from "@/lib/validation";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { XIcon } from "lucide-react";
+import { RefreshCcwIcon, XIcon } from "lucide-react";
 import { DropzoneOptions } from "react-dropzone";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
@@ -58,6 +65,7 @@ const schema = z.object({
     url: zEmptyUrlToUndefined,
     ...publicationDetailsSchema,
   }),
+  physicalDetails: z.string().optional(),
   author: z
     .object({
       isUsul: z.boolean(),
@@ -67,18 +75,6 @@ const schema = z.object({
       slug: z.string().optional(),
       diedYear: z.coerce.number().optional(),
     })
-    .refine(
-      (data) => {
-        if (data.isUsul === false && !data.diedYear) {
-          return false;
-        }
-        return true;
-      },
-      {
-        message: "Died year is required",
-        path: ["diedYear"],
-      },
-    )
     .refine(
       (data) => {
         if (data.isUsul === false && !data.arabicName) {
@@ -119,8 +115,9 @@ export default function AddTextFromAirtable() {
   const { data: advancedGenres, isLoading: isLoadingAdvancedGenres } =
     api.usulAdvancedGenre.allAdvancedGenres.useQuery();
 
-  const { data: airtableTexts, isLoading: isLoadingAirtableTexts } =
-    api.airtable.getAirtableTexts.useQuery();
+  const { airtableTexts, isLoadingAirtableTexts, purgeCache, isPurgingCache } =
+    useAirtableTexts();
+
   const [selectedAirtableIndex, setSelectedAirtableIndex] = useState<
     number | null
   >(null);
@@ -137,6 +134,8 @@ export default function AddTextFromAirtable() {
   const [files, setFiles] = useState<File[]>([]);
   const [pdfUrl, setPdfUrl] = useState("");
   const { isUploading, uploadFiles, uploadFromUrl } = useUploadPdfs();
+  const [authorAlive, setAuthorAlive] = useState(false);
+  const [hasPhysicalDetails, setHasPhysicalDetails] = useState(false);
 
   const airtableText = useMemo(() => {
     if (selectedAirtableIndex === null) return null;
@@ -156,16 +155,6 @@ export default function AddTextFromAirtable() {
 
   useEffect(() => {
     if (airtableText) {
-      form.setValue(
-        "_airtableReference",
-        airtableText._airtableReference ?? undefined,
-      );
-      form.setValue("arabicName", airtableText.arabicName ?? "");
-      form.setValue("transliteration", airtableText.transliteration ?? "");
-      form.setValue("otherNames", airtableText.otherNames);
-
-      form.setValue("externalVersion.url", airtableText.digitizedUrl ?? "");
-
       const advancedGenresInDb: string[] = [];
       airtableText.advancedGenres.forEach(({ name }) => {
         const advancedGenre = advancedGenres?.find(
@@ -175,19 +164,58 @@ export default function AddTextFromAirtable() {
           advancedGenresInDb.push(advancedGenre.id);
         }
       });
-      form.setValue("advancedGenres", advancedGenresInDb);
+
+      const author = airtableText?.author;
+      const authorSlug = getSlugFromUrl(author?.usulUrl ?? "");
+      const diedYear = author?.diedYear ?? -1;
+      form.reset({
+        _airtableReference: airtableText._airtableReference ?? undefined,
+        arabicName: airtableText.arabicName ?? "",
+        transliteration: airtableText.transliteration ?? "",
+        otherNames: airtableText.otherNames,
+        advancedGenres: advancedGenresInDb,
+        externalVersion: {
+          url: airtableText.digitizedUrl ?? "",
+        },
+        // TODO: enable physical details
+        physicalDetails: "",
+        author: {
+          isUsul: author?.isUsul ?? false,
+          _airtableReference: author?._airtableReference ?? "",
+          arabicName: author?.arabicName ?? "",
+          transliteratedName: author?.transliteration ?? "",
+          diedYear,
+          slug: authorSlug ?? "",
+        },
+      });
+
+      setAuthorAlive(diedYear === -1);
+
+      // TODO: enable physical details
+      setHasPhysicalDetails(false);
+
+      // form.setValue(
+      //   "_airtableReference",
+      //   airtableText._airtableReference ?? undefined,
+      // );
+      // form.setValue("arabicName", airtableText.arabicName ?? "");
+      // form.setValue("transliteration", airtableText.transliteration ?? "");
+      // form.setValue("otherNames", airtableText.otherNames);
+
+      // form.setValue("externalVersion.url", airtableText.digitizedUrl ?? "");
+      // form.setValue("advancedGenres", advancedGenresInDb);
 
       // author part
-      const author = airtableText?.author;
-      form.setValue("author.arabicName", author?.arabicName ?? "");
-      form.setValue("author.transliteratedName", author?.transliteration ?? "");
-      form.setValue("author.diedYear", author?.diedYear ?? ("" as any));
 
-      form.setValue("author.isUsul", author?.isUsul ?? false);
+      // form.setValue("author.arabicName", author?.arabicName ?? "");
+      // form.setValue("author.transliteratedName", author?.transliteration ?? "");
+      // form.setValue("author.diedYear", author?.diedYear ?? ("" as any));
 
-      const authorSlug = getSlugFromUrl(author?.usulUrl ?? "");
-      form.setValue("author.slug", authorSlug ?? "");
-      form.setValue("author._airtableReference", author?._airtableReference!);
+      // form.setValue("author.isUsul", author?.isUsul ?? false);
+
+      // const authorSlug = getSlugFromUrl(author?.usulUrl ?? "");
+      // form.setValue("author.slug", authorSlug ?? "");
+      // form.setValue("author._airtableReference", author?._airtableReference!);
     }
   }, [airtableText, advancedGenres]);
 
@@ -199,6 +227,8 @@ export default function AddTextFromAirtable() {
         form.reset();
         setFiles([]);
         setPdfUrl("");
+        setAuthorAlive(false);
+        setHasPhysicalDetails(false);
         setSelectedAirtableIndex((oldIndex) =>
           oldIndex === null ? oldIndex : oldIndex + 1,
         );
@@ -223,10 +253,13 @@ export default function AddTextFromAirtable() {
       }
     }
 
-    // if (!finalPdfUrl) return;
-
     if (data.author.isUsul && !data.author.slug) {
       toast.error("Author slug is required");
+      return;
+    }
+
+    if (!data.author.isUsul && !authorAlive && !data.author.diedYear) {
+      toast.error("Author death year is required");
       return;
     }
 
@@ -236,6 +269,7 @@ export default function AddTextFromAirtable() {
       transliteratedName: data.transliteration,
       advancedGenres: data.advancedGenres,
       otherNames: data.otherNames,
+      physicalDetails: hasPhysicalDetails ? data.physicalDetails : undefined,
       author: data.author.isUsul
         ? {
             isUsul: true,
@@ -246,7 +280,7 @@ export default function AddTextFromAirtable() {
             _airtableReference: data.author._airtableReference,
             arabicName: data.author.arabicName,
             transliteratedName: data.author.transliteratedName,
-            diedYear: data.author.diedYear,
+            diedYear: authorAlive ? -1 : data.author.diedYear,
           },
       externalVersion: data.externalVersion,
       pdfVersion: {
@@ -301,11 +335,29 @@ export default function AddTextFromAirtable() {
         {isLoadingAirtableTexts ? (
           <div>Loading...</div>
         ) : (
-          <AirtableSelector
-            airtableTexts={airtableTexts ?? []}
-            selectedIndex={selectedAirtableIndex}
-            setSelectedIndex={setSelectedAirtableIndex}
-          />
+          <div className="flex items-center gap-2">
+            <AirtableSelector
+              airtableTexts={airtableTexts ?? []}
+              selectedIndex={selectedAirtableIndex}
+              setSelectedIndex={setSelectedAirtableIndex}
+            />
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  onClick={() => purgeCache()}
+                  disabled={isPurgingCache}
+                >
+                  <RefreshCcwIcon className="mr-2 h-4 w-4" />{" "}
+                  {isPurgingCache ? "Purging..." : "Refresh"}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Click on this if the airtable data is not up to date
+              </TooltipContent>
+            </Tooltip>
+          </div>
         )}
       </div>
 
@@ -426,14 +478,27 @@ export default function AddTextFromAirtable() {
             name="author.diedYear"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Author Death Year (*)</FormLabel>
-                <FormControl>
-                  <Input
-                    {...field}
+                <FormLabel>Author Death Year</FormLabel>
+
+                <div className="mt-2 flex gap-2">
+                  <Checkbox
+                    id="authorAlive"
+                    checked={authorAlive}
+                    onCheckedChange={() => setAuthorAlive(!authorAlive)}
                     disabled={isUsulAuthor || allFieldsDisabled}
-                    type="number"
                   />
-                </FormControl>
+                  <Label htmlFor="authorAlive">Author is alive</Label>
+                </div>
+
+                {!authorAlive && (
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled={isUsulAuthor || allFieldsDisabled}
+                      type="number"
+                    />
+                  </FormControl>
+                )}
 
                 <FormMessage />
               </FormItem>
@@ -784,6 +849,45 @@ export default function AddTextFromAirtable() {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="my-10 h-[2px] w-full bg-border" />
+
+          <div>
+            <h2 className="text-2xl font-bold">Physical Details</h2>
+            <div className="mt-5 flex gap-2">
+              <Checkbox
+                id="hasPhysicalDetails"
+                checked={hasPhysicalDetails}
+                disabled={allFieldsDisabled}
+                onCheckedChange={() =>
+                  setHasPhysicalDetails(!hasPhysicalDetails)
+                }
+              />
+              <Label htmlFor="hasPhysicalDetails">
+                This book doesn't have digitized copies or PDFs online
+              </Label>
+            </div>
+
+            {hasPhysicalDetails && (
+              <FormField
+                control={form.control}
+                name="physicalDetails"
+                render={({ field }) => (
+                  <FormItem className="mt-5">
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter physical details"
+                        disabled={allFieldsDisabled}
+                        {...field}
+                      />
+                    </FormControl>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </div>
 
           <div className="my-10 h-[2px] w-full bg-border" />
