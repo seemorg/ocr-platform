@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AdvancedGenresSelector from "@/components/advanced-genres-selector";
 import { AuthorsCombobox } from "@/components/author-selector";
@@ -10,7 +10,6 @@ import TransliterationHelper from "@/components/transliteration-helper";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileInput, FileUploader } from "@/components/ui/file-upload";
 import {
   Form,
   FormControl,
@@ -28,14 +27,17 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import VersionsInput, {
+  makeVersionsInitialState,
+  Version,
+} from "@/components/versions-input";
 import useAirtableTexts from "@/hooks/useAirtableTexts";
 import { useUploadPdfs } from "@/hooks/useUploadPdfs";
 import { textToSlug } from "@/lib/slug";
 import { zEmptyUrlToUndefined } from "@/lib/validation";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RefreshCcwIcon, XIcon } from "lucide-react";
-import { DropzoneOptions } from "react-dropzone";
+import { RefreshCcwIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
@@ -47,24 +49,12 @@ const getSlugFromUrl = (url: string) => {
   return url.split("/").pop();
 };
 
-const publicationDetailsSchema = {
-  investigator: z.string().optional(),
-  publisher: z.string().optional(),
-  editionNumber: z.string().optional(),
-  publicationYear: z.coerce.number().optional(),
-};
-
 const schema = z.object({
   _airtableReference: z.string().optional(),
   arabicName: z.string().min(1),
   transliteration: z.string().min(1),
   otherNames: z.array(z.string()),
   advancedGenres: z.array(z.string()),
-  pdfVersion: z.object(publicationDetailsSchema),
-  externalVersion: z.object({
-    url: zEmptyUrlToUndefined,
-    ...publicationDetailsSchema,
-  }),
   physicalDetails: z.string().optional(),
   author: z
     .object({
@@ -101,16 +91,6 @@ const schema = z.object({
     ),
 });
 
-const MAX_FILE_SIZE_IN_MB = 150;
-const dropzoneOptions = {
-  accept: {
-    "application/pdf": [".pdf"],
-  },
-  multiple: true,
-  maxFiles: 10,
-  maxSize: MAX_FILE_SIZE_IN_MB * 1024 * 1024,
-} satisfies DropzoneOptions;
-
 export default function AddTextFromAirtable() {
   const { data: advancedGenres, isLoading: isLoadingAdvancedGenres } =
     api.usulAdvancedGenre.allAdvancedGenres.useQuery();
@@ -130,9 +110,7 @@ export default function AddTextFromAirtable() {
     },
   });
 
-  const [pdfMode, setPdfMode] = useState<"upload" | "url">("upload");
-  const [files, setFiles] = useState<File[]>([]);
-  const [pdfUrl, setPdfUrl] = useState("");
+  const [versions, setVersions] = useState<Version[]>(makeVersionsInitialState);
   const { isUploading, uploadFiles, uploadFromUrl } = useUploadPdfs();
   const [authorAlive, setAuthorAlive] = useState(false);
   const [hasPhysicalDetails, setHasPhysicalDetails] = useState(false);
@@ -174,11 +152,7 @@ export default function AddTextFromAirtable() {
         transliteration: airtableText.transliteration ?? "",
         otherNames: airtableText.otherNames,
         advancedGenres: advancedGenresInDb,
-        externalVersion: {
-          url: airtableText.digitizedUrl ?? "",
-        },
-        // TODO: enable physical details
-        physicalDetails: "",
+        physicalDetails: airtableText.physicalDetails ?? undefined,
         author: {
           isUsul: author?.isUsul ?? false,
           _airtableReference: author?._airtableReference ?? "",
@@ -191,31 +165,18 @@ export default function AddTextFromAirtable() {
 
       setAuthorAlive(diedYear === -1);
 
-      // TODO: enable physical details
-      setHasPhysicalDetails(false);
+      if (airtableText.digitizedUrl) {
+        setVersions([
+          {
+            type: "external",
+            url: airtableText.digitizedUrl,
+          },
+        ]);
+      } else {
+        setVersions(makeVersionsInitialState);
+      }
 
-      // form.setValue(
-      //   "_airtableReference",
-      //   airtableText._airtableReference ?? undefined,
-      // );
-      // form.setValue("arabicName", airtableText.arabicName ?? "");
-      // form.setValue("transliteration", airtableText.transliteration ?? "");
-      // form.setValue("otherNames", airtableText.otherNames);
-
-      // form.setValue("externalVersion.url", airtableText.digitizedUrl ?? "");
-      // form.setValue("advancedGenres", advancedGenresInDb);
-
-      // author part
-
-      // form.setValue("author.arabicName", author?.arabicName ?? "");
-      // form.setValue("author.transliteratedName", author?.transliteration ?? "");
-      // form.setValue("author.diedYear", author?.diedYear ?? ("" as any));
-
-      // form.setValue("author.isUsul", author?.isUsul ?? false);
-
-      // const authorSlug = getSlugFromUrl(author?.usulUrl ?? "");
-      // form.setValue("author.slug", authorSlug ?? "");
-      // form.setValue("author._airtableReference", author?._airtableReference!);
+      setHasPhysicalDetails(!!airtableText.physicalDetails);
     }
   }, [airtableText, advancedGenres]);
 
@@ -225,8 +186,7 @@ export default function AddTextFromAirtable() {
         toast.success("Book created successfully!");
         // reset form
         form.reset();
-        setFiles([]);
-        setPdfUrl("");
+        setVersions(makeVersionsInitialState);
         setAuthorAlive(false);
         setHasPhysicalDetails(false);
         setSelectedAirtableIndex((oldIndex) =>
@@ -238,18 +198,50 @@ export default function AddTextFromAirtable() {
   const onSubmit = async (data: z.infer<typeof schema>) => {
     const inferredSlug = textToSlug(data.transliteration);
 
-    let finalPdfUrl: string | undefined;
-    let finalSplitsData: { start: number; end: number }[] | undefined;
-    if (pdfMode === "upload") {
-      if (files.length > 0) {
-        const response = await uploadFiles(files, inferredSlug);
-        finalPdfUrl = response?.url;
-        finalSplitsData = response?.splitsData;
-      }
-    } else {
-      if (pdfUrl) {
-        const response = await uploadFromUrl(pdfUrl, inferredSlug);
-        finalPdfUrl = response?.url;
+    const finalVersions: ({
+      url: string;
+      splitsData?: { start: number; end: number }[];
+    } & Pick<
+      Version,
+      | "publisher"
+      | "publicationYear"
+      | "investigator"
+      | "editionNumber"
+      | "type"
+    >)[] = [];
+
+    for (const version of versions) {
+      if (version.type === "external") {
+        if (version.url) {
+          finalVersions.push(version);
+        }
+      } else {
+        let finalPdfUrl: string | undefined;
+        let finalSplitsData: { start: number; end: number }[] | undefined;
+        if (version.mode === "upload") {
+          if (version.files.length > 0) {
+            const response = await uploadFiles(version.files, inferredSlug);
+            finalPdfUrl = response?.url;
+            finalSplitsData = response?.splitsData;
+          }
+        } else {
+          if (version.url) {
+            const response = await uploadFromUrl(version.url, inferredSlug);
+            finalPdfUrl = response?.url;
+          }
+        }
+
+        if (finalPdfUrl) {
+          finalVersions.push({
+            type: "pdf",
+            url: finalPdfUrl,
+            splitsData: finalSplitsData,
+            publisher: version.publisher,
+            publicationYear: version.publicationYear,
+            investigator: version.investigator,
+            editionNumber: version.editionNumber,
+          });
+        }
       }
     }
 
@@ -282,12 +274,7 @@ export default function AddTextFromAirtable() {
             transliteratedName: data.author.transliteratedName,
             diedYear: authorAlive ? -1 : data.author.diedYear,
           },
-      externalVersion: data.externalVersion,
-      pdfVersion: {
-        ...(finalPdfUrl ? { url: finalPdfUrl } : {}),
-        ...(finalSplitsData ? { splitsData: finalSplitsData } : {}),
-        ...data.pdfVersion,
-      },
+      versions: finalVersions,
     });
   };
 
@@ -320,14 +307,6 @@ export default function AddTextFromAirtable() {
     form.resetField("author.diedYear");
     form.resetField("author._airtableReference");
   };
-
-  const onFilesChange = useCallback(
-    (newFiles: File[] | null) => {
-      if (isMutating || allFieldsDisabled) return;
-      setFiles(newFiles ?? []);
-    },
-    [isMutating, allFieldsDisabled],
-  );
 
   return (
     <PageLayout title="Import Text From Airtable" backHref="/usul">
@@ -610,251 +589,16 @@ export default function AddTextFromAirtable() {
             </div>
           ) : null}
 
-          <div>
-            <h2 className="text-2xl font-bold">Versions</h2>
-
-            <div className="mt-5 flex flex-col gap-5">
-              <div className="rounded-md bg-gray-50 px-8 py-4">
-                <FormField
-                  control={form.control}
-                  name="externalVersion.url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>External Digitized Book URL</FormLabel>
-                      <FormControl>
-                        <Input disabled={allFieldsDisabled} {...field} />
-                      </FormControl>
-
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <h3 className="mt-10 text-lg font-semibold">
-                  Publication Details
-                </h3>
-                <div className="mt-5 grid grid-cols-2 gap-10">
-                  <FormField
-                    control={form.control}
-                    name="externalVersion.investigator"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Investigator (المحقق)</FormLabel>
-                        <FormControl>
-                          <Input disabled={allFieldsDisabled} {...field} />
-                        </FormControl>
-
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="externalVersion.publisher"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Publisher (دار النشر)</FormLabel>
-                        <FormControl>
-                          <Input disabled={allFieldsDisabled} {...field} />
-                        </FormControl>
-
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="externalVersion.editionNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Edition Number (رقم الطبعة)</FormLabel>
-                        <FormControl>
-                          <Input disabled={allFieldsDisabled} {...field} />
-                        </FormControl>
-
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="externalVersion.publicationYear"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Publication Year (سنة النشر)</FormLabel>
-                        <FormControl>
-                          <Input
-                            disabled={allFieldsDisabled}
-                            {...field}
-                            type="number"
-                          />
-                        </FormControl>
-
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-md bg-gray-50 px-8 py-4">
-                <div className="flex items-center gap-2">
-                  <Label className="text-lg font-semibold" htmlFor="pdfUrl">
-                    PDF
-                  </Label>
-
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    type="button"
-                    onClick={() =>
-                      setPdfMode((prev) =>
-                        prev === "upload" ? "url" : "upload",
-                      )
-                    }
-                    disabled={allFieldsDisabled}
-                  >
-                    {pdfMode === "upload" ? "Mode: Upload" : "Mode: URL"}
-                  </Button>
-                </div>
-                <div>
-                  {pdfMode === "upload" ? (
-                    <>
-                      {files.length > 0 ? (
-                        <div className="my-4 flex flex-col">
-                          {files.map((file, idx) => (
-                            <div key={idx}>
-                              <span className="flex-shrink-0">
-                                {file.name} (
-                                {(file.size / 1024 / 1024).toFixed(1)} MB)
-                              </span>
-
-                              <Button
-                                type="button"
-                                onClick={() => {
-                                  const newFiles = files.filter(
-                                    (f, fIdx) => fIdx !== idx,
-                                  );
-                                  setFiles(newFiles);
-                                }}
-                              >
-                                <XIcon className="size-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-
-                      <FileUploader
-                        id="pdfUrl"
-                        value={files}
-                        onValueChange={onFilesChange}
-                        dropzoneOptions={{
-                          ...dropzoneOptions,
-                          disabled: isMutating || allFieldsDisabled,
-                        }}
-                      >
-                        <FileInput>
-                          <div className="mt-4 flex h-32 w-full items-center justify-center rounded-md border bg-background">
-                            <p className="text-gray-400">Drop files here</p>
-                          </div>
-                        </FileInput>
-                      </FileUploader>
-                    </>
-                  ) : (
-                    <div className="mt-4">
-                      <Input
-                        id="pdfUrl"
-                        placeholder="Enter PDF Url"
-                        type="url"
-                        value={pdfUrl}
-                        onChange={(e) => setPdfUrl(e.target.value)}
-                        required
-                        disabled={isMutating || allFieldsDisabled}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <h3 className="mt-10 text-lg font-semibold">
-                  Publication Details
-                </h3>
-                <div className="mt-5 grid grid-cols-2 gap-10">
-                  <FormField
-                    control={form.control}
-                    name="pdfVersion.investigator"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Investigator (المحقق)</FormLabel>
-                        <FormControl>
-                          <Input disabled={allFieldsDisabled} {...field} />
-                        </FormControl>
-
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="pdfVersion.publisher"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Publisher (دار النشر)</FormLabel>
-                        <FormControl>
-                          <Input disabled={allFieldsDisabled} {...field} />
-                        </FormControl>
-
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="pdfVersion.editionNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Edition Number (رقم الطبعة)</FormLabel>
-                        <FormControl>
-                          <Input disabled={allFieldsDisabled} {...field} />
-                        </FormControl>
-
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="pdfVersion.publicationYear"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Publication Year (سنة النشر)</FormLabel>
-                        <FormControl>
-                          <Input
-                            disabled={allFieldsDisabled}
-                            {...field}
-                            type="number"
-                          />
-                        </FormControl>
-
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          <VersionsInput
+            versions={versions}
+            setVersions={setVersions}
+            disabled={isMutating || allFieldsDisabled}
+          />
 
           <div className="my-10 h-[2px] w-full bg-border" />
 
           <div>
-            <h2 className="text-2xl font-bold">Physical Details</h2>
+            <h2 className="text-2xl font-bold">Physical Only</h2>
             <div className="mt-5 flex gap-2">
               <Checkbox
                 id="hasPhysicalDetails"
