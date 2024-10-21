@@ -2,10 +2,13 @@ import Link from "next/link";
 import PageLayout from "@/components/page-layout";
 import { DefaultDataTable } from "@/components/tables/default";
 import { Button } from "@/components/ui/button";
-import { getPagination } from "@/lib/pagination";
+import { getPagination, getQuery } from "@/lib/pagination";
 import { usulDb } from "@/server/db";
 import { PaginationSearchParams } from "@/types/pagination";
 
+import type { Prisma } from "@usul-ocr/usul-db";
+
+import { SearchBar } from "../search-bar";
 import { columns } from "./columns";
 
 export default async function TextsPage({
@@ -13,11 +16,45 @@ export default async function TextsPage({
 }: {
   searchParams: PaginationSearchParams;
 }) {
+  const query = getQuery(searchParams);
   const pagination = getPagination(searchParams);
 
+  let filter: Prisma.BookWhereInput | undefined;
+  if (query) {
+    filter = {
+      OR: [
+        {
+          primaryNameTranslations: {
+            some: {
+              text:
+                query.mode === "contains"
+                  ? { contains: query.text, mode: "insensitive" }
+                  : { equals: query.text },
+            },
+          },
+        },
+        {
+          slug:
+            query.mode === "contains"
+              ? { contains: query.text, mode: "insensitive" }
+              : { equals: query.text },
+        },
+        {
+          transliteration:
+            query.mode === "contains"
+              ? { contains: query.text, mode: "insensitive" }
+              : { equals: query.text },
+        },
+      ],
+    };
+  }
+
   const [count, books] = await Promise.all([
-    usulDb.book.count({}),
+    usulDb.book.count({
+      where: filter,
+    }),
     usulDb.book.findMany({
+      where: filter,
       include: {
         primaryNameTranslations: {
           where: {
@@ -34,9 +71,11 @@ export default async function TextsPage({
           },
         },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+      ],
       skip: (pagination.page - 1) * pagination.pageSize,
       take: pagination.pageSize,
     }),
@@ -64,11 +103,16 @@ export default async function TextsPage({
   });
 
   return (
-    <PageLayout title="Texts" backHref="/usul">
-      <Button asChild className="mb-5">
-        <Link href="/usul/texts/add">Add Text</Link>
-      </Button>
-
+    <PageLayout
+      title="Texts"
+      backHref="/usul"
+      actions={
+        <Button asChild className="mb-5">
+          <Link href="/usul/texts/add">Add Text</Link>
+        </Button>
+      }
+    >
+      <SearchBar />
       <DefaultDataTable
         columns={columns}
         data={preparedBooks}

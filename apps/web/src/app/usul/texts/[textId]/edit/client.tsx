@@ -512,7 +512,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
 
         <div className="my-10 h-[2px] w-full bg-border" />
         <div>
-          <h2 className="text-2xl font-bold">Physical Details</h2>
+          <h2 className="text-2xl font-bold">Physical Only</h2>
           <div className="mt-5 flex gap-2">
             <Checkbox
               id="hasPhysicalDetails"

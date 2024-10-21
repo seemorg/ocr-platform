@@ -14,3 +14,16 @@ export function getPagination(searchParams: PaginationSearchParams) {
     pageSize: isNaN(pageSize) ? DEFAULT_PAGE_SIZE : pageSize,
   };
 }
+
+export function getQuery(searchParams: PaginationSearchParams) {
+  if (!searchParams.q) {
+    return null;
+  }
+
+  return {
+    text: searchParams.q.trim(),
+    mode: ["contains", "exact"].includes(searchParams.mode ?? "")
+      ? searchParams.mode
+      : "contains",
+  };
+}

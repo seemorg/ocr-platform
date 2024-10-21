@@ -2,10 +2,13 @@ import Link from "next/link";
 import PageLayout from "@/components/page-layout";
 import { DefaultDataTable } from "@/components/tables/default";
 import { Button } from "@/components/ui/button";
-import { getPagination } from "@/lib/pagination";
+import { getPagination, getQuery } from "@/lib/pagination";
 import { usulDb } from "@/server/db";
 import { PaginationSearchParams } from "@/types/pagination";
 
+import type { Prisma } from "@usul-ocr/usul-db";
+
+import { SearchBar } from "../search-bar";
 import { columns } from "./columns";
 
 export default async function AdvancedGenresPage({
@@ -14,10 +17,43 @@ export default async function AdvancedGenresPage({
   searchParams: PaginationSearchParams;
 }) {
   const pagination = getPagination(searchParams);
+  const query = getQuery(searchParams);
+
+  let filter: Prisma.AdvancedGenreWhereInput | undefined;
+  if (query) {
+    filter = {
+      OR: [
+        {
+          nameTranslations: {
+            some: {
+              text:
+                query.mode === "contains"
+                  ? { contains: query.text, mode: "insensitive" }
+                  : { equals: query.text },
+            },
+          },
+        },
+
+        {
+          transliteration:
+            query.mode === "contains"
+              ? { contains: query.text, mode: "insensitive" }
+              : { equals: query.text },
+        },
+        {
+          slug:
+            query.mode === "contains"
+              ? { contains: query.text, mode: "insensitive" }
+              : { equals: query.text },
+        },
+      ],
+    };
+  }
 
   const [count, genres] = await Promise.all([
-    usulDb.advancedGenre.count({}),
+    usulDb.advancedGenre.count({ where: filter }),
     usulDb.advancedGenre.findMany({
+      where: filter,
       include: {
         nameTranslations: {
           where: {
@@ -46,11 +82,16 @@ export default async function AdvancedGenresPage({
   });
 
   return (
-    <PageLayout title="Advanced Genres" backHref="/usul">
-      <Button asChild className="mb-5">
-        <Link href="/usul/advanced-genres/add">Add Advanced Genre</Link>
-      </Button>
-
+    <PageLayout
+      title="Advanced Genres"
+      backHref="/usul"
+      actions={
+        <Button asChild className="mb-5">
+          <Link href="/usul/advanced-genres/add">Add Advanced Genre</Link>
+        </Button>
+      }
+    >
+      <SearchBar />
       <DefaultDataTable
         columns={columns}
         data={preparedData}

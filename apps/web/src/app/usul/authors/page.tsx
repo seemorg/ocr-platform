@@ -2,10 +2,13 @@ import Link from "next/link";
 import PageLayout from "@/components/page-layout";
 import { DefaultDataTable } from "@/components/tables/default";
 import { Button } from "@/components/ui/button";
-import { getPagination } from "@/lib/pagination";
+import { getPagination, getQuery } from "@/lib/pagination";
 import { usulDb } from "@/server/db";
 import { PaginationSearchParams } from "@/types/pagination";
 
+import type { Prisma } from "@usul-ocr/usul-db";
+
+import { SearchBar } from "../search-bar";
 import { columns } from "./columns";
 
 export default async function AuthorsPage({
@@ -13,11 +16,45 @@ export default async function AuthorsPage({
 }: {
   searchParams: PaginationSearchParams;
 }) {
+  const query = getQuery(searchParams);
   const pagination = getPagination(searchParams);
 
+  let filter: Prisma.AuthorWhereInput | undefined;
+  if (query) {
+    filter = {
+      OR: [
+        {
+          primaryNameTranslations: {
+            some: {
+              text:
+                query.mode === "contains"
+                  ? { contains: query.text, mode: "insensitive" }
+                  : { equals: query.text },
+            },
+          },
+        },
+        {
+          transliteration:
+            query.mode === "contains"
+              ? { contains: query.text, mode: "insensitive" }
+              : { equals: query.text },
+        },
+        {
+          slug:
+            query.mode === "contains"
+              ? { contains: query.text, mode: "insensitive" }
+              : { equals: query.text },
+        },
+      ],
+    };
+  }
+
   const [count, authors] = await Promise.all([
-    usulDb.author.count({}),
+    usulDb.author.count({
+      where: filter,
+    }),
     usulDb.author.findMany({
+      where: filter,
       include: {
         primaryNameTranslations: {
           where: {
@@ -46,11 +83,16 @@ export default async function AuthorsPage({
   });
 
   return (
-    <PageLayout title="Authors" backHref="/usul">
-      <Button asChild className="mb-5">
-        <Link href="/usul/authors/add">Add Author</Link>
-      </Button>
-
+    <PageLayout
+      title="Authors"
+      backHref="/usul"
+      actions={
+        <Button asChild className="mb-5">
+          <Link href="/usul/authors/add">Add Author</Link>
+        </Button>
+      }
+    >
+      <SearchBar />
       <DefaultDataTable
         columns={columns}
         data={preparedBooks}
