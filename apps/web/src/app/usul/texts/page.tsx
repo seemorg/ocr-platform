@@ -55,7 +55,10 @@ export default async function TextsPage({
     }),
     usulDb.book.findMany({
       where: filter,
-      include: {
+      select: {
+        id: true,
+        createdAt: true,
+        updatedAt: true,
         primaryNameTranslations: {
           where: {
             OR: [{ locale: "ar" }, { locale: "en" }],
@@ -94,11 +97,12 @@ export default async function TextsPage({
 
     return {
       id: book.id,
-      slug: book.slug,
       arabicName: titles.ar,
       englishName: titles.en,
       arabicAuthorName: authorNames.ar,
       englishAuthorName: authorNames.en,
+      createdAt: book.createdAt,
+      updatedAt: book.updatedAt,
     };
   });
 

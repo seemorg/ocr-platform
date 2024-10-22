@@ -22,22 +22,16 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { parseAsInteger, useQueryState } from "nuqs";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   totalItems: number;
-  // pagination: {
-  //   pageIndex: number;
-  //   pageSize: number;
-  // };
 }
 
 export function DefaultDataTable<TData, TValue>({
   columns,
   data,
-  // pagination,
   totalItems,
 }: DataTableProps<TData, TValue>) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);

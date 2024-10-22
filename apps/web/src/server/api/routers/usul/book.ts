@@ -102,6 +102,7 @@ export const usulBookRouter = createTRPCRouter({
         where: { id: input.id },
         select: {
           id: true,
+          slug: true,
           physicalDetails: true,
           author: {
             select: {
@@ -149,6 +150,7 @@ export const usulBookRouter = createTRPCRouter({
 
       const preparedBook = {
         id: book.id,
+        slug: book.slug,
         arabicName: book.primaryNameTranslations.find(
           (translation) => translation.locale === "ar",
         )?.text,

@@ -4,31 +4,40 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DeleteModal } from "@/components/delete-modal";
 import { Button } from "@/components/ui/button";
+import Spinner from "@/components/ui/spinner";
 import { api } from "@/trpc/react";
 import { ColumnDef } from "@tanstack/react-table";
+import { PenBoxIcon, Trash2Icon } from "lucide-react";
 import toast from "react-hot-toast";
 
 export type Text = {
   id: string;
-  slug: string;
   arabicName?: string;
   englishName?: string;
   arabicAuthorName?: string;
   englishAuthorName?: string;
+  createdAt?: Date | null;
+  updatedAt?: Date | null;
 };
 
 export const columns: ColumnDef<Text>[] = [
   {
     accessorKey: "arabicName",
-    header: "Arabic Name",
-  },
-  {
-    accessorKey: "englishName",
-    header: "English Name",
-  },
-  {
-    accessorKey: "slug",
-    header: "Slug",
+    header: "Name",
+    cell: ({ row }) => {
+      const { arabicName, englishName } = row.original;
+
+      return (
+        <div className="flex max-w-[350px] flex-col gap-1">
+          <p className="truncate" title={arabicName}>
+            {arabicName}
+          </p>
+          <p className="truncate" title={englishName}>
+            {englishName}
+          </p>
+        </div>
+      );
+    },
   },
   {
     header: "Author",
@@ -36,11 +45,24 @@ export const columns: ColumnDef<Text>[] = [
       const { arabicAuthorName, englishAuthorName } = row.original;
 
       return (
-        <div className="flex flex-col gap-1">
-          <p>{arabicAuthorName}</p>
-          <p>{englishAuthorName}</p>
+        <div className="flex max-w-[350px] flex-col gap-1">
+          <p className="truncate" title={arabicAuthorName}>
+            {arabicAuthorName}
+          </p>
+          <p className="truncate" title={englishAuthorName}>
+            {englishAuthorName}
+          </p>
         </div>
       );
+    },
+  },
+  {
+    header: "Created At",
+    cell: ({ row }) => {
+      const { createdAt } = row.original;
+      if (!createdAt || createdAt.getTime() === 1729428682426) return "-";
+
+      return <p>{createdAt.toLocaleDateString()}</p>;
     },
   },
   {
@@ -57,14 +79,20 @@ export const columns: ColumnDef<Text>[] = [
 
       return (
         <div className="flex items-center gap-3">
-          <Button asChild variant="outline">
-            <Link href={`/usul/texts/${id}/edit`}>Edit</Link>
+          <Button asChild variant="outline" size="icon">
+            <Link href={`/usul/texts/${id}/edit`}>
+              <PenBoxIcon className="size-4" />
+            </Link>
           </Button>
 
           <DeleteModal
             trigger={
-              <Button variant="destructive" disabled={isPending}>
-                {isPending ? "Deleting..." : "Delete"}
+              <Button variant="destructive" disabled={isPending} size="icon">
+                {isPending ? (
+                  <Spinner size="2xs" />
+                ) : (
+                  <Trash2Icon className="size-4" />
+                )}
               </Button>
             }
             onDelete={() => mutateAsync({ id })}
