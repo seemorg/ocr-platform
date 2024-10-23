@@ -50,3 +50,35 @@ export const regenerateBookCover = async ({ id }: { id: string }) => {
     bookId: id,
   });
 };
+
+export const regenerateBook = async ({
+  id,
+  regenerateNames,
+  regenerateCover,
+}: {
+  id: string;
+  regenerateNames?: boolean;
+  regenerateCover?: boolean;
+}) => {
+  return makePipelineRequest<{ success: boolean }>(`/books/regenerate`, {
+    id,
+    regenerateNames,
+    regenerateCover,
+  });
+};
+
+export const regenerateAuthor = async ({
+  id,
+  regenerateNames,
+  regenerateBio,
+}: {
+  id: string;
+  regenerateNames?: boolean;
+  regenerateBio?: boolean;
+}) => {
+  return makePipelineRequest<{ success: boolean }>(`/authors/regenerate`, {
+    id,
+    regenerateNames,
+    regenerateBio,
+  });
+};

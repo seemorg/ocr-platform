@@ -25,9 +25,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import VersionsInput, { Version } from "@/components/versions-input";
 import { useUploadPdfs } from "@/hooks/useUploadPdfs";
+import { textToSlug } from "@/lib/slug";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RefreshCcwIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
@@ -60,6 +60,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
       transliteration: text.transliteratedName ?? "",
       advancedGenres: text.advancedGenres,
       otherNames: text.otherNames ?? [],
+      physicalDetails: text.physicalDetails ?? "",
     },
   });
 
@@ -83,44 +84,78 @@ export default function EditTextClientPage({ text }: { text: Text }) {
 
   const router = useRouter();
 
-  const { mutateAsync: createBook, isPending: isCreatingBook } =
-    api.usulBook.create.useMutation({
+  const { mutateAsync: updateBook, isPending: isUpdatingBook } =
+    api.usulBook.update.useMutation({
       onSuccess: () => {
-        toast.success("Book created successfully!");
+        toast.success("Book updated successfully!");
 
         router.push("/usul/texts");
       },
     });
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
-    toast.error("Sorry, updating a book is not supported yet!");
+    const inferredSlug = textToSlug(data.transliteration);
 
-    // let finalPdfUrl: string | undefined;
-    // let finalSplitsData: { start: number; end: number }[] | undefined;
-    // if (pdfMode === "upload") {
-    //   const response = await uploadFiles(files, fileName);
-    //   finalPdfUrl = response?.url;
-    //   finalSplitsData = response?.splitsData;
-    // } else {
-    //   const response = await uploadFromUrl(pdfUrl);
-    //   finalPdfUrl = response?.url;
-    // }
+    const finalVersions: ({
+      url: string;
+      splitsData?: { start: number; end: number }[];
+    } & Pick<
+      Version,
+      | "publisher"
+      | "publicationYear"
+      | "investigator"
+      | "editionNumber"
+      | "type"
+    >)[] = [];
 
-    // if (!finalPdfUrl) return;
+    for (const version of versions) {
+      if (version.type === "external") {
+        if (version.url) {
+          finalVersions.push(version);
+        }
+      } else {
+        let finalPdfUrl: string | undefined;
+        let finalSplitsData: { start: number; end: number }[] | undefined;
+        if (version.mode === "upload") {
+          if (version.files.length > 0) {
+            const response = await uploadFiles(version.files, inferredSlug);
+            finalPdfUrl = response?.url;
+            finalSplitsData = response?.splitsData;
+          }
+        } else {
+          if (version.url) {
+            const response = await uploadFromUrl(version.url, inferredSlug);
+            finalPdfUrl = response?.url;
+          }
+        }
 
-    // await createBook({
-    //   arabicName: data.arabicName,
-    //   transliteratedName: data.transliteration,
-    //   slug: data.slug,
-    //   advancedGenres: data.advancedGenres,
-    //   otherNames: data.otherNames,
-    //   authorId: data.author.id,
-    //   pdfUrl: finalPdfUrl,
-    //   splitsData: finalSplitsData ?? [],
-    // });
+        if (finalPdfUrl) {
+          finalVersions.push({
+            type: "pdf",
+            url: finalPdfUrl,
+            splitsData: finalSplitsData,
+            publisher: version.publisher,
+            publicationYear: version.publicationYear,
+            investigator: version.investigator,
+            editionNumber: version.editionNumber,
+          });
+        }
+      }
+    }
+
+    await updateBook({
+      id: text.id,
+      arabicName: data.arabicName,
+      transliteratedName: data.transliteration,
+      advancedGenres: data.advancedGenres,
+      otherNames: data.otherNames,
+      authorId: data.author.id,
+      versions: finalVersions,
+      physicalDetails: hasPhysicalDetails ? data.physicalDetails : undefined,
+    });
   };
 
-  const isMutating = isUploading || isCreatingBook;
+  const isMutating = isUploading || isUpdatingBook;
 
   return (
     <Form {...form}>
@@ -310,7 +345,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
           <Button type="submit" disabled={isMutating}>
             {isUploading
               ? "Uploading files..."
-              : isCreatingBook
+              : isUpdatingBook
                 ? "Submitting..."
                 : "Submit"}
           </Button>

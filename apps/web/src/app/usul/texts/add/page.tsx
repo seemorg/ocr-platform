@@ -130,7 +130,7 @@ export default function AddTextPage() {
       physicalDetails: hasPhysicalDetails ? data.physicalDetails : undefined,
       advancedGenres: data.advancedGenres,
       otherNames: data.otherNames,
-      authorSlug: data.author.slug,
+      author: { isUsul: true, slug: data.author.slug },
       versions: finalVersions,
     });
   };

@@ -181,7 +181,7 @@ export default function AddTextFromAirtable() {
   }, [airtableText, advancedGenres]);
 
   const { mutateAsync: createBook, isPending: isCreatingBook } =
-    api.usulBook.importFromAirtable.useMutation({
+    api.usulBook.create.useMutation({
       onSuccess: () => {
         toast.success("Book created successfully!");
         // reset form
