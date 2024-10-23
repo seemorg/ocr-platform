@@ -81,11 +81,7 @@ export const getBookWithDetailsById = async (id: string, db: typeof usulDb) => {
     book.author.primaryNameTranslations,
   );
 
-  const versions = book.versions.filter(
-    (version) => version.source === "pdf" || version.source === "external",
-  ) as (PrismaJson.BookVersion & {
-    source: "pdf" | "external";
-  })[];
+  const versions = book.versions;
 
   return {
     id: book.id,

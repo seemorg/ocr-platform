@@ -199,18 +199,20 @@ export default function AddTextFromAirtable() {
     const inferredSlug = textToSlug(data.transliteration);
 
     const finalVersions: ({
+      type: "pdf" | "external";
       url: string;
       splitsData?: { start: number; end: number }[];
     } & Pick<
       Version,
-      | "publisher"
-      | "publicationYear"
-      | "investigator"
-      | "editionNumber"
-      | "type"
+      "publisher" | "publicationYear" | "investigator" | "editionNumber"
     >)[] = [];
 
     for (const version of versions) {
+      if (version.type === "openiti" || version.type === "turath") {
+        // skip turath and openiti versions and don't send them to the backend
+        continue;
+      }
+
       if (version.type === "external") {
         if (version.url) {
           finalVersions.push(version);

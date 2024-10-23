@@ -25,7 +25,21 @@ type PdfVersion = {
   url?: string;
 } & PublicationDetails;
 
-export type Version = ExternalVersion | PdfVersion;
+type TurathVersion = {
+  type: "turath";
+  value: string;
+} & PublicationDetails;
+
+type OpenitiVersion = {
+  type: "openiti";
+  value: string;
+} & PublicationDetails;
+
+export type Version =
+  | ExternalVersion
+  | PdfVersion
+  | TurathVersion
+  | OpenitiVersion;
 
 const MAX_FILE_SIZE_IN_MB = 150;
 const dropzoneOptions = {
@@ -39,10 +53,6 @@ const dropzoneOptions = {
 
 export const makeVersionsInitialState = (): Version[] => {
   return [
-    // {
-    //   type: "external",
-    //   url: "",
-    // },
     {
       type: "pdf",
       mode: "upload",
@@ -73,75 +83,88 @@ export default function VersionsInput({
   };
 
   const renderPublicationDetails = (idx: number) => {
-    const version = versions[idx];
+    const version = versions[idx]!;
+    const isReadonly = version.type === "turath" || version.type === "openiti";
 
     return (
       <div className="mt-10">
         <h3 className="text-lg font-semibold">Publication Details</h3>
         <div className="mt-5 grid grid-cols-2 gap-10">
           <div className="space-y-2">
-            <Label htmlFor={`externalVersion.investigator-${idx}`}>
+            <Label htmlFor={`version-${idx}.investigator`}>
               Investigator (المحقق)
             </Label>
             <Input
-              disabled={disabled}
-              id={`externalVersion.investigator-${idx}`}
+              disabled={disabled || isReadonly}
+              id={`version-${idx}.investigator`}
               className="bg-white"
               value={version?.investigator}
-              onChange={(e) =>
-                fieldChangeHandler(idx, "investigator", e.target.value)
+              onChange={
+                isReadonly
+                  ? undefined
+                  : (e) =>
+                      fieldChangeHandler(idx, "investigator", e.target.value)
               }
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`externalVersion.publisher-${idx}`}>
+            <Label htmlFor={`version-${idx}.publisher`}>
               Publisher (دار النشر)
             </Label>
             <Input
-              id={`externalVersion.publisher-${idx}`}
-              disabled={disabled}
+              id={`version-${idx}.publisher`}
+              disabled={disabled || isReadonly}
               value={version?.publisher}
               className="bg-white"
-              onChange={(e) =>
-                fieldChangeHandler(idx, "publisher", e.target.value)
+              onChange={
+                isReadonly
+                  ? undefined
+                  : (e) => fieldChangeHandler(idx, "publisher", e.target.value)
               }
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`externalVersion.editionNumber-${idx}`}>
+            <Label htmlFor={`version-${idx}.editionNumber`}>
               Edition Number (رقم الطبعة)
             </Label>
             <Input
-              disabled={disabled}
-              id={`externalVersion.editionNumber-${idx}`}
+              disabled={disabled || isReadonly}
+              id={`version-${idx}.editionNumber`}
               className="bg-white"
               value={version?.editionNumber}
-              onChange={(e) =>
-                fieldChangeHandler(idx, "editionNumber", e.target.value)
+              onChange={
+                isReadonly
+                  ? undefined
+                  : (e) =>
+                      fieldChangeHandler(idx, "editionNumber", e.target.value)
               }
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`externalVersion.publicationYear-${idx}`}>
+            <Label htmlFor={`version-${idx}.publicationYear`}>
               Publication Year (سنة النشر)
             </Label>
             <Input
-              disabled={disabled}
-              id={`externalVersion.publicationYear-${idx}`}
+              disabled={disabled || isReadonly}
+              id={`version-${idx}.publicationYear`}
               type="number"
               className="bg-white"
               value={version?.publicationYear}
-              onChange={(e) => {
-                const newValue = e.target.value.trim();
-                fieldChangeHandler(
-                  idx,
-                  "publicationYear",
-                  newValue ? Number(newValue) : undefined,
-                );
-              }}
+              onChange={
+                isReadonly
+                  ? undefined
+                  : (e) => {
+                      const newValue = e.target.value.trim();
+                      fieldChangeHandler(
+                        idx,
+                        "publicationYear",
+                        newValue ? Number(newValue) : undefined,
+                      );
+                    }
+              }
             />
           </div>
         </div>
@@ -178,12 +201,34 @@ export default function VersionsInput({
         <div className="mt-5 flex flex-col gap-5">
           {versions.map((version, idx) => {
             let content;
+            if (version.type === "turath" || version.type === "openiti") {
+              content = (
+                <>
+                  <div className="space-y-4">
+                    <Label
+                      htmlFor={`version-${idx}.url`}
+                      className="text-lg font-semibold"
+                    >
+                      {version.type === "turath" ? "Turath" : "Openiti"}
+                    </Label>
+
+                    <Input
+                      disabled
+                      id={`version-${idx}.url`}
+                      className="bg-white"
+                      value={version.value}
+                    />
+                  </div>
+                </>
+              );
+            }
+
             if (version.type === "external") {
               content = (
                 <>
                   <div className="space-y-4">
                     <Label
-                      htmlFor={`externalVersion.url-${idx}`}
+                      htmlFor={`version-${idx}.url`}
                       className="text-lg font-semibold"
                     >
                       External Digitized Book URL
@@ -191,7 +236,7 @@ export default function VersionsInput({
 
                     <Input
                       disabled={disabled}
-                      id={`externalVersion.url-${idx}`}
+                      id={`version-${idx}.url`}
                       className="bg-white"
                       value={version.url}
                       onChange={(e) =>
@@ -210,7 +255,7 @@ export default function VersionsInput({
                   <div className="flex items-center gap-2">
                     <Label
                       className="text-lg font-semibold"
-                      htmlFor={`pdfVersion.input-${idx}`}
+                      htmlFor={`version-${idx}.input`}
                     >
                       PDF
                     </Label>
@@ -257,7 +302,7 @@ export default function VersionsInput({
                         ) : null}
 
                         <FileUploader
-                          id={`pdfVersion.input-${idx}`}
+                          id={`version-${idx}.input`}
                           value={typedVersion.files}
                           onValueChange={(files) =>
                             fieldChangeHandler(idx, "files", files ?? [])
@@ -277,7 +322,7 @@ export default function VersionsInput({
                     ) : (
                       <div className="mt-4">
                         <Input
-                          id={`pdfVersion.input-${idx}`}
+                          id={`version-${idx}.input`}
                           placeholder="Enter PDF Url"
                           className="bg-white"
                           type="url"
@@ -296,23 +341,24 @@ export default function VersionsInput({
 
             return (
               <div className="relative rounded-md bg-gray-50 px-8 py-4">
-                {/* Don't show for the 1st 2 buttons */}
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-2 top-2"
-                  disabled={disabled}
-                  onClick={() => {
-                    const newVersions = versions.filter(
-                      (_, vIdx) => vIdx !== idx,
-                    );
-                    setVersions(newVersions);
-                  }}
-                >
-                  <XIcon className="size-4" />
-                </Button>
+                {/* Don't show remove button for turath and openiti versions */}
+                {version.type !== "turath" && version.type !== "openiti" && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-2"
+                    disabled={disabled}
+                    onClick={() => {
+                      const newVersions = versions.filter(
+                        (_, vIdx) => vIdx !== idx,
+                      );
+                      setVersions(newVersions);
+                    }}
+                  >
+                    <XIcon className="size-4" />
+                  </Button>
+                )}
 
                 {content}
                 {renderPublicationDetails(idx)}
