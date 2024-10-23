@@ -84,8 +84,8 @@ export const getAirtableTexts = unstable_cache(
             TextField.ADVANCED_GENRES,
             TextField.PHYSICAL_DETAILS,
           ],
-          // make sure `Usul` is not checked
-          filterByFormula: `{Usul} = 0`,
+          // make sure `Usul` and `Turath.io` are not checked
+          filterByFormula: `AND({Usul} = 0, {Turath.io} = 0)`,
         })
         .all(),
       airtable("Authors")
