@@ -1,6 +1,7 @@
 import { env } from "@/env";
 import { createPresignedUrl, doesObjectExists } from "@/lib/s3";
 import { TRPCError } from "@trpc/server";
+import { nanoid } from "nanoid";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "../trpc";
@@ -15,34 +16,32 @@ export const uploadsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input }) => {
-      let key = `${PREFIX}${input.fileName.endsWith(".pdf") ? input.fileName : `${input.fileName}.pdf`}`;
+      const fileName = input.fileName;
+      let key: string;
 
-      // check if file exists
-      const exists = await doesObjectExists(key);
-      if (exists) {
-        // if the FE is passing a file name that ends with .pdf, then we can assume that it's a conflict
-        if (input.fileName.endsWith(".pdf")) {
+      // if the FE is passing a file name that ends with .pdf, then we can assume that it's a conflict
+      if (fileName.endsWith(".pdf")) {
+        // check if file exists
+        const exists = await doesObjectExists(`${PREFIX}${fileName}`);
+        if (exists) {
           throw new TRPCError({
             code: "CONFLICT",
             message: "A file with the same name already exists",
           });
         }
 
-        // otherwise, keep regenerating the key until it doesn't exist
-        let increment = 1;
-        let key = `${PREFIX}${input.fileName}-${increment}.pdf`;
-        while (await doesObjectExists(key)) {
-          increment++;
-          key = `${PREFIX}${input.fileName}-${increment}.pdf`;
-        }
+        key = fileName;
+      } else {
+        key = `${fileName}-${nanoid(10)}.pdf`;
       }
 
+      const finalKey = `${PREFIX}${key}`;
       const url = await createPresignedUrl({
-        key,
+        key: finalKey,
         contentType: "application/pdf",
       });
 
-      const publicUrl = `${env.CLOUDFLARE_R2_BUCKET_URL}/${key}`;
+      const publicUrl = `${env.CLOUDFLARE_R2_BUCKET_URL}/${finalKey}`;
 
       return {
         publicUrl,
