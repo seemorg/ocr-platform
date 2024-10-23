@@ -35,6 +35,7 @@ export const updateBook = async (
       id: true,
       transliteration: true,
       authorId: true,
+      versions: true,
       genres: {
         select: {
           id: true,
@@ -225,6 +226,14 @@ export const updateBook = async (
 
     const versions = prepareBookVersions(data.versions);
 
+    const finalVersions = [
+      // old versions that are not usul or external
+      ...currentBook.versions.filter(
+        (version) => version.source !== "pdf" && version.source !== "external",
+      ),
+      ...versions,
+    ];
+
     return tx.book.update({
       where: {
         id: data.id,
@@ -301,8 +310,8 @@ export const updateBook = async (
               author: { connect: { id: data.authorId } },
             }
           : {}),
-        versions,
-        numberOfVersions: versions.length,
+        versions: finalVersions,
+        numberOfVersions: finalVersions.length,
         physicalDetails: data.physicalDetails,
       },
     });
