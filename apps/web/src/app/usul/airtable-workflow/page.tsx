@@ -410,7 +410,7 @@ export default function AddTextFromAirtable() {
             name="author.arabicName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Author Arabic Name (*)</FormLabel>
+                <FormLabel>Author Arabic Name *</FormLabel>
                 <FormControl>
                   <Input
                     {...field}
@@ -429,7 +429,7 @@ export default function AddTextFromAirtable() {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center gap-2">
-                  <FormLabel>Author Transliterated Name (*)</FormLabel>
+                  <FormLabel>Author Transliterated Name *</FormLabel>
                   {!isUsulAuthor && (
                     <TransliterationHelper
                       getText={() => form.getValues("author.arabicName")}
@@ -494,7 +494,7 @@ export default function AddTextFromAirtable() {
             name="arabicName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Book Arabic Name (*)</FormLabel>
+                <FormLabel>Book Arabic Name *</FormLabel>
                 <FormControl>
                   <Input disabled={allFieldsDisabled} {...field} />
                 </FormControl>
@@ -510,7 +510,7 @@ export default function AddTextFromAirtable() {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center gap-2">
-                  <FormLabel>Book Transliterated Name (*)</FormLabel>
+                  <FormLabel>Book Transliterated Name *</FormLabel>
 
                   <TransliterationHelper
                     getText={() => form.getValues("arabicName")}

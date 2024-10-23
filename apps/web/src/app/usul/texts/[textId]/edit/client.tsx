@@ -168,7 +168,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
           name="author"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Author (*)</FormLabel>
+              <FormLabel>Author *</FormLabel>
               <FormControl>
                 <div className="block">
                   <AuthorsCombobox
@@ -208,7 +208,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
           disabled={isMutating}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Arabic Name (*)</FormLabel>
+              <FormLabel>Arabic Name *</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -225,7 +225,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
           render={({ field }) => (
             <FormItem>
               <div className="flex items-center gap-2">
-                <FormLabel>Transliterated Name (*)</FormLabel>
+                <FormLabel>Transliterated Name *</FormLabel>
                 <TransliterationHelper
                   getText={() => form.getValues("arabicName")}
                   setTransliteration={(text) => field.onChange(text)}
