@@ -1,4 +1,8 @@
-import { addAuthorToPipeline, addBookToPipeline } from "@/lib/usul-pipeline";
+import {
+  addAuthorToPipeline,
+  addBookToPipeline,
+  regenerateBookCover,
+} from "@/lib/usul-pipeline";
 import {
   createUniqueAuthorSlug,
   getAuthor,
@@ -95,6 +99,12 @@ const prepareVersions = (versions: z.infer<typeof versionSchema>[]) => {
 };
 
 export const usulBookRouter = createTRPCRouter({
+  regenerateBookCover: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input }) => {
+      const result = await regenerateBookCover({ id: input.id });
+      return result;
+    }),
   getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -102,7 +112,7 @@ export const usulBookRouter = createTRPCRouter({
         where: { id: input.id },
         select: {
           id: true,
-          slug: true,
+          coverImageUrl: true,
           physicalDetails: true,
           author: {
             select: {
@@ -141,16 +151,15 @@ export const usulBookRouter = createTRPCRouter({
         return null;
       }
 
-      const pdfVersion = book.versions.find(
-        (version) => version.source === "pdf",
-      );
-      const externalVersion = book.versions.find(
-        (version) => version.source === "external",
-      );
+      const versions = book.versions.filter(
+        (version) => version.source === "pdf" || version.source === "external",
+      ) as (PrismaJson.BookVersion & {
+        source: "pdf" | "external";
+      })[];
 
       const preparedBook = {
         id: book.id,
-        slug: book.slug,
+        coverImageUrl: book.coverImageUrl,
         arabicName: book.primaryNameTranslations.find(
           (translation) => translation.locale === "ar",
         )?.text,
@@ -161,13 +170,13 @@ export const usulBookRouter = createTRPCRouter({
         otherNames: book.otherNameTranslations[0]?.texts,
         advancedGenres: book.advancedGenres.map((genre) => genre.id),
         author: {
+          id: book.author.id,
           slug: book.author.slug,
           arabicName: book.author.primaryNameTranslations[0]?.text,
           transliteratedName: book.author.transliteration,
           diedYear: book.author.year,
         },
-        pdfVersion: pdfVersion,
-        externalVersion: externalVersion,
+        versions,
         physicalDetails: book.physicalDetails,
       };
 

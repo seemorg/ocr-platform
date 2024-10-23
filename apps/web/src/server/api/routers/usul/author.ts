@@ -113,6 +113,7 @@ export const usulAuthorRouter = createTRPCRouter({
 
       const preparedAuthors = authors.map((author) => {
         return {
+          id: author.id,
           slug: author.slug,
           arabicName: author.primaryNameTranslations[0]?.text ?? null,
           transliteratedName: author.transliteration,

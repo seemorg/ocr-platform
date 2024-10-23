@@ -387,8 +387,6 @@ export default function AddTextFromAirtable() {
             <AuthorsCombobox
               selected={selectedAuthor as any}
               onSelect={(author) => {
-                console.log(author);
-
                 if (author) {
                   form.setValue("author.slug", author.slug);
                   form.setValue("author.arabicName", author.arabicName!);

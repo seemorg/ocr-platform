@@ -89,6 +89,7 @@ model Book {
     authorId       String
 
     physicalDetails String?
+    coverImageUrl   String?
 
     createdAt DateTime  @default(now())
     updatedAt DateTime? @updatedAt

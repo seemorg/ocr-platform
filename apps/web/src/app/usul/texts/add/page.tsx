@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -38,6 +39,7 @@ const schema = z.object({
   otherNames: z.array(z.string()),
   advancedGenres: z.array(z.string()),
   author: z.object({
+    id: z.string(),
     slug: z.string(),
     arabicName: z.string(),
     transliteratedName: z.string(),
@@ -237,7 +239,13 @@ export default function AddTextPage() {
             disabled={isMutating}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Other Names (Arabic)</FormLabel>
+                <div>
+                  <FormLabel>Other Book Names (Arabic)</FormLabel>
+                  <FormDescription>
+                    Add other names that this book is known by
+                  </FormDescription>
+                </div>
+
                 <FormControl>
                   <TextArrayInput
                     values={field.value}

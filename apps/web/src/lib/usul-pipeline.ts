@@ -44,3 +44,9 @@ export const addAuthorToPipeline = async ({
     arabicName,
   });
 };
+
+export const regenerateBookCover = async ({ id }: { id: string }) => {
+  return makePipelineRequest<{ success: boolean }>(`/book-covers/regenerate`, {
+    bookId: id,
+  });
+};

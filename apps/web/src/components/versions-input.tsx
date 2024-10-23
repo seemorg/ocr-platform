@@ -134,13 +134,14 @@ export default function VersionsInput({
               type="number"
               className="bg-white"
               value={version?.publicationYear}
-              onChange={(e) =>
+              onChange={(e) => {
+                const newValue = e.target.value.trim();
                 fieldChangeHandler(
                   idx,
                   "publicationYear",
-                  Number(e.target.value),
-                )
-              }
+                  newValue ? Number(newValue) : undefined,
+                );
+              }}
             />
           </div>
         </div>
