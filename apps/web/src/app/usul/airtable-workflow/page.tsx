@@ -193,6 +193,9 @@ export default function AddTextFromAirtable() {
           oldIndex === null ? oldIndex : oldIndex + 1,
         );
       },
+      onError: () => {
+        toast.error("Something went wrong");
+      },
     });
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
