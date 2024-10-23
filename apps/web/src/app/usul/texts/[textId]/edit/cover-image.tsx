@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/trpc/react";
 import { RefreshCcwIcon } from "lucide-react";
@@ -10,10 +11,14 @@ export default function CoverImage({
   coverImageUrl: string;
   bookId: string;
 }) {
+  const [hash, setHash] = useState<string>(() =>
+    new Date().getTime().toString(30),
+  );
+
   const { mutate: regenerateBookCover, isPending } =
     api.usulBook.regenerateBookCover.useMutation({
       onSuccess: () => {
-        toast.success("Regeneration requested, check back in a couple minutes");
+        toast.success("Regeneration requested, refresh in a couple minutes");
       },
     });
 
@@ -34,7 +39,7 @@ export default function CoverImage({
         </div>
 
         <img
-          src={coverImageUrl}
+          src={`${coverImageUrl}?t=${hash}`}
           alt="Cover Image"
           className="h-full w-full object-contain"
         />
