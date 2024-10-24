@@ -41,7 +41,7 @@ export type Version =
   | TurathVersion
   | OpenitiVersion;
 
-const MAX_FILE_SIZE_IN_MB = 150;
+const MAX_FILE_SIZE_IN_MB = 300;
 const dropzoneOptions = {
   accept: {
     "application/pdf": [".pdf"],
