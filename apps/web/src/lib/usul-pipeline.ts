@@ -45,12 +45,6 @@ export const addAuthorToPipeline = async ({
   });
 };
 
-export const regenerateBookCover = async ({ id }: { id: string }) => {
-  return makePipelineRequest<{ success: boolean }>(`/book-covers/regenerate`, {
-    bookId: id,
-  });
-};
-
 export const regenerateBook = async ({
   id,
   regenerateNames,

@@ -1,6 +1,7 @@
-import { addAuthorToPipeline } from "@/lib/usul-pipeline";
+import { addAuthorToPipeline, regenerateAuthor } from "@/lib/usul-pipeline";
 import { createUniqueAuthorSlug } from "@/server/services/usul/author";
 import { createId } from "@paralleldrive/cuid2";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "../../trpc";
@@ -21,9 +22,7 @@ export const usulAuthorRouter = createTRPCRouter({
           year: true,
           primaryNameTranslations: {
             where: {
-              locale: {
-                in: ["ar", "en"],
-              },
+              locale: "ar",
             },
           },
           otherNameTranslations: {
@@ -34,7 +33,7 @@ export const usulAuthorRouter = createTRPCRouter({
           transliteration: true,
           bioTranslations: {
             where: {
-              locale: "en",
+              locale: "ar",
             },
           },
         },
@@ -47,15 +46,10 @@ export const usulAuthorRouter = createTRPCRouter({
       const preparedAuthor = {
         id: author.id,
         year: author.year,
-        arabicName: author.primaryNameTranslations.find(
-          (translation) => translation.locale === "ar",
-        )?.text,
-        englishName: author.primaryNameTranslations.find(
-          (translation) => translation.locale === "en",
-        )?.text,
+        arabicName: author.primaryNameTranslations[0]?.text,
+        otherArabicNames: author.otherNameTranslations[0]?.texts,
         transliteratedName: author.transliteration,
-        otherNames: author.otherNameTranslations[0]?.texts,
-        bio: author.bioTranslations[0]?.text,
+        arabicBio: author.bioTranslations[0]?.text,
       };
 
       return preparedAuthor;
@@ -129,8 +123,7 @@ export const usulAuthorRouter = createTRPCRouter({
         arabicName: z.string(),
         transliteration: z.string(),
         otherArabicNames: z.array(z.string()).optional(),
-        englishName: z.string().optional(),
-        englishBio: z.string().optional(),
+        arabicBio: z.string().optional(),
         slug: z.string().optional(),
         deathYear: z.number(),
       }),
@@ -161,24 +154,15 @@ export const usulAuthorRouter = createTRPCRouter({
               }
             : {}),
           primaryNameTranslations: {
-            createMany: {
-              data: [
-                {
-                  locale: "ar",
-                  text: input.arabicName,
-                },
-                ...(input.englishName
-                  ? [{ locale: "en", text: input.englishName }]
-                  : []),
-              ],
+            create: {
+              locale: "ar",
+              text: input.arabicName,
             },
           },
-          ...(input.englishBio
+          ...(input.arabicBio
             ? {
                 bioTranslations: {
-                  createMany: {
-                    data: [{ locale: "en", text: input.englishBio }],
-                  },
+                  create: { locale: "en", text: input.arabicBio },
                 },
               }
             : {}),
@@ -197,16 +181,45 @@ export const usulAuthorRouter = createTRPCRouter({
       z.object({
         id: z.string(),
         arabicName: z.string(),
+        arabicBio: z.string().optional(),
         transliteration: z.string(),
         otherArabicNames: z.array(z.string()).optional(),
-        englishName: z.string().optional(),
-        englishBio: z.string().optional(),
         deathYear: z.number(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // TODO: call webhook for regenerating data
-      return ctx.usulDb.author.update({
+      const currentAuthor = await ctx.usulDb.author.findFirst({
+        where: { id: input.id },
+        select: {
+          id: true,
+          transliteration: true,
+          primaryNameTranslations: {
+            where: {
+              locale: "ar",
+            },
+          },
+          bioTranslations: {
+            where: {
+              locale: "ar",
+            },
+          },
+        },
+      });
+
+      if (!currentAuthor) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Author not found",
+        });
+      }
+
+      const didNameChange =
+        input.arabicName !== currentAuthor?.primaryNameTranslations[0]?.text;
+
+      const didBioChange =
+        input.arabicBio !== currentAuthor?.bioTranslations[0]?.text;
+
+      await ctx.usulDb.author.update({
         where: { id: input.id },
         data: {
           transliteration: input.transliteration,
@@ -249,49 +262,45 @@ export const usulAuthorRouter = createTRPCRouter({
                   text: input.arabicName,
                 },
               },
-              ...(input.englishName
-                ? [
-                    {
-                      where: {
-                        authorId_locale: {
-                          authorId: input.id,
-                          locale: "en",
-                        },
-                      },
-                      create: {
-                        locale: "en",
-                        text: input.englishName,
-                      },
-                      update: {
-                        text: input.englishName,
-                      },
-                    },
-                  ]
-                : []),
             ],
           },
-          ...(input.englishBio
-            ? {
-                bioTranslations: {
+          bioTranslations: {
+            ...(input.arabicBio
+              ? {
                   upsert: {
                     where: {
                       authorId_locale: {
                         authorId: input.id,
-                        locale: "en",
+                        locale: "ar",
                       },
                     },
                     create: {
-                      locale: "en",
-                      text: input.englishBio,
+                      locale: "ar",
+                      text: input.arabicBio,
                     },
                     update: {
-                      text: input.englishBio,
+                      text: input.arabicBio,
                     },
                   },
-                },
-              }
-            : {}),
+                }
+              : {
+                  delete: {
+                    authorId_locale: {
+                      authorId: input.id,
+                      locale: "ar",
+                    },
+                  },
+                }),
+          },
         },
       });
+
+      if (didNameChange) {
+        await regenerateAuthor({
+          id: input.id,
+          regenerateNames: true,
+          regenerateBio: true,
+        });
+      }
     }),
 });

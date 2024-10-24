@@ -2,10 +2,12 @@
 
 import type { AppRouter } from "@/server/api/root";
 import type { inferRouterOutputs } from "@trpc/server";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TextArrayInput from "@/components/text-array-input";
 import TransliterationHelper from "@/components/transliteration-helper";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -15,6 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,11 +27,10 @@ import { z } from "zod";
 
 const schema = z.object({
   arabicName: z.string().min(1),
-  englishName: z.string().optional(),
   transliteration: z.string().min(1),
-  otherNames: z.array(z.string()),
+  otherArabicNames: z.array(z.string()),
+  arabicBio: z.string().optional(),
   deathYear: z.coerce.number(),
-  bio: z.string().optional(),
 });
 
 type Author = NonNullable<
@@ -37,15 +39,15 @@ type Author = NonNullable<
 
 export default function EditTextClientPage({ author }: { author: Author }) {
   const router = useRouter();
+  const [authorAlive, setAuthorAlive] = useState(author.year === -1);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
       deathYear: author.year,
       arabicName: author.arabicName,
       transliteration: author.transliteratedName ?? "",
-      englishName: author.englishName,
-      otherNames: author.otherNames,
-      bio: author.bio,
+      otherArabicNames: author.otherArabicNames ?? [],
+      arabicBio: author.arabicBio,
     },
   });
 
@@ -62,9 +64,9 @@ export default function EditTextClientPage({ author }: { author: Author }) {
       id: author.id,
       arabicName: data.arabicName,
       transliteration: data.transliteration,
-      deathYear: data.deathYear,
-      englishBio: data.bio,
-      otherArabicNames: data.otherNames,
+      deathYear: authorAlive ? -1 : data.deathYear,
+      arabicBio: data.arabicBio,
+      otherArabicNames: data.otherArabicNames,
     });
   };
 
@@ -82,23 +84,7 @@ export default function EditTextClientPage({ author }: { author: Author }) {
           disabled={isMutating}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Arabic Name</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="englishName"
-          disabled={isMutating}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>English Name</FormLabel>
+              <FormLabel>Arabic Name *</FormLabel>
               <FormControl>
                 <Input {...field} />
               </FormControl>
@@ -115,7 +101,7 @@ export default function EditTextClientPage({ author }: { author: Author }) {
           render={({ field }) => (
             <FormItem>
               <div className="flex items-center gap-2">
-                <FormLabel>Transliterated Name</FormLabel>
+                <FormLabel>Transliterated Name *</FormLabel>
                 <TransliterationHelper
                   getText={() => form.getValues("arabicName")}
                   setTransliteration={(text) => field.onChange(text)}
@@ -136,10 +122,23 @@ export default function EditTextClientPage({ author }: { author: Author }) {
           name="deathYear"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Death Year (Hijri)</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
+              <FormLabel>Death Year (Hijri) *</FormLabel>
+
+              <div className="mt-2 flex gap-2">
+                <Checkbox
+                  id="authorAlive"
+                  checked={authorAlive}
+                  onCheckedChange={() => setAuthorAlive(!authorAlive)}
+                  disabled={isMutating}
+                />
+                <Label htmlFor="authorAlive">Author is alive</Label>
+              </div>
+
+              {!authorAlive && (
+                <FormControl>
+                  <Input {...field} disabled={isMutating} type="number" />
+                </FormControl>
+              )}
 
               <FormMessage />
             </FormItem>
@@ -148,10 +147,10 @@ export default function EditTextClientPage({ author }: { author: Author }) {
 
         <FormField
           control={form.control}
-          name="bio"
+          name="arabicBio"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Biography (English)</FormLabel>
+              <FormLabel>Biography (Arabic)</FormLabel>
               <FormControl>
                 <Textarea className="min-h-40" {...field} />
               </FormControl>
@@ -163,7 +162,7 @@ export default function EditTextClientPage({ author }: { author: Author }) {
 
         <FormField
           control={form.control}
-          name="otherNames"
+          name="otherArabicNames"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Other Names (Arabic)</FormLabel>

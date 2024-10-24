@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import PageLayout from "@/components/page-layout";
 import TextArrayInput from "@/components/text-array-input";
 import TransliterationHelper from "@/components/transliteration-helper";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -14,8 +16,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { textToSlug } from "@/lib/slug";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -24,22 +26,22 @@ import { z } from "zod";
 
 const schema = z.object({
   arabicName: z.string().min(1),
-  englishName: z.string().optional(),
   transliteration: z.string().min(1),
-  otherNames: z.array(z.string()),
+  otherArabicNames: z.array(z.string()),
   deathYear: z.coerce.number(),
-  bio: z.string().optional(),
+  arabicBio: z.string().optional(),
 });
 
 export default function AddAuthorPage() {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      otherNames: [],
+      otherArabicNames: [],
     },
   });
 
   const router = useRouter();
+  const [authorAlive, setAuthorAlive] = useState(false);
 
   const { mutateAsync: createAuthor, isPending: isCreatingAuthor } =
     api.usulAuthor.create.useMutation({
@@ -53,9 +55,9 @@ export default function AddAuthorPage() {
     await createAuthor({
       arabicName: data.arabicName,
       transliteration: data.transliteration,
-      deathYear: data.deathYear,
-      englishBio: data.bio,
-      otherArabicNames: data.otherNames,
+      deathYear: authorAlive ? -1 : data.deathYear,
+      arabicBio: data.arabicBio,
+      otherArabicNames: data.otherArabicNames,
     });
   };
 
@@ -74,23 +76,7 @@ export default function AddAuthorPage() {
             disabled={isMutating}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Arabic Name</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="englishName"
-            disabled={isMutating}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>English Name</FormLabel>
+                <FormLabel>Arabic Name *</FormLabel>
                 <FormControl>
                   <Input {...field} />
                 </FormControl>
@@ -107,7 +93,7 @@ export default function AddAuthorPage() {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center gap-2">
-                  <FormLabel>Transliterated Name</FormLabel>
+                  <FormLabel>Transliterated Name *</FormLabel>
                   <TransliterationHelper
                     getText={() => form.getValues("arabicName")}
                     setTransliteration={(text) => field.onChange(text)}
@@ -129,10 +115,23 @@ export default function AddAuthorPage() {
             name="deathYear"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Death Year (Hijri)</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
+                <FormLabel>Death Year (Hijri) *</FormLabel>
+
+                <div className="mt-2 flex gap-2">
+                  <Checkbox
+                    id="authorAlive"
+                    checked={authorAlive}
+                    onCheckedChange={() => setAuthorAlive(!authorAlive)}
+                    disabled={isMutating}
+                  />
+                  <Label htmlFor="authorAlive">Author is alive</Label>
+                </div>
+
+                {!authorAlive && (
+                  <FormControl>
+                    <Input {...field} disabled={isMutating} type="number" />
+                  </FormControl>
+                )}
 
                 <FormMessage />
               </FormItem>
@@ -141,10 +140,10 @@ export default function AddAuthorPage() {
 
           <FormField
             control={form.control}
-            name="bio"
+            name="arabicBio"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Biography (English)</FormLabel>
+                <FormLabel>Biography (Arabic)</FormLabel>
                 <FormControl>
                   <Textarea className="min-h-40" {...field} />
                 </FormControl>
@@ -156,7 +155,7 @@ export default function AddAuthorPage() {
 
           <FormField
             control={form.control}
-            name="otherNames"
+            name="otherArabicNames"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Other Names (Arabic)</FormLabel>

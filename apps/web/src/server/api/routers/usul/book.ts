@@ -2,7 +2,6 @@ import {
   addAuthorToPipeline,
   addBookToPipeline,
   regenerateBook,
-  regenerateBookCover,
 } from "@/lib/usul-pipeline";
 import {
   deleteBookById,
@@ -24,7 +23,10 @@ export const usulBookRouter = createTRPCRouter({
   regenerateBookCover: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input }) => {
-      const result = await regenerateBookCover({ id: input.id });
+      const result = await regenerateBook({
+        id: input.id,
+        regenerateCover: true,
+      });
       return result;
     }),
   getById: protectedProcedure
