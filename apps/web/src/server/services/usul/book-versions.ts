@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const publicationDetailsSchema = {
   publisher: z.string().optional(),
+  publisherLocation: z.string().optional(),
   editionNumber: z.string().optional(),
   publicationYear: z.number().optional(),
   investigator: z.string().optional(),
@@ -37,6 +38,9 @@ export const prepareBookVersions = (
     const publicationDetails = {
       ...(version.investigator ? { investigator: version.investigator } : {}),
       ...(version.publisher ? { publisher: version.publisher } : {}),
+      ...(version.publisherLocation
+        ? { publisherLocation: version.publisherLocation }
+        : {}),
       ...(version.editionNumber
         ? {
             editionNumber: version.editionNumber,

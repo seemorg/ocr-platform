@@ -32,6 +32,8 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
 
+import { AuthorYearStatus } from "@usul-ocr/usul-db";
+
 import CoverImage from "./cover-image";
 
 const schema = z.object({
@@ -45,7 +47,8 @@ const schema = z.object({
     slug: z.string(),
     arabicName: z.string(),
     transliteratedName: z.string().nullable(),
-    year: z.coerce.number(),
+    year: z.coerce.number().optional(),
+    yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
   }),
 });
 
@@ -110,7 +113,11 @@ export default function EditTextClientPage({ text }: { text: Text }) {
       splitsData?: { start: number; end: number }[];
     } & Pick<
       Version,
-      "publisher" | "publicationYear" | "investigator" | "editionNumber"
+      | "publisher"
+      | "publicationYear"
+      | "investigator"
+      | "editionNumber"
+      | "publisherLocation"
     >)[] = [];
 
     for (const version of versions) {
@@ -145,6 +152,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
             url: finalPdfUrl,
             splitsData: finalSplitsData,
             publisher: version.publisher,
+            publisherLocation: version.publisherLocation,
             publicationYear: version.publicationYear,
             investigator: version.investigator,
             editionNumber: version.editionNumber,
@@ -183,7 +191,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
                 <div className="block">
                   <AuthorsCombobox
                     {...field}
-                    selected={field.value}
+                    selected={field.value as any}
                     onSelect={field.onChange}
                   />
                 </div>
@@ -237,7 +245,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
               <div className="flex items-center gap-2">
                 <FormLabel>Transliterated Name *</FormLabel>
                 <TransliterationHelper
-                  getText={() => form.getValues("arabicName")}
+                  getText={() => form.watch("arabicName")}
                   setTransliteration={(text) => field.onChange(text)}
                   disabled={isMutating}
                 />

@@ -7,6 +7,7 @@ declare global {
       publicationDetails?: {
         investigator?: string;
         publisher?: string;
+        publisherLocation?: string;
         editionNumber?: string;
         publicationYear?: number; // hijri
       };

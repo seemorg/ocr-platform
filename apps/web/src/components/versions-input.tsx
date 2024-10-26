@@ -9,6 +9,7 @@ import { Label } from "./ui/label";
 type PublicationDetails = {
   investigator?: string;
   publisher?: string;
+  publisherLocation?: string;
   editionNumber?: string;
   publicationYear?: number;
 };
@@ -121,6 +122,28 @@ export default function VersionsInput({
                 isReadonly
                   ? undefined
                   : (e) => fieldChangeHandler(idx, "publisher", e.target.value)
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`version-${idx}.publisherLocation`}>
+              Publisher Location (مدينة النشر)
+            </Label>
+            <Input
+              id={`version-${idx}.publisherLocation`}
+              disabled={disabled || isReadonly}
+              value={version?.publisherLocation}
+              className="bg-white"
+              onChange={
+                isReadonly
+                  ? undefined
+                  : (e) =>
+                      fieldChangeHandler(
+                        idx,
+                        "publisherLocation",
+                        e.target.value,
+                      )
               }
             />
           </div>

@@ -24,11 +24,14 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
 
+import { AuthorYearStatus } from "@usul-ocr/usul-db";
+
 const schema = z.object({
   arabicName: z.string().min(1),
   transliteration: z.string().min(1),
   otherArabicNames: z.array(z.string()),
-  deathYear: z.coerce.number(),
+  deathYear: z.coerce.number().optional(),
+  yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
   arabicBio: z.string().optional(),
 });
 
@@ -41,7 +44,6 @@ export default function AddAuthorPage() {
   });
 
   const router = useRouter();
-  const [authorAlive, setAuthorAlive] = useState(false);
 
   const { mutateAsync: createAuthor, isPending: isCreatingAuthor } =
     api.usulAuthor.create.useMutation({
@@ -52,16 +54,34 @@ export default function AddAuthorPage() {
     });
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
+    if (!data.yearStatus && !data.deathYear) {
+      toast.error("Year status or death year is required");
+      return;
+    }
+
     await createAuthor({
       arabicName: data.arabicName,
       transliteration: data.transliteration,
-      deathYear: authorAlive ? -1 : data.deathYear,
+      deathYear: data.yearStatus ? undefined : data.deathYear,
+      yearStatus: data.yearStatus,
       arabicBio: data.arabicBio,
       otherArabicNames: data.otherArabicNames,
     });
   };
 
   const isMutating = isCreatingAuthor;
+
+  const setAuthorYearStatus = (checked: boolean, status: AuthorYearStatus) => {
+    if (checked) {
+      form.setValue("yearStatus", status);
+      form.setValue("deathYear", undefined);
+    } else {
+      form.setValue("yearStatus", undefined);
+      form.setValue("deathYear", undefined);
+    }
+  };
+
+  const currentYearStatus = form.watch("yearStatus");
 
   return (
     <PageLayout title="Add Author" backHref="/usul/authors">
@@ -95,7 +115,7 @@ export default function AddAuthorPage() {
                 <div className="flex items-center gap-2">
                   <FormLabel>Transliterated Name *</FormLabel>
                   <TransliterationHelper
-                    getText={() => form.getValues("arabicName")}
+                    getText={() => form.watch("arabicName")}
                     setTransliteration={(text) => field.onChange(text)}
                     disabled={isMutating}
                   />
@@ -117,17 +137,41 @@ export default function AddAuthorPage() {
               <FormItem>
                 <FormLabel>Death Year (Hijri) *</FormLabel>
 
-                <div className="mt-2 flex gap-2">
-                  <Checkbox
-                    id="authorAlive"
-                    checked={authorAlive}
-                    onCheckedChange={() => setAuthorAlive(!authorAlive)}
-                    disabled={isMutating}
-                  />
-                  <Label htmlFor="authorAlive">Author is alive</Label>
+                <div>
+                  <div className="mt-2 flex gap-2">
+                    <Checkbox
+                      id="authorAlive"
+                      checked={currentYearStatus === AuthorYearStatus.Alive}
+                      onCheckedChange={(checked) =>
+                        setAuthorYearStatus(
+                          Boolean(checked),
+                          AuthorYearStatus.Alive,
+                        )
+                      }
+                      disabled={isMutating}
+                    />
+                    <Label htmlFor="authorAlive">Author is alive</Label>
+                  </div>
+
+                  <div className="mt-2 flex gap-2">
+                    <Checkbox
+                      id="authorUnknown"
+                      checked={currentYearStatus === AuthorYearStatus.Unknown}
+                      onCheckedChange={(checked) =>
+                        setAuthorYearStatus(
+                          Boolean(checked),
+                          AuthorYearStatus.Unknown,
+                        )
+                      }
+                      disabled={isMutating}
+                    />
+                    <Label htmlFor="authorUnknown">
+                      Author's death year is unknown
+                    </Label>
+                  </div>
                 </div>
 
-                {!authorAlive && (
+                {!currentYearStatus && (
                   <FormControl>
                     <Input {...field} disabled={isMutating} type="number" />
                   </FormControl>

@@ -3,6 +3,8 @@ import { createId } from "@paralleldrive/cuid2";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { AuthorYearStatus } from "@usul-ocr/usul-db";
+
 import { createUniqueAuthorSlug, getAuthor } from "../author";
 import { createUniqueBookSlug } from "../book";
 import { bookVersionSchema, prepareBookVersions } from "../book-versions";
@@ -26,6 +28,7 @@ export const createBookSchema = z.object({
       arabicName: z.string(),
       transliteratedName: z.string(),
       diedYear: z.number().optional(),
+      yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
     }),
   ]),
   versions: z.array(bookVersionSchema),
@@ -87,6 +90,13 @@ export const createBook = async (
       authorArabicName = author.name;
     } else {
       shouldCreateAuthor = true;
+
+      if (!data.author.yearStatus && !data.author.diedYear) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Author death year or year status is required",
+        });
+      }
     }
   }
 
@@ -180,7 +190,8 @@ export const createBook = async (
             },
           },
           transliteration: validatedAuthor.transliteratedName,
-          year: validatedAuthor.diedYear ?? -1,
+          year: validatedAuthor.diedYear,
+          yearStatus: validatedAuthor.yearStatus,
           extraProperties: {
             _airtableReference: validatedAuthor._airtableReference,
           },

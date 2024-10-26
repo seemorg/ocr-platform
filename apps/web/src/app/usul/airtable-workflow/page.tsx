@@ -42,6 +42,8 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
 
+import { AuthorYearStatus } from "@usul-ocr/usul-db";
+
 import AirtableSelector from "./airtable-selector";
 
 const getSlugFromUrl = (url: string) => {
@@ -64,6 +66,7 @@ const schema = z.object({
       transliteratedName: z.string(),
       slug: z.string().optional(),
       diedYear: z.coerce.number().optional(),
+      yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
     })
     .refine(
       (data) => {
@@ -112,7 +115,6 @@ export default function AddTextFromAirtable() {
 
   const [versions, setVersions] = useState<Version[]>(makeVersionsInitialState);
   const { isUploading, uploadFiles, uploadFromUrl } = useUploadPdfs();
-  const [authorAlive, setAuthorAlive] = useState(false);
   const [hasPhysicalDetails, setHasPhysicalDetails] = useState(false);
 
   const airtableText = useMemo(() => {
@@ -145,7 +147,7 @@ export default function AddTextFromAirtable() {
 
       const author = airtableText?.author;
       const authorSlug = getSlugFromUrl(author?.usulUrl ?? "");
-      const diedYear = author?.diedYear ?? -1;
+      const diedYear = author?.diedYear;
       form.reset({
         _airtableReference: airtableText._airtableReference ?? undefined,
         arabicName: airtableText.arabicName ?? "",
@@ -158,12 +160,11 @@ export default function AddTextFromAirtable() {
           _airtableReference: author?._airtableReference ?? "",
           arabicName: author?.arabicName ?? "",
           transliteratedName: author?.transliteration ?? "",
-          diedYear,
+          diedYear: diedYear ?? undefined,
+          yearStatus: diedYear ? undefined : AuthorYearStatus.Unknown,
           slug: authorSlug ?? "",
         },
       });
-
-      setAuthorAlive(diedYear === -1);
 
       if (airtableText.digitizedUrl) {
         setVersions([
@@ -187,7 +188,6 @@ export default function AddTextFromAirtable() {
         // reset form
         form.reset();
         setVersions(makeVersionsInitialState);
-        setAuthorAlive(false);
         setHasPhysicalDetails(false);
         setSelectedAirtableIndex((oldIndex) =>
           oldIndex === null ? oldIndex : oldIndex + 1,
@@ -207,7 +207,11 @@ export default function AddTextFromAirtable() {
       splitsData?: { start: number; end: number }[];
     } & Pick<
       Version,
-      "publisher" | "publicationYear" | "investigator" | "editionNumber"
+      | "publisher"
+      | "publicationYear"
+      | "investigator"
+      | "editionNumber"
+      | "publisherLocation"
     >)[] = [];
 
     for (const version of versions) {
@@ -242,6 +246,7 @@ export default function AddTextFromAirtable() {
             url: finalPdfUrl,
             splitsData: finalSplitsData,
             publisher: version.publisher,
+            publisherLocation: version.publisherLocation,
             publicationYear: version.publicationYear,
             investigator: version.investigator,
             editionNumber: version.editionNumber,
@@ -255,8 +260,12 @@ export default function AddTextFromAirtable() {
       return;
     }
 
-    if (!data.author.isUsul && !authorAlive && !data.author.diedYear) {
-      toast.error("Author death year is required");
+    if (
+      !data.author.isUsul &&
+      !data.author.yearStatus &&
+      !data.author.diedYear
+    ) {
+      toast.error("Author death year or year status is required");
       return;
     }
 
@@ -277,7 +286,8 @@ export default function AddTextFromAirtable() {
             _airtableReference: data.author._airtableReference,
             arabicName: data.author.arabicName,
             transliteratedName: data.author.transliteratedName,
-            diedYear: authorAlive ? -1 : data.author.diedYear,
+            diedYear: data.author.yearStatus ? undefined : data.author.diedYear,
+            yearStatus: data.author.yearStatus,
           },
       versions: finalVersions,
     });
@@ -301,6 +311,7 @@ export default function AddTextFromAirtable() {
       arabicName: author.arabicName,
       transliteratedName: author.transliteratedName,
       year: author.diedYear,
+      yearStatus: author.yearStatus,
     };
   }, [form.watch("author.slug")]);
 
@@ -312,6 +323,21 @@ export default function AddTextFromAirtable() {
     form.resetField("author.diedYear");
     form.resetField("author._airtableReference");
   };
+
+  const setAuthorYearStatus = (checked: boolean, status: AuthorYearStatus) => {
+    if (checked) {
+      form.setValue("author.yearStatus", status);
+      form.setValue("author.diedYear", undefined);
+    } else {
+      form.setValue("author.yearStatus", undefined);
+      form.setValue(
+        "author.diedYear",
+        selectedAuthor?.year ?? airtableText?.author?.diedYear ?? 0,
+      );
+    }
+  };
+
+  const currentYearStatus = form.watch("author.yearStatus");
 
   return (
     <PageLayout title="Import Text From Airtable" backHref="/usul">
@@ -437,7 +463,7 @@ export default function AddTextFromAirtable() {
                   <FormLabel>Author Transliterated Name *</FormLabel>
                   {!isUsulAuthor && (
                     <TransliterationHelper
-                      getText={() => form.getValues("author.arabicName")}
+                      getText={() => form.watch("author.arabicName")}
                       setTransliteration={(text) => field.onChange(text)}
                       disabled={allFieldsDisabled}
                     />
@@ -462,17 +488,41 @@ export default function AddTextFromAirtable() {
               <FormItem>
                 <FormLabel>Author Death Year</FormLabel>
 
-                <div className="mt-2 flex gap-2">
-                  <Checkbox
-                    id="authorAlive"
-                    checked={authorAlive}
-                    onCheckedChange={() => setAuthorAlive(!authorAlive)}
-                    disabled={isUsulAuthor || allFieldsDisabled}
-                  />
-                  <Label htmlFor="authorAlive">Author is alive</Label>
+                <div>
+                  <div className="mt-2 flex gap-2">
+                    <Checkbox
+                      id="authorAlive"
+                      checked={currentYearStatus === AuthorYearStatus.Alive}
+                      onCheckedChange={(checked) =>
+                        setAuthorYearStatus(
+                          Boolean(checked),
+                          AuthorYearStatus.Alive,
+                        )
+                      }
+                      disabled={isUsulAuthor || allFieldsDisabled}
+                    />
+                    <Label htmlFor="authorAlive">Author is alive</Label>
+                  </div>
+
+                  <div className="mt-2 flex gap-2">
+                    <Checkbox
+                      id="authorUnknown"
+                      checked={currentYearStatus === AuthorYearStatus.Unknown}
+                      onCheckedChange={(checked) =>
+                        setAuthorYearStatus(
+                          Boolean(checked),
+                          AuthorYearStatus.Unknown,
+                        )
+                      }
+                      disabled={isUsulAuthor || allFieldsDisabled}
+                    />
+                    <Label htmlFor="authorUnknown">
+                      Author's death year is unknown
+                    </Label>
+                  </div>
                 </div>
 
-                {!authorAlive && (
+                {!currentYearStatus && (
                   <FormControl>
                     <Input
                       {...field}
@@ -518,7 +568,7 @@ export default function AddTextFromAirtable() {
                   <FormLabel>Book Transliterated Name *</FormLabel>
 
                   <TransliterationHelper
-                    getText={() => form.getValues("arabicName")}
+                    getText={() => form.watch("arabicName")}
                     setTransliteration={(text) => field.onChange(text)}
                     disabled={allFieldsDisabled}
                   />

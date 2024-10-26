@@ -19,6 +19,7 @@ export const zEmptyUrlToUndefined = z.preprocess((arg) => {
 export const publicationDetailsSchema = {
   investigator: z.string().optional(),
   publisher: z.string().optional(),
+  publisherLocation: z.string().optional(),
   editionNumber: z.string().optional(),
   publicationYear: z.coerce.number().optional(),
 };
