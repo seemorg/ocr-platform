@@ -28,6 +28,8 @@ declare module "next-auth" {
   // }
 }
 
+const whitelistedEmails = ["sarmadhbokhari@gmail.com"];
+
 /**
  * Options for NextAuth.js used to configure adapters, providers, callbacks, etc.
  *
@@ -52,7 +54,11 @@ export const authOptions: NextAuthOptions = {
       //   },
       // });
 
-      if (email.endsWith("@usul.ai") || email.endsWith("@digitalseem.org")) {
+      if (
+        email.endsWith("@usul.ai") ||
+        email.endsWith("@digitalseem.org") ||
+        whitelistedEmails.includes(email)
+      ) {
         return true;
       }
 
@@ -69,6 +75,7 @@ export const authOptions: NextAuthOptions = {
       return false;
     },
   },
+  // @ts-ignore
   adapter: PrismaAdapter(db) as Adapter,
   session: {
     strategy: "jwt",
