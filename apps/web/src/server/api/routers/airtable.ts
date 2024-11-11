@@ -4,9 +4,7 @@ import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const airtableRouter = createTRPCRouter({
   getAirtableTexts: protectedProcedure.query(async () => {
-    const airtableTexts = (await getAirtableTexts()).sort(
-      (a, b) => Number(a.id) - Number(b.id),
-    );
+    const airtableTexts = await getAirtableTexts();
     return airtableTexts;
   }),
   invalidateAirtableTexts: protectedProcedure.mutation(async () => {

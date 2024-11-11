@@ -34,7 +34,6 @@ import VersionsInput, {
 import useAirtableTexts from "@/hooks/useAirtableTexts";
 import { useUploadPdfs } from "@/hooks/useUploadPdfs";
 import { textToSlug } from "@/lib/slug";
-import { zEmptyUrlToUndefined } from "@/lib/validation";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RefreshCcwIcon } from "lucide-react";
@@ -98,12 +97,16 @@ export default function AddTextFromAirtable() {
   const { data: advancedGenres, isLoading: isLoadingAdvancedGenres } =
     api.usulAdvancedGenre.allAdvancedGenres.useQuery();
 
-  const { airtableTexts, isLoadingAirtableTexts, purgeCache, isPurgingCache } =
-    useAirtableTexts();
-
-  const [selectedAirtableIndex, setSelectedAirtableIndex] = useState<
-    number | null
-  >(null);
+  const {
+    airtableTexts,
+    base,
+    setBase,
+    isLoadingAirtableTexts,
+    purgeCache,
+    isPurgingCache,
+    selectedAirtableIndex,
+    setSelectedAirtableIndex,
+  } = useAirtableTexts();
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -350,6 +353,8 @@ export default function AddTextFromAirtable() {
               airtableTexts={airtableTexts ?? []}
               selectedIndex={selectedAirtableIndex}
               setSelectedIndex={setSelectedAirtableIndex}
+              base={base}
+              setBase={setBase}
             />
 
             <Tooltip>
@@ -639,6 +644,15 @@ export default function AddTextFromAirtable() {
               >
                 {decodeURI(airtableText.pdfUrl)}
               </a>
+            </div>
+          ) : null}
+
+          {airtableText?.publicationDetails ? (
+            <div>
+              <p className="text-lg">Attached Publication Details</p>
+              <p className="mt-3 min-w-0 break-words">
+                {airtableText.publicationDetails}
+              </p>
             </div>
           ) : null}
 

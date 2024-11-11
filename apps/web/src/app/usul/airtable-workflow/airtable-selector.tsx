@@ -13,6 +13,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { airtableBases } from "@/hooks/useAirtableTexts";
 import { AirtableText } from "@/lib/airtable";
 import { commandScore } from "@/lib/command-score";
 import { cn } from "@/lib/utils";
@@ -26,28 +34,51 @@ export default function AirtableSelector({
   airtableTexts,
   selectedIndex,
   setSelectedIndex,
+  base,
+  setBase,
 }: {
   airtableTexts: AirtableText[];
   selectedIndex: number | null;
   setSelectedIndex: (value: number | null) => void;
+  base?: (typeof airtableBases)[number];
+  setBase?: (value: (typeof airtableBases)[number]) => void;
 }) {
   const [open, setOpen] = useState(false);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-[500px] max-w-full justify-between"
-        >
-          {selectedIndex !== null
-            ? createLabel(airtableTexts[selectedIndex]!)
-            : "Select a text..."}
-          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
+      <div className="flex items-center gap-2">
+        {base && (
+          <Select value={base} onValueChange={setBase}>
+            <SelectTrigger className="w-[100px]">
+              <SelectValue placeholder="Select a base" />
+            </SelectTrigger>
+
+            <SelectContent>
+              {airtableBases.map((b) => (
+                <SelectItem key={b} value={b}>
+                  {b}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-[500px] max-w-full justify-between"
+          >
+            {selectedIndex !== null
+              ? createLabel(airtableTexts[selectedIndex]!)
+              : "Select a text..."}
+            <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+      </div>
+
       <PopoverContent className="w-[500px] max-w-full p-0">
         <Command
           disablePointerSelection={false}

@@ -1,7 +1,15 @@
+import { useState } from "react";
 import { api } from "@/trpc/react";
+
+export const airtableBases = ["hanafi", "maliki", "shafii", "texts"] as const;
 
 export default function useAirtableTexts() {
   const utils = api.useUtils();
+  const [base, setBase] = useState<(typeof airtableBases)[number]>("texts");
+  const [selectedAirtableIndex, setSelectedAirtableIndex] = useState<
+    number | null
+  >(null);
+
   const { data: airtableTexts, isLoading: isLoadingAirtableTexts } =
     api.airtable.getAirtableTexts.useQuery();
 
@@ -14,9 +22,20 @@ export default function useAirtableTexts() {
     },
   });
 
+  const handleBaseChange = (value: (typeof airtableBases)[number]) => {
+    if (value === base) return;
+
+    setBase(value);
+    setSelectedAirtableIndex(0);
+  };
+
   return {
-    airtableTexts,
+    airtableTexts: airtableTexts ? airtableTexts[base] : undefined,
+    setBase: handleBaseChange,
+    base,
     isLoadingAirtableTexts,
+    selectedAirtableIndex,
+    setSelectedAirtableIndex,
     purgeCache: invalidateAirtableTexts,
     isPurgingCache: isInvalidatingAirtableTexts,
   };
