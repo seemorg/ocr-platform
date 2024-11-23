@@ -35,8 +35,10 @@ export const getBookWithDetailsById = async (id: string, db: typeof usulDb) => {
     where: { id },
     select: {
       id: true,
+      slug: true,
       coverImageUrl: true,
       physicalDetails: true,
+      extraProperties: true,
       author: {
         select: {
           id: true,
@@ -83,8 +85,35 @@ export const getBookWithDetailsById = async (id: string, db: typeof usulDb) => {
 
   const versions = book.versions;
 
+  let physicalDetails:
+    | (Extract<
+        NonNullable<PrismaJson.BookExtraProperties["physicalDetails"]>,
+        { type: "manuscript" }
+      > & { details: string })
+    | Extract<
+        NonNullable<PrismaJson.BookExtraProperties["physicalDetails"]>,
+        { type: "published" }
+      >
+    | null = null;
+  if (book.extraProperties.physicalDetails) {
+    if (book.extraProperties.physicalDetails.type === "manuscript") {
+      physicalDetails = {
+        type: "manuscript",
+        details: book.physicalDetails ?? "",
+      };
+    } else {
+      physicalDetails = book.extraProperties.physicalDetails;
+    }
+  } else if (book.physicalDetails) {
+    physicalDetails = {
+      type: "manuscript",
+      details: book.physicalDetails,
+    };
+  }
+
   return {
     id: book.id,
+    slug: book.slug,
     coverImageUrl: book.coverImageUrl,
     arabicName: bookNames.ar,
     englishName: bookNames.en,
@@ -99,7 +128,7 @@ export const getBookWithDetailsById = async (id: string, db: typeof usulDb) => {
       diedYear: book.author.year,
     },
     versions,
-    physicalDetails: book.physicalDetails,
+    physicalDetails,
   };
 };
 

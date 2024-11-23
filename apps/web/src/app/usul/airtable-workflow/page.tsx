@@ -5,6 +5,9 @@ import Link from "next/link";
 import AdvancedGenresSelector from "@/components/advanced-genres-selector";
 import { AuthorsCombobox } from "@/components/author-selector";
 import PageLayout from "@/components/page-layout";
+import PhysicalDetails, {
+  physicalDetailsSchema,
+} from "@/components/physical-details";
 import TextArrayInput from "@/components/text-array-input";
 import TransliterationHelper from "@/components/transliteration-helper";
 import { Alert } from "@/components/ui/alert";
@@ -52,12 +55,11 @@ const getSlugFromUrl = (url: string) => {
 
 const schema = z.object({
   _airtableReference: z.string().optional(),
-  // arabicName: z.string().min(1),
   arabicNames: z.array(z.string()).min(1),
   primaryArabicNameIndex: z.number().min(0).default(0),
   transliteration: z.string().min(1),
   advancedGenres: z.array(z.string()),
-  physicalDetails: z.string().optional(),
+  physicalDetails: physicalDetailsSchema,
   author: z
     .object({
       isUsul: z.boolean(),
@@ -162,7 +164,9 @@ export default function AddTextFromAirtable() {
         primaryArabicNameIndex: 0,
         transliteration: airtableText.transliteration ?? "",
         advancedGenres: advancedGenresInDb,
-        physicalDetails: airtableText.physicalDetails ?? undefined,
+        physicalDetails: airtableText.physicalDetails
+          ? { type: "manuscript", details: airtableText.physicalDetails }
+          : null,
         author: {
           isUsul: author?.isUsul ?? false,
           _airtableReference: author?._airtableReference ?? "",
@@ -288,7 +292,7 @@ export default function AddTextFromAirtable() {
       otherNames: otherArabicNames,
       transliteratedName: data.transliteration,
       advancedGenres: data.advancedGenres,
-      physicalDetails: hasPhysicalDetails ? data.physicalDetails : undefined,
+      physicalDetails: hasPhysicalDetails ? data.physicalDetails : null,
       author: data.author.isUsul
         ? {
             isUsul: true,
@@ -706,23 +710,7 @@ export default function AddTextFromAirtable() {
             </div>
 
             {hasPhysicalDetails && (
-              <FormField
-                control={form.control}
-                name="physicalDetails"
-                render={({ field }) => (
-                  <FormItem className="mt-5">
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter physical details"
-                        disabled={allFieldsDisabled}
-                        {...field}
-                      />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <PhysicalDetails form={form} disabled={allFieldsDisabled} />
             )}
           </div>
 

@@ -23,6 +23,7 @@ export const usulAuthorRouter = createTRPCRouter({
         where: { id: input.id },
         select: {
           id: true,
+          slug: true,
           year: true,
           yearStatus: true,
           primaryNameTranslations: {
@@ -50,6 +51,7 @@ export const usulAuthorRouter = createTRPCRouter({
 
       const preparedAuthor = {
         id: author.id,
+        slug: author.slug,
         year: author.year,
         yearStatus: author.yearStatus,
         arabicName: author.primaryNameTranslations[0]?.text,

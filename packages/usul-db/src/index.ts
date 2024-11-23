@@ -23,6 +23,18 @@ declare global {
     }
 
     interface BookExtraProperties {
+      physicalDetails?:
+        | {
+            type: "published";
+            investigator?: string;
+            publisher?: string;
+            publisherLocation?: string;
+            editionNumber?: string;
+            publicationYear?: number; // hijri
+          }
+        | {
+            type: "manuscript";
+          };
       splitsData?: { start: number; end: number }[];
       _airtableReference?: string;
     }

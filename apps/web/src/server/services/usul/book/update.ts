@@ -11,7 +11,22 @@ export const updateBookSchema = z.object({
   transliteratedName: z.string(),
   advancedGenres: z.array(z.string()),
   otherNames: z.array(z.string()).optional(),
-  physicalDetails: z.string().optional(),
+  physicalDetails: z
+    .discriminatedUnion("type", [
+      z.object({
+        type: z.literal("published"),
+        investigator: z.string().optional(),
+        publisher: z.string().optional(),
+        publisherLocation: z.string().optional(),
+        editionNumber: z.string().optional(),
+        publicationYear: z.number().optional(),
+      }),
+      z.object({
+        type: z.literal("manuscript"),
+        details: z.string(),
+      }),
+    ])
+    .nullable(),
   authorId: z.string(),
   versions: z.array(bookVersionSchema),
 });
@@ -36,6 +51,7 @@ export const updateBook = async (
       transliteration: true,
       authorId: true,
       versions: true,
+      extraProperties: true,
       genres: {
         select: {
           id: true,
@@ -312,7 +328,25 @@ export const updateBook = async (
           : {}),
         versions: finalVersions,
         numberOfVersions: finalVersions.length,
-        physicalDetails: data.physicalDetails,
+        physicalDetails:
+          data.physicalDetails && data.physicalDetails.type === "manuscript"
+            ? data.physicalDetails.details
+            : null,
+        extraProperties: {
+          ...currentBook.extraProperties,
+          physicalDetails: data.physicalDetails
+            ? {
+                type: data.physicalDetails.type,
+                ...(data.physicalDetails.type === "published" && {
+                  investigator: data.physicalDetails.investigator,
+                  publisher: data.physicalDetails.publisher,
+                  publisherLocation: data.physicalDetails.publisherLocation,
+                  editionNumber: data.physicalDetails.editionNumber,
+                  publicationYear: data.physicalDetails.publicationYear,
+                }),
+              }
+            : undefined,
+        },
       },
     });
   });

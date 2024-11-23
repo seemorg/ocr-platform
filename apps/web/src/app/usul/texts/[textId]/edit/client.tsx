@@ -7,6 +7,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdvancedGenresSelector from "@/components/advanced-genres-selector";
 import { AuthorsCombobox } from "@/components/author-selector";
+import PhysicalDetails, {
+  physicalDetailsSchema,
+} from "@/components/physical-details";
 import TextArrayInput from "@/components/text-array-input";
 import TransliterationHelper from "@/components/transliteration-helper";
 import { Button } from "@/components/ui/button";
@@ -42,7 +45,7 @@ const schema = z.object({
   transliteration: z.string().min(1),
   otherNames: z.array(z.string()),
   advancedGenres: z.array(z.string()),
-  physicalDetails: z.string().optional(),
+  physicalDetails: physicalDetailsSchema,
   author: z.object({
     id: z.string(),
     slug: z.string(),
@@ -65,7 +68,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
       transliteration: text.transliteratedName ?? "",
       advancedGenres: text.advancedGenres,
       otherNames: text.otherNames ?? [],
-      physicalDetails: text.physicalDetails ?? "",
+      physicalDetails: text.physicalDetails,
     },
   });
 
@@ -176,7 +179,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
       otherNames: otherNames,
       authorId: data.author.id,
       versions: finalVersions,
-      physicalDetails: hasPhysicalDetails ? data.physicalDetails : undefined,
+      physicalDetails: hasPhysicalDetails ? data.physicalDetails : null,
     });
   };
 
@@ -332,23 +335,9 @@ export default function EditTextClientPage({ text }: { text: Text }) {
           </div>
 
           {hasPhysicalDetails && (
-            <FormField
-              control={form.control}
-              name="physicalDetails"
-              render={({ field }) => (
-                <FormItem className="mt-5">
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter physical details"
-                      disabled={isMutating}
-                      {...field}
-                    />
-                  </FormControl>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="mt-5">
+              <PhysicalDetails form={form} disabled={isMutating} />
+            </div>
           )}
         </div>
 

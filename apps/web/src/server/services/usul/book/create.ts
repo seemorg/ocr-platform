@@ -16,7 +16,22 @@ export const createBookSchema = z.object({
   transliteratedName: z.string(),
   slug: z.string().optional(),
   advancedGenres: z.array(z.string()),
-  physicalDetails: z.string().optional(),
+  physicalDetails: z
+    .discriminatedUnion("type", [
+      z.object({
+        type: z.literal("published"),
+        investigator: z.string().optional(),
+        publisher: z.string().optional(),
+        publisherLocation: z.string().optional(),
+        editionNumber: z.string().optional(),
+        publicationYear: z.number().optional(),
+      }),
+      z.object({
+        type: z.literal("manuscript"),
+        details: z.string(),
+      }),
+    ])
+    .nullable(),
   author: z.discriminatedUnion("isUsul", [
     z.object({
       isUsul: z.literal(true),
@@ -251,14 +266,31 @@ export const createBook = async (
         author: { connect: { id: authorId } },
         versions,
         numberOfVersions: versions.length,
-        physicalDetails: data.physicalDetails,
-        ...(data._airtableReference
-          ? {
-              extraProperties: {
+        physicalDetails:
+          data.physicalDetails && data.physicalDetails.type === "manuscript"
+            ? data.physicalDetails.details
+            : null,
+        extraProperties: {
+          ...(data._airtableReference
+            ? {
                 _airtableReference: data._airtableReference,
-              },
-            }
-          : {}),
+              }
+            : {}),
+          ...(data.physicalDetails
+            ? {
+                physicalDetails: {
+                  type: data.physicalDetails.type,
+                  ...(data.physicalDetails.type === "published" && {
+                    investigator: data.physicalDetails.investigator,
+                    publisher: data.physicalDetails.publisher,
+                    publisherLocation: data.physicalDetails.publisherLocation,
+                    editionNumber: data.physicalDetails.editionNumber,
+                    publicationYear: data.physicalDetails.publicationYear,
+                  }),
+                },
+              }
+            : {}),
+        },
       },
     });
   });

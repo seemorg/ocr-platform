@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import AdvancedGenresSelector from "@/components/advanced-genres-selector";
 import { AuthorsCombobox } from "@/components/author-selector";
 import PageLayout from "@/components/page-layout";
+import PhysicalDetails, {
+  physicalDetailsSchema,
+} from "@/components/physical-details";
 import TextArrayInput from "@/components/text-array-input";
 import TransliterationHelper from "@/components/transliteration-helper";
 import { Button } from "@/components/ui/button";
@@ -20,7 +23,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import VersionsInput, {
   makeVersionsInitialState,
   Version,
@@ -38,7 +40,6 @@ import { AuthorYearStatus } from "@usul-ocr/usul-db";
 const schema = z.object({
   arabicNames: z.array(z.string()).min(1),
   primaryArabicNameIndex: z.number().default(0),
-  // arabicName: z.string().min(1),
   transliteration: z.string().min(1),
   advancedGenres: z.array(z.string()),
   author: z.object({
@@ -49,7 +50,7 @@ const schema = z.object({
     year: z.coerce.number().optional(),
     yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
   }),
-  physicalDetails: z.string().optional(),
+  physicalDetails: physicalDetailsSchema,
 });
 
 export default function AddTextPage() {
@@ -145,7 +146,7 @@ export default function AddTextPage() {
       arabicName: primaryArabicName,
       otherNames: otherNames,
       transliteratedName: data.transliteration,
-      physicalDetails: hasPhysicalDetails ? data.physicalDetails : undefined,
+      physicalDetails: hasPhysicalDetails ? data.physicalDetails : null,
       advancedGenres: data.advancedGenres,
       author: { isUsul: true, slug: data.author.slug },
       versions: finalVersions,
@@ -189,22 +190,6 @@ export default function AddTextPage() {
               </FormItem>
             )}
           />
-
-          {/* <FormField
-            control={form.control}
-            name="arabicName"
-            disabled={isMutating}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Arabic Name</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          /> */}
 
           <FormField
             control={form.control}
@@ -304,9 +289,14 @@ export default function AddTextPage() {
                 id="hasPhysicalDetails"
                 checked={hasPhysicalDetails}
                 disabled={isMutating}
-                onCheckedChange={() =>
-                  setHasPhysicalDetails(!hasPhysicalDetails)
-                }
+                onCheckedChange={(checked) => {
+                  setHasPhysicalDetails(!!checked);
+                  if (!checked) {
+                    form.setValue("physicalDetails", null);
+                  } else {
+                    form.setValue("physicalDetails", { type: "published" });
+                  }
+                }}
               />
               <Label htmlFor="hasPhysicalDetails">
                 This book doesn't have digitized copies or PDFs online
@@ -314,23 +304,9 @@ export default function AddTextPage() {
             </div>
 
             {hasPhysicalDetails && (
-              <FormField
-                control={form.control}
-                name="physicalDetails"
-                render={({ field }) => (
-                  <FormItem className="mt-5">
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter physical details"
-                        disabled={isMutating}
-                        {...field}
-                      />
-                    </FormControl>
-
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="mt-5">
+                <PhysicalDetails form={form} disabled={isMutating} />
+              </div>
             )}
           </div>
           <div className="my-10 h-[2px] w-full bg-border" />
