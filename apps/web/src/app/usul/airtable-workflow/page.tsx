@@ -52,16 +52,18 @@ const getSlugFromUrl = (url: string) => {
 
 const schema = z.object({
   _airtableReference: z.string().optional(),
-  arabicName: z.string().min(1),
+  // arabicName: z.string().min(1),
+  arabicNames: z.array(z.string()).min(1),
+  primaryArabicNameIndex: z.number().min(0).default(0),
   transliteration: z.string().min(1),
-  otherNames: z.array(z.string()),
   advancedGenres: z.array(z.string()),
   physicalDetails: z.string().optional(),
   author: z
     .object({
       isUsul: z.boolean(),
       _airtableReference: z.string(),
-      arabicName: z.string(),
+      arabicNames: z.array(z.string()).min(1),
+      primaryArabicNameIndex: z.number().min(0).default(0),
       transliteratedName: z.string(),
       slug: z.string().optional(),
       diedYear: z.coerce.number().optional(),
@@ -69,14 +71,14 @@ const schema = z.object({
     })
     .refine(
       (data) => {
-        if (data.isUsul === false && !data.arabicName) {
+        if (data.isUsul === false && data.arabicNames.length === 0) {
           return false;
         }
         return true;
       },
       {
         message: "Arabic name is required",
-        path: ["arabicName"],
+        path: ["arabicNames"],
       },
     )
     .refine(
@@ -112,7 +114,8 @@ export default function AddTextFromAirtable() {
     resolver: zodResolver(schema),
     defaultValues: {
       advancedGenres: [],
-      otherNames: [],
+      arabicNames: [],
+      primaryArabicNameIndex: 0,
     },
   });
 
@@ -153,15 +156,18 @@ export default function AddTextFromAirtable() {
       const diedYear = author?.diedYear;
       form.reset({
         _airtableReference: airtableText._airtableReference ?? undefined,
-        arabicName: airtableText.arabicName ?? "",
+        arabicNames: airtableText.arabicName
+          ? [airtableText.arabicName, ...airtableText.otherNames]
+          : [],
+        primaryArabicNameIndex: 0,
         transliteration: airtableText.transliteration ?? "",
-        otherNames: airtableText.otherNames,
         advancedGenres: advancedGenresInDb,
         physicalDetails: airtableText.physicalDetails ?? undefined,
         author: {
           isUsul: author?.isUsul ?? false,
           _airtableReference: author?._airtableReference ?? "",
-          arabicName: author?.arabicName ?? "",
+          arabicNames: author?.arabicName ? [author.arabicName] : [],
+          primaryArabicNameIndex: 0,
           transliteratedName: author?.transliteration ?? "",
           diedYear: diedYear ?? undefined,
           yearStatus: diedYear ? undefined : AuthorYearStatus.Unknown,
@@ -272,12 +278,16 @@ export default function AddTextFromAirtable() {
       return;
     }
 
+    const primaryArabicName = data.arabicNames[data.primaryArabicNameIndex]!;
+    const otherArabicNames = data.arabicNames.filter(
+      (_, idx) => idx !== data.primaryArabicNameIndex,
+    );
     await createBook({
       _airtableReference: data._airtableReference,
-      arabicName: data.arabicName,
+      arabicName: primaryArabicName,
+      otherNames: otherArabicNames,
       transliteratedName: data.transliteration,
       advancedGenres: data.advancedGenres,
-      otherNames: data.otherNames,
       physicalDetails: hasPhysicalDetails ? data.physicalDetails : undefined,
       author: data.author.isUsul
         ? {
@@ -287,7 +297,11 @@ export default function AddTextFromAirtable() {
         : {
             isUsul: false,
             _airtableReference: data.author._airtableReference,
-            arabicName: data.author.arabicName,
+            arabicName:
+              data.author.arabicNames[data.author.primaryArabicNameIndex]!,
+            otherNames: data.author.arabicNames.filter(
+              (_, idx) => idx !== data.author.primaryArabicNameIndex,
+            ),
             transliteratedName: data.author.transliteratedName,
             diedYear: data.author.yearStatus ? undefined : data.author.diedYear,
             yearStatus: data.author.yearStatus,
@@ -311,7 +325,7 @@ export default function AddTextFromAirtable() {
     if (!author || !author.isUsul || !author.slug) return null;
     return {
       slug: author.slug,
-      arabicName: author.arabicName,
+      arabicName: author.arabicNames[author.primaryArabicNameIndex]!,
       transliteratedName: author.transliteratedName,
       year: author.diedYear,
       yearStatus: author.yearStatus,
@@ -321,7 +335,8 @@ export default function AddTextFromAirtable() {
   const toggleIsUsul = () => {
     form.setValue("author.isUsul", !author.isUsul);
     form.resetField("author.slug");
-    form.resetField("author.arabicName");
+    form.resetField("author.arabicNames");
+    form.resetField("author.primaryArabicNameIndex");
     form.resetField("author.transliteratedName");
     form.resetField("author.diedYear");
     form.resetField("author._airtableReference");
@@ -425,7 +440,8 @@ export default function AddTextFromAirtable() {
               onSelect={(author) => {
                 if (author) {
                   form.setValue("author.slug", author.slug);
-                  form.setValue("author.arabicName", author.arabicName!);
+                  form.setValue("author.arabicNames", [author.arabicName!]);
+                  form.setValue("author.primaryArabicNameIndex", 0);
                   form.setValue(
                     "author.transliteratedName",
                     author.transliteratedName!,
@@ -433,7 +449,8 @@ export default function AddTextFromAirtable() {
                   form.setValue("author.diedYear", author.year!);
                 } else {
                   form.resetField("author.slug");
-                  form.resetField("author.arabicName");
+                  form.resetField("author.arabicNames");
+                  form.resetField("author.primaryArabicNameIndex");
                   form.resetField("author.transliteratedName");
                   form.resetField("author.diedYear");
                 }
@@ -443,13 +460,20 @@ export default function AddTextFromAirtable() {
 
           <FormField
             control={form.control}
-            name="author.arabicName"
+            name="author.arabicNames"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Author Arabic Name *</FormLabel>
+                <FormLabel>Author Names (Arabic) *</FormLabel>
                 <FormControl>
-                  <Input
-                    {...field}
+                  <TextArrayInput
+                    values={field.value ?? []}
+                    setValues={field.onChange}
+                    primaryIndex={
+                      form.watch("author.primaryArabicNameIndex") ?? 0
+                    }
+                    setPrimaryIndex={(idx) =>
+                      form.setValue("author.primaryArabicNameIndex", idx)
+                    }
                     disabled={isUsulAuthor || allFieldsDisabled}
                   />
                 </FormControl>
@@ -468,7 +492,13 @@ export default function AddTextFromAirtable() {
                   <FormLabel>Author Transliterated Name *</FormLabel>
                   {!isUsulAuthor && (
                     <TransliterationHelper
-                      getText={() => form.watch("author.arabicName")}
+                      getText={() => {
+                        const primaryArabicName =
+                          form.watch("author.arabicNames")?.[
+                            form.watch("author.primaryArabicNameIndex")
+                          ];
+                        return primaryArabicName ?? "";
+                      }}
                       setTransliteration={(text) => field.onChange(text)}
                       disabled={allFieldsDisabled}
                     />
@@ -551,12 +581,26 @@ export default function AddTextFromAirtable() {
         >
           <FormField
             control={form.control}
-            name="arabicName"
+            name="arabicNames"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Book Arabic Name *</FormLabel>
+                <div>
+                  <FormLabel>Book Names (Arabic) *</FormLabel>
+                  <FormDescription>
+                    Add all names that this book is known by
+                  </FormDescription>
+                </div>
+
                 <FormControl>
-                  <Input disabled={allFieldsDisabled} {...field} />
+                  <TextArrayInput
+                    disabled={allFieldsDisabled}
+                    values={field.value}
+                    setValues={field.onChange}
+                    primaryIndex={form.watch("primaryArabicNameIndex")}
+                    setPrimaryIndex={(idx) =>
+                      form.setValue("primaryArabicNameIndex", idx)
+                    }
+                  />
                 </FormControl>
 
                 <FormMessage />
@@ -573,7 +617,13 @@ export default function AddTextFromAirtable() {
                   <FormLabel>Book Transliterated Name *</FormLabel>
 
                   <TransliterationHelper
-                    getText={() => form.watch("arabicName")}
+                    getText={() => {
+                      const primaryArabicName =
+                        form.watch("arabicNames")?.[
+                          form.watch("primaryArabicNameIndex")
+                        ];
+                      return primaryArabicName ?? "";
+                    }}
                     setTransliteration={(text) => field.onChange(text)}
                     disabled={allFieldsDisabled}
                   />
@@ -599,31 +649,6 @@ export default function AddTextFromAirtable() {
                     setSelectedAdvancedGenreIds={field.onChange}
                     isLoading={isLoadingAdvancedGenres}
                     advancedGenres={advancedGenres}
-                  />
-                </FormControl>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="otherNames"
-            render={({ field }) => (
-              <FormItem>
-                <div>
-                  <FormLabel>Other Book Names (Arabic)</FormLabel>
-                  <FormDescription>
-                    Add other names that this book is known by
-                  </FormDescription>
-                </div>
-
-                <FormControl>
-                  <TextArrayInput
-                    disabled={allFieldsDisabled}
-                    values={field.value}
-                    setValues={field.onChange}
                   />
                 </FormControl>
 

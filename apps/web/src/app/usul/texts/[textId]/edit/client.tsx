@@ -37,7 +37,8 @@ import { AuthorYearStatus } from "@usul-ocr/usul-db";
 import CoverImage from "./cover-image";
 
 const schema = z.object({
-  arabicName: z.string().min(1),
+  arabicNames: z.array(z.string()).min(1),
+  primaryArabicNameIndex: z.number().default(0),
   transliteration: z.string().min(1),
   otherNames: z.array(z.string()),
   advancedGenres: z.array(z.string()),
@@ -59,7 +60,8 @@ export default function EditTextClientPage({ text }: { text: Text }) {
     resolver: zodResolver(schema),
     defaultValues: {
       author: text.author,
-      arabicName: text.arabicName,
+      arabicNames: [text.arabicName, ...(text.otherNames ?? [])],
+      primaryArabicNameIndex: 0,
       transliteration: text.transliteratedName ?? "",
       advancedGenres: text.advancedGenres,
       otherNames: text.otherNames ?? [],
@@ -106,6 +108,11 @@ export default function EditTextClientPage({ text }: { text: Text }) {
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
     const inferredSlug = textToSlug(data.transliteration);
+
+    const primaryArabicName = data.arabicNames[data.primaryArabicNameIndex]!;
+    const otherNames = data.arabicNames.filter(
+      (_, idx) => idx !== data.primaryArabicNameIndex,
+    );
 
     const finalVersions: ({
       type: "pdf" | "external";
@@ -163,10 +170,10 @@ export default function EditTextClientPage({ text }: { text: Text }) {
 
     await updateBook({
       id: text.id,
-      arabicName: data.arabicName,
+      arabicName: primaryArabicName,
       transliteratedName: data.transliteration,
       advancedGenres: data.advancedGenres,
-      otherNames: data.otherNames,
+      otherNames: otherNames,
       authorId: data.author.id,
       versions: finalVersions,
       physicalDetails: hasPhysicalDetails ? data.physicalDetails : undefined,
@@ -222,13 +229,27 @@ export default function EditTextClientPage({ text }: { text: Text }) {
 
         <FormField
           control={form.control}
-          name="arabicName"
+          name="arabicNames"
           disabled={isMutating}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Arabic Name *</FormLabel>
+              <div>
+                <FormLabel>Book Names (Arabic) *</FormLabel>
+                <FormDescription>
+                  Add all names that this book is known by
+                </FormDescription>
+              </div>
+
               <FormControl>
-                <Input {...field} />
+                <TextArrayInput
+                  values={field.value}
+                  setValues={field.onChange}
+                  primaryIndex={form.watch("primaryArabicNameIndex")}
+                  setPrimaryIndex={(index) =>
+                    form.setValue("primaryArabicNameIndex", index)
+                  }
+                  disabled={field.disabled}
+                />
               </FormControl>
 
               <FormMessage />
@@ -245,7 +266,13 @@ export default function EditTextClientPage({ text }: { text: Text }) {
               <div className="flex items-center gap-2">
                 <FormLabel>Transliterated Name *</FormLabel>
                 <TransliterationHelper
-                  getText={() => form.watch("arabicName")}
+                  getText={() => {
+                    const primaryArabicName =
+                      form.watch("arabicNames")[
+                        form.watch("primaryArabicNameIndex")
+                      ] ?? "";
+                    return primaryArabicName;
+                  }}
                   setTransliteration={(text) => field.onChange(text)}
                   disabled={isMutating}
                 />
@@ -273,32 +300,6 @@ export default function EditTextClientPage({ text }: { text: Text }) {
                   setSelectedAdvancedGenreIds={field.onChange}
                   isLoading={isLoadingAdvancedGenres}
                   advancedGenres={advancedGenres}
-                />
-              </FormControl>
-
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="otherNames"
-          disabled={isMutating}
-          render={({ field }) => (
-            <FormItem>
-              <div>
-                <FormLabel>Other Book Names (Arabic)</FormLabel>
-                <FormDescription>
-                  Add other names that this book is known by
-                </FormDescription>
-              </div>
-
-              <FormControl>
-                <TextArrayInput
-                  values={field.value}
-                  setValues={field.onChange}
-                  disabled={field.disabled}
                 />
               </FormControl>
 

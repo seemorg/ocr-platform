@@ -12,10 +12,10 @@ import { bookVersionSchema, prepareBookVersions } from "../book-versions";
 export const createBookSchema = z.object({
   _airtableReference: z.string().optional(),
   arabicName: z.string(),
+  otherNames: z.array(z.string()).optional(),
   transliteratedName: z.string(),
   slug: z.string().optional(),
   advancedGenres: z.array(z.string()),
-  otherNames: z.array(z.string()).optional(),
   physicalDetails: z.string().optional(),
   author: z.discriminatedUnion("isUsul", [
     z.object({
@@ -26,6 +26,7 @@ export const createBookSchema = z.object({
       isUsul: z.literal(false),
       _airtableReference: z.string(),
       arabicName: z.string(),
+      otherNames: z.array(z.string()).optional(),
       transliteratedName: z.string(),
       diedYear: z.number().optional(),
       yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
@@ -189,6 +190,16 @@ export const createBook = async (
               text: validatedAuthor.arabicName,
             },
           },
+          ...(validatedAuthor.otherNames
+            ? {
+                otherNameTranslations: {
+                  create: {
+                    locale: "ar",
+                    texts: validatedAuthor.otherNames,
+                  },
+                },
+              }
+            : {}),
           transliteration: validatedAuthor.transliteratedName,
           year: validatedAuthor.diedYear,
           yearStatus: validatedAuthor.yearStatus,

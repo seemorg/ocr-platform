@@ -2,7 +2,9 @@ import Link from "next/link";
 import PageLayout from "@/components/page-layout";
 import { Button } from "@/components/ui/button";
 
-export default function AdminPage() {
+import { withAdminAuth } from "./admin-page";
+
+function AdminPage() {
   return (
     <PageLayout title="Admin">
       <div className="grid grid-cols-3 gap-10">
@@ -13,3 +15,5 @@ export default function AdminPage() {
     </PageLayout>
   );
 }
+
+export default withAdminAuth(AdminPage);

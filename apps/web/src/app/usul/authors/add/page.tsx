@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -27,7 +28,8 @@ import { z } from "zod";
 import { AuthorYearStatus } from "@usul-ocr/usul-db";
 
 const schema = z.object({
-  arabicName: z.string().min(1),
+  arabicNames: z.array(z.string()).min(1),
+  primaryArabicNameIndex: z.number().default(0),
   transliteration: z.string().min(1),
   otherArabicNames: z.array(z.string()),
   deathYear: z.coerce.number().optional(),
@@ -39,6 +41,8 @@ export default function AddAuthorPage() {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
+      arabicNames: [""],
+      primaryArabicNameIndex: 0,
       otherArabicNames: [],
     },
   });
@@ -59,13 +63,18 @@ export default function AddAuthorPage() {
       return;
     }
 
+    const primaryArabicName = data.arabicNames[data.primaryArabicNameIndex]!;
+    const otherNames = data.arabicNames.filter(
+      (_, idx) => idx !== data.primaryArabicNameIndex,
+    );
+
     await createAuthor({
-      arabicName: data.arabicName,
+      arabicName: primaryArabicName,
       transliteration: data.transliteration,
       deathYear: data.yearStatus ? undefined : data.deathYear,
       yearStatus: data.yearStatus,
       arabicBio: data.arabicBio,
-      otherArabicNames: data.otherArabicNames,
+      otherArabicNames: otherNames,
     });
   };
 
@@ -92,13 +101,27 @@ export default function AddAuthorPage() {
         >
           <FormField
             control={form.control}
-            name="arabicName"
+            name="arabicNames"
             disabled={isMutating}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Arabic Name *</FormLabel>
+                <div>
+                  <FormLabel>Author Names (Arabic) *</FormLabel>
+                  <FormDescription>
+                    Add all names that this author is known by
+                  </FormDescription>
+                </div>
+
                 <FormControl>
-                  <Input {...field} />
+                  <TextArrayInput
+                    values={field.value}
+                    setValues={field.onChange}
+                    primaryIndex={form.watch("primaryArabicNameIndex")}
+                    setPrimaryIndex={(index) =>
+                      form.setValue("primaryArabicNameIndex", index)
+                    }
+                    disabled={field.disabled}
+                  />
                 </FormControl>
 
                 <FormMessage />
@@ -115,7 +138,13 @@ export default function AddAuthorPage() {
                 <div className="flex items-center gap-2">
                   <FormLabel>Transliterated Name *</FormLabel>
                   <TransliterationHelper
-                    getText={() => form.watch("arabicName")}
+                    getText={() => {
+                      const primaryArabicName =
+                        form.watch("arabicNames")[
+                          form.watch("primaryArabicNameIndex")
+                        ] ?? "";
+                      return primaryArabicName;
+                    }}
                     setTransliteration={(text) => field.onChange(text)}
                     disabled={isMutating}
                   />
@@ -190,25 +219,6 @@ export default function AddAuthorPage() {
                 <FormLabel>Biography (Arabic)</FormLabel>
                 <FormControl>
                   <Textarea className="min-h-40" {...field} />
-                </FormControl>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="otherArabicNames"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Other Names (Arabic)</FormLabel>
-                <FormControl>
-                  <TextArrayInput
-                    values={field.value}
-                    setValues={field.onChange}
-                    disabled={field.disabled}
-                  />
                 </FormControl>
 
                 <FormMessage />

@@ -36,9 +36,10 @@ import { z } from "zod";
 import { AuthorYearStatus } from "@usul-ocr/usul-db";
 
 const schema = z.object({
-  arabicName: z.string().min(1),
+  arabicNames: z.array(z.string()).min(1),
+  primaryArabicNameIndex: z.number().default(0),
+  // arabicName: z.string().min(1),
   transliteration: z.string().min(1),
-  otherNames: z.array(z.string()),
   advancedGenres: z.array(z.string()),
   author: z.object({
     id: z.string(),
@@ -59,7 +60,8 @@ export default function AddTextPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       advancedGenres: [],
-      otherNames: [],
+      arabicNames: [],
+      primaryArabicNameIndex: 0,
     },
   });
 
@@ -134,12 +136,17 @@ export default function AddTextPage() {
       }
     }
 
+    const primaryArabicName = data.arabicNames[data.primaryArabicNameIndex]!;
+    const otherNames = data.arabicNames.filter(
+      (_, idx) => idx !== data.primaryArabicNameIndex,
+    );
+
     await createBook({
-      arabicName: data.arabicName,
+      arabicName: primaryArabicName,
+      otherNames: otherNames,
       transliteratedName: data.transliteration,
       physicalDetails: hasPhysicalDetails ? data.physicalDetails : undefined,
       advancedGenres: data.advancedGenres,
-      otherNames: data.otherNames,
       author: { isUsul: true, slug: data.author.slug },
       versions: finalVersions,
     });
@@ -183,7 +190,7 @@ export default function AddTextPage() {
             )}
           />
 
-          <FormField
+          {/* <FormField
             control={form.control}
             name="arabicName"
             disabled={isMutating}
@@ -192,6 +199,36 @@ export default function AddTextPage() {
                 <FormLabel>Arabic Name</FormLabel>
                 <FormControl>
                   <Input {...field} />
+                </FormControl>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          /> */}
+
+          <FormField
+            control={form.control}
+            name="arabicNames"
+            disabled={isMutating}
+            render={({ field }) => (
+              <FormItem>
+                <div>
+                  <FormLabel>Book Names (Arabic)</FormLabel>
+                  <FormDescription>
+                    Add all names that this book is known by
+                  </FormDescription>
+                </div>
+
+                <FormControl>
+                  <TextArrayInput
+                    values={field.value}
+                    setValues={field.onChange}
+                    primaryIndex={form.watch("primaryArabicNameIndex")}
+                    setPrimaryIndex={(index) =>
+                      form.setValue("primaryArabicNameIndex", index)
+                    }
+                    disabled={field.disabled}
+                  />
                 </FormControl>
 
                 <FormMessage />
@@ -208,7 +245,13 @@ export default function AddTextPage() {
                 <div className="flex items-center gap-2">
                   <FormLabel>Transliterated Name</FormLabel>
                   <TransliterationHelper
-                    getText={() => form.watch("arabicName")}
+                    getText={() => {
+                      const primaryArabicName =
+                        form.watch("arabicNames")[
+                          form.watch("primaryArabicNameIndex")
+                        ] ?? "";
+                      return primaryArabicName;
+                    }}
                     setTransliteration={(text) => field.onChange(text)}
                     disabled={isMutating}
                   />
@@ -235,32 +278,6 @@ export default function AddTextPage() {
                     setSelectedAdvancedGenreIds={field.onChange}
                     isLoading={isLoadingAdvancedGenres}
                     advancedGenres={advancedGenres}
-                  />
-                </FormControl>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="otherNames"
-            disabled={isMutating}
-            render={({ field }) => (
-              <FormItem>
-                <div>
-                  <FormLabel>Other Book Names (Arabic)</FormLabel>
-                  <FormDescription>
-                    Add other names that this book is known by
-                  </FormDescription>
-                </div>
-
-                <FormControl>
-                  <TextArrayInput
-                    values={field.value}
-                    setValues={field.onChange}
-                    disabled={field.disabled}
                   />
                 </FormControl>
 

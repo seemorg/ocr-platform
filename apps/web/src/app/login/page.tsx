@@ -1,7 +1,8 @@
-import { getServerAuthSession } from "@/server/auth";
 import { redirect } from "next/navigation";
-import AuthForm from "./auth-form";
 import { Logo } from "@/components/icons";
+import { getServerAuthSession } from "@/server/auth";
+
+import AuthForm from "./auth-form";
 
 export default async function LoginPage() {
   const session = await getServerAuthSession();

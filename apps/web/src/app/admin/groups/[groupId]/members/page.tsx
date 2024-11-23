@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { withAdminAuth } from "@/app/admin/admin-page";
 import PageLayout from "@/components/page-layout";
 import { api } from "@/trpc/server";
 
@@ -6,7 +7,7 @@ import AddMemberForm from "./add-form";
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
 
-export default async function GroupMembersPage({
+async function GroupMembersPage({
   params: { groupId },
 }: {
   params: { groupId: string };
@@ -29,3 +30,5 @@ export default async function GroupMembersPage({
     </PageLayout>
   );
 }
+
+export default withAdminAuth(GroupMembersPage);

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { withAdminAuth } from "@/app/admin/admin-page";
 import PageLayout from "@/components/page-layout";
 import { api } from "@/trpc/server";
 
@@ -6,7 +7,7 @@ import AddBookForm from "./add-form";
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
 
-export default async function GroupBooksPage({
+async function GroupBooksPage({
   params: { groupId },
 }: {
   params: { groupId: string };
@@ -26,3 +27,5 @@ export default async function GroupBooksPage({
     </PageLayout>
   );
 }
+
+export default withAdminAuth(GroupBooksPage);
