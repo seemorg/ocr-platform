@@ -165,7 +165,7 @@ export default function AddTextFromAirtable() {
         transliteration: airtableText.transliteration ?? "",
         advancedGenres: advancedGenresInDb,
         physicalDetails: airtableText.physicalDetails
-          ? { type: "manuscript", details: airtableText.physicalDetails }
+          ? { type: "published", details: airtableText.physicalDetails }
           : null,
         author: {
           isUsul: author?.isUsul ?? false,
@@ -710,7 +710,9 @@ export default function AddTextFromAirtable() {
             </div>
 
             {hasPhysicalDetails && (
-              <PhysicalDetails form={form} disabled={allFieldsDisabled} />
+              <div className="mt-5">
+                <PhysicalDetails form={form} disabled={allFieldsDisabled} />
+              </div>
             )}
           </div>
 

@@ -25,6 +25,7 @@ export const createBookSchema = z.object({
         publisherLocation: z.string().optional(),
         editionNumber: z.string().optional(),
         publicationYear: z.number().optional(),
+        details: z.string().optional(),
       }),
       z.object({
         type: z.literal("manuscript"),
@@ -266,10 +267,9 @@ export const createBook = async (
         author: { connect: { id: authorId } },
         versions,
         numberOfVersions: versions.length,
-        physicalDetails:
-          data.physicalDetails && data.physicalDetails.type === "manuscript"
-            ? data.physicalDetails.details
-            : null,
+        physicalDetails: data.physicalDetails?.details
+          ? data.physicalDetails.details
+          : null,
         extraProperties: {
           ...(data._airtableReference
             ? {

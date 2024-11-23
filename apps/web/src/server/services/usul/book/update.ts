@@ -20,6 +20,7 @@ export const updateBookSchema = z.object({
         publisherLocation: z.string().optional(),
         editionNumber: z.string().optional(),
         publicationYear: z.number().optional(),
+        details: z.string().optional(),
       }),
       z.object({
         type: z.literal("manuscript"),
@@ -328,10 +329,9 @@ export const updateBook = async (
           : {}),
         versions: finalVersions,
         numberOfVersions: finalVersions.length,
-        physicalDetails:
-          data.physicalDetails && data.physicalDetails.type === "manuscript"
-            ? data.physicalDetails.details
-            : null,
+        physicalDetails: data.physicalDetails?.details
+          ? data.physicalDetails.details
+          : null,
         extraProperties: {
           ...currentBook.extraProperties,
           physicalDetails: data.physicalDetails
