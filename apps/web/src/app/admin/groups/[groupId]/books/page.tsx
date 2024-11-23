@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { withAdminAuth } from "@/app/admin/admin-page";
 import PageLayout from "@/components/page-layout";
 import { api } from "@/trpc/server";
 
@@ -28,4 +27,4 @@ async function GroupBooksPage({
   );
 }
 
-export default withAdminAuth(GroupBooksPage);
+export default GroupBooksPage;

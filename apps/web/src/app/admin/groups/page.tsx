@@ -1,7 +1,6 @@
 import PageLayout from "@/components/page-layout";
 import { db } from "@/server/db";
 
-import { withAdminAuth } from "../admin-page";
 import AddGroupForm from "./add-form";
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
@@ -17,4 +16,4 @@ async function GroupsPage() {
   );
 }
 
-export default withAdminAuth(GroupsPage);
+export default GroupsPage;

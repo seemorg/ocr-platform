@@ -4,7 +4,11 @@ import { db } from "@/server/db";
 
 import { UserRole } from "@usul-ocr/db";
 
-export async function withAdminAuth(Component: React.ComponentType<any>) {
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const session = await getServerAuthSession();
 
   if (!session?.user) {
@@ -24,5 +28,5 @@ export async function withAdminAuth(Component: React.ComponentType<any>) {
     redirect("/app");
   }
 
-  return Component;
+  return children;
 }

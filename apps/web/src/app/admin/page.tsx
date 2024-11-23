@@ -2,8 +2,6 @@ import Link from "next/link";
 import PageLayout from "@/components/page-layout";
 import { Button } from "@/components/ui/button";
 
-import { withAdminAuth } from "./admin-page";
-
 function AdminPage() {
   return (
     <PageLayout title="Admin">
@@ -16,4 +14,4 @@ function AdminPage() {
   );
 }
 
-export default withAdminAuth(AdminPage);
+export default AdminPage;
