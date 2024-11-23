@@ -25,7 +25,8 @@ export const physicalDetailsSchema = z
     }),
     z.object({ type: z.literal("manuscript"), details: z.string() }),
   ])
-  .nullable();
+  .nullable()
+  .default(null);
 
 export default function PhysicalDetails({ form, disabled }: Props) {
   const details = form.watch("physicalDetails");

@@ -52,7 +52,7 @@ const schema = z.object({
     arabicName: z.string(),
     transliteratedName: z.string().nullable(),
     year: z.coerce.number().optional(),
-    yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
+    yearStatus: z.nativeEnum(AuthorYearStatus).nullable(),
   }),
 });
 

@@ -48,7 +48,7 @@ const schema = z.object({
     arabicName: z.string(),
     transliteratedName: z.string(),
     year: z.coerce.number().optional(),
-    yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
+    yearStatus: z.nativeEnum(AuthorYearStatus).nullable(),
   }),
   physicalDetails: physicalDetailsSchema,
 });
@@ -177,6 +177,7 @@ export default function AddTextPage() {
                     />
                   </div>
                 </FormControl>
+
                 {field.value ? (
                   <a
                     href={`https://usul.ai/author/${field.value.slug}`}
