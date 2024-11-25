@@ -113,4 +113,27 @@ export const usulBookRouter = createTRPCRouter({
 
       return { success: true };
     }),
+  getLatestByAuthor: protectedProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const author = await ctx.usulDb.author.findFirst({
+        where: { slug: input.slug },
+        select: { id: true },
+      });
+      if (!author) return [];
+      return await ctx.usulDb.book.findMany({
+        where: { authorId: author.id },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          slug: true,
+          transliteration: true,
+          primaryNameTranslations: {
+            where: {
+              OR: [{ locale: "ar" }, { locale: "en" }],
+            },
+          },
+        },
+      });
+    }),
 });

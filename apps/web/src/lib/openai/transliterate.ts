@@ -1,13 +1,6 @@
-import { env } from "@/env";
-import { AzureOpenAI } from "openai";
 import { z } from "zod";
 
-export const openai = new AzureOpenAI({
-  deployment: env.AZURE_OPENAI_DEPLOYMENT_NAME,
-  apiVersion: "2024-08-01-preview",
-  endpoint: `https://${env.AZURE_OPENAI_RESOURCE_NAME}.openai.azure.com/`,
-  apiKey: env.AZURE_OPENAI_KEY,
-});
+import { openai } from ".";
 
 const SYSTEM_PROMPT = `
 You are an assistant that helps Islamic researchers. You take arabic text as input, and return a json with the english transliteration in IJMES format.

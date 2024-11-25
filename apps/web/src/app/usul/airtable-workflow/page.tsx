@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AdvancedGenresSelector from "@/components/advanced-genres-selector";
 import { AuthorsCombobox } from "@/components/author-selector";
+import LatestAuthorBooks from "@/components/latest-author-books";
 import PageLayout from "@/components/page-layout";
 import PhysicalDetails, {
   physicalDetailsSchema,
@@ -124,6 +125,10 @@ export default function AddTextFromAirtable() {
   const [versions, setVersions] = useState<Version[]>(makeVersionsInitialState);
   const { isUploading, uploadFiles, uploadFromUrl } = useUploadPdfs();
   const [hasPhysicalDetails, setHasPhysicalDetails] = useState(false);
+  const {
+    mutateAsync: extractPublishingDetails,
+    isPending: isExtractingPublishingDetails,
+  } = api.openai.extractPublishingDetails.useMutation();
 
   const airtableText = useMemo(() => {
     if (selectedAirtableIndex === null) return null;
@@ -286,6 +291,9 @@ export default function AddTextFromAirtable() {
     const otherArabicNames = data.arabicNames.filter(
       (_, idx) => idx !== data.primaryArabicNameIndex,
     );
+
+    // console.log(data);
+
     await createBook({
       _airtableReference: data._airtableReference,
       arabicName: primaryArabicName,
@@ -317,8 +325,7 @@ export default function AddTextFromAirtable() {
   const isMutating = isUploading || isCreatingBook;
   const isUsulBook = !!airtableReferenceCheck?.bookExists;
 
-  const isUsulAuthor =
-    form.getValues("author.isUsul") || airtableReferenceCheck?.authorExists;
+  const isUsulAuthor = form.getValues("author.isUsul");
   // || airtableReferenceCheck?.authorExists
 
   const allFieldsDisabled =
@@ -335,6 +342,43 @@ export default function AddTextFromAirtable() {
       yearStatus: author.yearStatus,
     };
   }, [form.watch("author.slug")]);
+
+  const handleExtractPublishingDetails = useCallback(async () => {
+    if (!airtableText?.publicationDetails || allFieldsDisabled) return;
+
+    const { result } = await extractPublishingDetails({
+      text: airtableText.publicationDetails,
+    });
+
+    // update 1st version, if it does exist, add a pdf one
+    if (versions[0]) {
+      setVersions((old) => [
+        {
+          ...old[0]!,
+          ...(result?.investigator && {
+            investigator: result.investigator,
+          }),
+          ...(result?.publisher && {
+            publisher: result.publisher,
+          }),
+          ...(result?.publisherLocation && {
+            publisherLocation: result.publisherLocation,
+          }),
+          ...(result?.publicationYear && {
+            publicationYear: result.publicationYear,
+          }),
+          ...(result?.editionNumber && {
+            editionNumber: result.editionNumber,
+          }),
+        },
+        ...old.slice(1),
+      ]);
+    }
+  }, [airtableText, allFieldsDisabled]);
+
+  useEffect(() => {
+    handleExtractPublishingDetails();
+  }, [handleExtractPublishingDetails]);
 
   const toggleIsUsul = () => {
     form.setValue("author.isUsul", !author.isUsul);
@@ -575,6 +619,10 @@ export default function AddTextFromAirtable() {
               </FormItem>
             )}
           />
+
+          {isUsulAuthor && (
+            <LatestAuthorBooks authorSlug={form.watch("author.slug")} />
+          )}
         </div>
 
         <div className="my-14 h-[2px] w-full bg-border" />
@@ -682,6 +730,12 @@ export default function AddTextFromAirtable() {
               <p className="mt-3 min-w-0 break-words">
                 {airtableText.publicationDetails}
               </p>
+
+              <Button type="button" onClick={handleExtractPublishingDetails}>
+                {isExtractingPublishingDetails
+                  ? "Extracting..."
+                  : "Extract Publishing Details"}
+              </Button>
             </div>
           ) : null}
 

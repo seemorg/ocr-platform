@@ -47,7 +47,7 @@ export default function PhysicalDetails({ form, disabled }: Props) {
         </div>
         <div className="flex items-center space-x-2">
           <RadioGroupItem value="manuscript" id="manuscript" />
-          <Label htmlFor="manuscript">Manuscript</Label>
+          <Label htmlFor="manuscript">Manuscript or Missing</Label>
         </div>
       </RadioGroup>
 

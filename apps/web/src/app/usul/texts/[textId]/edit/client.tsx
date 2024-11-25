@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdvancedGenresSelector from "@/components/advanced-genres-selector";
 import { AuthorsCombobox } from "@/components/author-selector";
+import LatestAuthorBooks from "@/components/latest-author-books";
 import PhysicalDetails, {
   physicalDetailsSchema,
 } from "@/components/physical-details";
@@ -226,6 +227,8 @@ export default function EditTextClientPage({ text }: { text: Text }) {
                 </div>
               ) : null}
               <FormMessage />
+
+              <LatestAuthorBooks authorSlug={field.value?.slug} />
             </FormItem>
           )}
         />

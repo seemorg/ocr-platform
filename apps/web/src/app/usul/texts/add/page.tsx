@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AdvancedGenresSelector from "@/components/advanced-genres-selector";
 import { AuthorsCombobox } from "@/components/author-selector";
+import LatestAuthorBooks from "@/components/latest-author-books";
 import PageLayout from "@/components/page-layout";
 import PhysicalDetails, {
   physicalDetailsSchema,
@@ -188,6 +189,8 @@ export default function AddTextPage() {
                   </a>
                 ) : null}
                 <FormMessage />
+
+                <LatestAuthorBooks authorSlug={field.value?.slug} />
               </FormItem>
             )}
           />
