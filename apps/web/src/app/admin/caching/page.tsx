@@ -72,6 +72,11 @@ function CachingPage() {
     return () => clearInterval(interval);
   }, [typesenseStartTime]);
 
+  const isIndexing =
+    !typesenseStatus ||
+    isReIndexingTypesense ||
+    typesenseStatus?.status === "BUSY";
+
   return (
     <PageLayout title="Caching" backHref="/admin">
       <div className="flex flex-col gap-20">
@@ -104,17 +109,11 @@ function CachingPage() {
               <Button
                 className="mt-3 text-lg"
                 variant="destructive"
-                disabled={
-                  !typesenseStatus ||
-                  isReIndexingTypesense ||
-                  typesenseStatus?.status === "BUSY"
-                }
+                disabled={isIndexing}
               >
-                {elapsedTime
-                  ? `Indexing... (${elapsedTime})`
-                  : isReIndexingTypesense
-                    ? "Re-indexing..."
-                    : "Re-index Typesense"}
+                {isIndexing
+                  ? `Indexing...${elapsedTime ? ` (${elapsedTime})` : ""}`
+                  : "Re-index Typesense"}
               </Button>
             }
             onDelete={() => reIndexTypesense()}
