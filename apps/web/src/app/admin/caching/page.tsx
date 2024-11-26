@@ -50,10 +50,12 @@ function CachingPage() {
     });
 
   useEffect(() => {
-    if (typesenseStatus?.status === "IDLE") {
-      setTypesenseStartTime(null);
-    } else if (typesenseStartTime) {
-      setTypesenseStartTime(typesenseStartTime);
+    if (typesenseStatus) {
+      if (typesenseStatus.status === "IDLE") {
+        setTypesenseStartTime(null);
+      } else {
+        setTypesenseStartTime(typesenseStatus.requestedAt);
+      }
     }
   }, [typesenseStatus]);
 
