@@ -105,7 +105,9 @@ function CachingPage() {
                 className="mt-3 text-lg"
                 variant="destructive"
                 disabled={
-                  isReIndexingTypesense || typesenseStatus?.status === "BUSY"
+                  !typesenseStatus ||
+                  isReIndexingTypesense ||
+                  typesenseStatus?.status === "BUSY"
                 }
               >
                 {elapsedTime

@@ -23,6 +23,7 @@ const makePipelineGetRequest = async <T>(endpoint: string) => {
       "Content-Type": "application/json",
       Authorization: `Bearer ${env.USUL_PIPELINE_API_KEY}`,
     },
+    cache: "no-store",
   });
 
   return response.json() as Promise<T>;

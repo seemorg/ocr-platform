@@ -242,7 +242,7 @@ export default function EditTextClientPage({ author }: { author: Author }) {
               <TabsTrigger value="en">English</TabsTrigger>
             </TabsList>
             <p className="text-xs text-gray-500">
-              Only select the language you want to update
+              Only update one language, the other gets automatically updated
             </p>
           </div>
           <TabsContent value="ar">
@@ -260,6 +260,16 @@ export default function EditTextClientPage({ author }: { author: Author }) {
                 </FormItem>
               )}
             />
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-2"
+              size="sm"
+              disabled={isMutating}
+              onClick={() => form.setValue("arabicBio", author.arabicBio)}
+            >
+              Reset to original
+            </Button>
           </TabsContent>
           <TabsContent value="en">
             <FormField
@@ -276,6 +286,17 @@ export default function EditTextClientPage({ author }: { author: Author }) {
                 </FormItem>
               )}
             />
+
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-2"
+              size="sm"
+              disabled={isMutating}
+              onClick={() => form.setValue("englishBio", author.englishBio)}
+            >
+              Reset to original
+            </Button>
           </TabsContent>
         </Tabs>
 
