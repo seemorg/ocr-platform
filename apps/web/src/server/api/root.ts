@@ -13,6 +13,7 @@ import { usulAdvancedGenreRouter } from "./routers/usul/advancedGenre";
 import { usulAuthorRouter } from "./routers/usul/author";
 import { usulBookRouter } from "./routers/usul/book";
 import { usulGenreRouter } from "./routers/usul/genre";
+import { cacheRouter } from "./routers/cache";
 
 /**
  * This is the primary router for your server.
@@ -33,6 +34,7 @@ export const appRouter = createTRPCRouter({
   usulGenre: usulGenreRouter,
   usulAdvancedGenre: usulAdvancedGenreRouter,
   usulAuthor: usulAuthorRouter,
+  cache: cacheRouter,
 });
 
 // export type definition of API
