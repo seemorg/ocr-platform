@@ -2,6 +2,7 @@
 
 import type { AppRouter } from "@/server/api/root";
 import type { inferRouterOutputs } from "@trpc/server";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import TextArrayInput from "@/components/text-array-input";
 import TransliterationHelper from "@/components/transliteration-helper";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,6 +35,7 @@ const schema = z.object({
   transliteration: z.string().min(1),
   otherArabicNames: z.array(z.string()),
   arabicBio: z.string().optional(),
+  englishBio: z.string().optional(),
   deathYear: z.coerce.number().optional(),
   yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
 });
@@ -43,6 +46,8 @@ type Author = NonNullable<
 
 export default function EditTextClientPage({ author }: { author: Author }) {
   const router = useRouter();
+
+  const [bioMode, setBioMode] = useState<"ar" | "en">("ar");
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -53,6 +58,7 @@ export default function EditTextClientPage({ author }: { author: Author }) {
       transliteration: author.transliteratedName ?? "",
       otherArabicNames: author.otherArabicNames ?? [],
       arabicBio: author.arabicBio,
+      englishBio: author.englishBio,
     },
   });
 
@@ -75,14 +81,23 @@ export default function EditTextClientPage({ author }: { author: Author }) {
       (_, idx) => idx !== data.primaryArabicNameIndex,
     );
 
+    // only send select bio mode + only send it if it changed
+    let bioToSend: { arabicBio?: string } | { englishBio?: string } | null =
+      null;
+    if (bioMode === "ar" && data.arabicBio !== author.arabicBio) {
+      bioToSend = { arabicBio: data.arabicBio };
+    } else if (bioMode === "en" && data.englishBio !== author.englishBio) {
+      bioToSend = { englishBio: data.englishBio };
+    }
+
     await updateAuthor({
       id: author.id,
       arabicName: primaryArabicName,
       transliteration: data.transliteration,
       deathYear: data.yearStatus ? undefined : data.deathYear,
       yearStatus: data.yearStatus,
-      arabicBio: data.arabicBio,
       otherArabicNames: otherNames,
+      ...(bioToSend ?? {}),
     });
   };
 
@@ -217,20 +232,52 @@ export default function EditTextClientPage({ author }: { author: Author }) {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="arabicBio"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Biography (Arabic)</FormLabel>
-              <FormControl>
-                <Textarea className="min-h-40" {...field} />
-              </FormControl>
+        <Tabs
+          value={bioMode}
+          onValueChange={(value) => setBioMode(value as "ar" | "en")}
+        >
+          <div className="flex items-center gap-2">
+            <TabsList>
+              <TabsTrigger value="ar">Arabic</TabsTrigger>
+              <TabsTrigger value="en">English</TabsTrigger>
+            </TabsList>
+            <p className="text-xs text-gray-500">
+              Only select the language you want to update
+            </p>
+          </div>
+          <TabsContent value="ar">
+            <FormField
+              control={form.control}
+              name="arabicBio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Biography (Arabic)</FormLabel>
+                  <FormControl>
+                    <Textarea className="min-h-40" {...field} />
+                  </FormControl>
 
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </TabsContent>
+          <TabsContent value="en">
+            <FormField
+              control={form.control}
+              name="englishBio"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Biography (English)</FormLabel>
+                  <FormControl>
+                    <Textarea className="min-h-40" {...field} />
+                  </FormControl>
+
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </TabsContent>
+        </Tabs>
 
         <div>
           <Button type="submit" disabled={isMutating}>

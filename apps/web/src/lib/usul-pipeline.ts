@@ -1,6 +1,6 @@
 import { env } from "@/env";
 
-const makePipelineRequest = async <T>(
+const makePipelinePostRequest = async <T>(
   endpoint: string,
   body?: Record<string, any>,
 ) => {
@@ -16,6 +16,18 @@ const makePipelineRequest = async <T>(
   return response.json() as Promise<T>;
 };
 
+const makePipelineGetRequest = async <T>(endpoint: string) => {
+  const response = await fetch(`${env.USUL_PIPELINE_BASE_URL}${endpoint}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.USUL_PIPELINE_API_KEY}`,
+    },
+  });
+
+  return response.json() as Promise<T>;
+};
+
 export const addBookToPipeline = async ({
   slug,
   arabicName,
@@ -25,7 +37,7 @@ export const addBookToPipeline = async ({
   arabicName: string;
   authorArabicName: string;
 }) => {
-  return makePipelineRequest<{ success: boolean }>(`/books`, {
+  return makePipelinePostRequest<{ success: boolean }>("/books", {
     slug,
     arabicName,
     authorArabicName,
@@ -39,7 +51,7 @@ export const addAuthorToPipeline = async ({
   slug: string;
   arabicName: string;
 }) => {
-  return makePipelineRequest<{ success: boolean }>(`/authors`, {
+  return makePipelinePostRequest<{ success: boolean }>("/authors", {
     slug,
     arabicName,
   });
@@ -54,7 +66,7 @@ export const regenerateBook = async ({
   regenerateNames?: boolean;
   regenerateCover?: boolean;
 }) => {
-  return makePipelineRequest<{ success: boolean }>(`/books/regenerate`, {
+  return makePipelinePostRequest<{ success: boolean }>("/books/regenerate", {
     id,
     regenerateNames,
     regenerateCover,
@@ -64,15 +76,37 @@ export const regenerateBook = async ({
 export const regenerateAuthor = async ({
   id,
   regenerateNames,
-  regenerateBio,
+  bioAr,
+  bioEn,
 }: {
   id: string;
   regenerateNames?: boolean;
-  regenerateBio?: boolean;
+  bioEn?: string;
+  bioAr?: string;
 }) => {
-  return makePipelineRequest<{ success: boolean }>(`/authors/regenerate`, {
+  return makePipelinePostRequest<{ success: boolean }>("/authors/regenerate", {
     id,
     regenerateNames,
-    regenerateBio,
+    bioEn,
+    bioAr,
   });
+};
+
+export const reIndexTypesense = async () => {
+  return makePipelinePostRequest<
+    | { status: "STARTED"; requestedAt: number }
+    | {
+        status: "IN_PROGRESS";
+      }
+  >("/typesense/index");
+};
+
+export const getTypesenseStatus = async () => {
+  return makePipelineGetRequest<
+    { status: "BUSY"; requestedAt: number } | { status: "IDLE" }
+  >("/typesense/status");
+};
+
+export const purgeCloudflareCache = async () => {
+  return makePipelinePostRequest<{ success: boolean }>("/cache/purge");
 };

@@ -20,7 +20,7 @@ async function GroupMembersPage({
   }
 
   return (
-    <PageLayout title={`"${data.name}" Members`}>
+    <PageLayout title={`"${data.name}" Members`} backHref="/admin/groups">
       <AddMemberForm groupId={groupId} />
       <DataTable
         columns={columns}

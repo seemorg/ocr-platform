@@ -9,6 +9,10 @@ function AdminPage() {
         <Button asChild className="min-h-[150px] text-lg" variant="outline">
           <Link href="/admin/groups">Groups</Link>
         </Button>
+
+        <Button asChild className="min-h-[150px] text-lg" variant="outline">
+          <Link href="/admin/caching">Caching</Link>
+        </Button>
       </div>
     </PageLayout>
   );

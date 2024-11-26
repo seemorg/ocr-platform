@@ -8,11 +8,12 @@ import { AuthorYearStatus } from "@usul-ocr/usul-db";
 export const updateAuthorSchema = z.object({
   id: z.string(),
   arabicName: z.string(),
-  arabicBio: z.string().optional(),
   transliteration: z.string(),
   otherArabicNames: z.array(z.string()).optional(),
   deathYear: z.number().optional(),
   yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
+  arabicBio: z.string().optional(),
+  englishBio: z.string().optional(),
 });
 
 export const updateAuthor = async (
@@ -131,11 +132,17 @@ export const updateAuthor = async (
     },
   });
 
-  if (didNameChange) {
+  if (didNameChange || input.arabicBio || input.englishBio) {
     await regenerateAuthor({
       id: input.id,
-      regenerateNames: true,
-      regenerateBio: true,
+      regenerateNames: didNameChange,
+      ...(input.arabicBio
+        ? { bioAr: input.arabicBio }
+        : input.englishBio
+          ? {
+              bioEn: input.englishBio,
+            }
+          : {}),
     });
   }
 };

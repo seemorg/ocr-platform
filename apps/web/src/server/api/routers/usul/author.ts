@@ -39,7 +39,7 @@ export const usulAuthorRouter = createTRPCRouter({
           transliteration: true,
           bioTranslations: {
             where: {
-              locale: "ar",
+              OR: [{ locale: "ar" }, { locale: "en" }],
             },
           },
         },
@@ -57,7 +57,10 @@ export const usulAuthorRouter = createTRPCRouter({
         arabicName: author.primaryNameTranslations[0]?.text,
         otherArabicNames: author.otherNameTranslations[0]?.texts,
         transliteratedName: author.transliteration,
-        arabicBio: author.bioTranslations[0]?.text,
+        arabicBio: author.bioTranslations.find((bio) => bio.locale === "ar")
+          ?.text,
+        englishBio: author.bioTranslations.find((bio) => bio.locale === "en")
+          ?.text,
       };
 
       return preparedAuthor;

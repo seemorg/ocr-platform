@@ -13,9 +13,13 @@ import {
 export const DeleteModal = ({
   trigger,
   onDelete,
+  description = " This action cannot be undone. This will permanently remove the record from our servers.",
+  action = "Delete",
 }: {
   trigger: React.ReactNode;
   onDelete: () => void;
+  description?: string;
+  action?: string;
 }) => {
   return (
     <AlertDialog>
@@ -24,15 +28,12 @@ export const DeleteModal = ({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This action cannot be undone. This will permanently remove the
-            record from our servers.
-          </AlertDialogDescription>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={onDelete} variant="destructive">
-            Delete
+            {action}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

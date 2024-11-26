@@ -9,7 +9,7 @@ async function GroupsPage() {
   const data = await db.group.findMany();
 
   return (
-    <PageLayout title="Groups">
+    <PageLayout title="Groups" backHref="/admin">
       <AddGroupForm />
       <DataTable columns={columns} data={data} />
     </PageLayout>
