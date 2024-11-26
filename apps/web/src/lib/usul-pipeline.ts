@@ -93,13 +93,17 @@ export const regenerateAuthor = async ({
   });
 };
 
-export const reIndexTypesense = async () => {
+export const reIndexTypesense = async ({
+  clearCloudflareCache = false,
+}: {
+  clearCloudflareCache?: boolean;
+}) => {
   return makePipelinePostRequest<
     | { status: "STARTED"; requestedAt: number }
     | {
         status: "IN_PROGRESS";
       }
-  >("/typesense/index");
+  >("/typesense/index", { clearCloudflareCache });
 };
 
 export const getTypesenseStatus = async () => {

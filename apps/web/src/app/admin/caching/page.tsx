@@ -104,22 +104,41 @@ function CachingPage() {
 
         <div>
           <p className="text-2xl font-bold">Typesense</p>
-          <DeleteModal
-            description="This action will re-index all typesense data."
-            action="Re-index"
-            trigger={
-              <Button
-                className="mt-3 text-lg"
-                variant="destructive"
-                disabled={isIndexing}
-              >
-                {isIndexing
-                  ? `Indexing...${elapsedTime ? ` (${elapsedTime})` : ""}`
-                  : "Re-index Typesense"}
-              </Button>
-            }
-            onDelete={() => reIndexTypesense()}
-          />
+          <div className="flex items-center gap-2">
+            <DeleteModal
+              description="This action will re-index all typesense data."
+              action="Re-index"
+              trigger={
+                <Button
+                  className="mt-3 text-lg"
+                  variant="destructive"
+                  disabled={isIndexing}
+                >
+                  {isIndexing
+                    ? `Indexing...${elapsedTime ? ` (${elapsedTime})` : ""}`
+                    : "Re-index Typesense"}
+                </Button>
+              }
+              onDelete={() => reIndexTypesense({ clearCloudflareCache: false })}
+            />
+
+            <DeleteModal
+              description="This action will re-index all typesense data and clear the cloudflare cache."
+              action="Re-index"
+              trigger={
+                <Button
+                  className="mt-3 text-lg"
+                  variant="destructive"
+                  disabled={isIndexing}
+                >
+                  {isIndexing
+                    ? `Indexing...${elapsedTime ? ` (${elapsedTime})` : ""}`
+                    : "Re-index Typesense + Clear Cloudflare Cache"}
+                </Button>
+              }
+              onDelete={() => reIndexTypesense({ clearCloudflareCache: true })}
+            />
+          </div>
         </div>
       </div>
     </PageLayout>
