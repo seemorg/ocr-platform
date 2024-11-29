@@ -24,17 +24,19 @@ export const updateAuthor = async (
     throw new Error("Year status or death year is required");
   }
 
+  const isChangingArabicBio = input.arabicBio !== undefined;
+  const isChangingEnglishBio = input.englishBio !== undefined;
+
+  if (isChangingArabicBio && isChangingEnglishBio) {
+    throw new Error("Cannot change both Arabic and English bio");
+  }
+
   const currentAuthor = await db.author.findFirst({
     where: { id: input.id },
     select: {
       id: true,
       transliteration: true,
       primaryNameTranslations: {
-        where: {
-          locale: "ar",
-        },
-      },
-      bioTranslations: {
         where: {
           locale: "ar",
         },
@@ -51,9 +53,6 @@ export const updateAuthor = async (
 
   const didNameChange =
     input.arabicName !== currentAuthor?.primaryNameTranslations[0]?.text;
-
-  // const didBioChange =
-  //   input.arabicBio !== currentAuthor?.bioTranslations[0]?.text;
 
   await db.author.update({
     where: { id: input.id },
@@ -102,7 +101,7 @@ export const updateAuthor = async (
         ],
       },
       bioTranslations: {
-        ...(input.arabicBio
+        ...(isChangingArabicBio
           ? {
               upsert: {
                 where: {
@@ -113,35 +112,45 @@ export const updateAuthor = async (
                 },
                 create: {
                   locale: "ar",
-                  text: input.arabicBio,
+                  text: input.arabicBio!,
                 },
                 update: {
-                  text: input.arabicBio,
+                  text: input.arabicBio!,
                 },
               },
             }
-          : {
-              delete: {
-                authorId_locale: {
-                  authorId: input.id,
-                  locale: "ar",
+          : {}),
+        ...(isChangingEnglishBio
+          ? {
+              upsert: {
+                where: {
+                  authorId_locale: {
+                    authorId: input.id,
+                    locale: "en",
+                  },
+                },
+                create: {
+                  locale: "en",
+                  text: input.englishBio!,
+                },
+                update: {
+                  text: input.englishBio!,
                 },
               },
-            }),
+            }
+          : {}),
       },
     },
   });
 
-  if (didNameChange || input.arabicBio || input.englishBio) {
+  if (didNameChange || isChangingArabicBio || isChangingEnglishBio) {
     await regenerateAuthor({
       id: input.id,
       regenerateNames: didNameChange,
-      ...(input.arabicBio
-        ? { bioAr: input.arabicBio }
-        : input.englishBio
-          ? {
-              bioEn: input.englishBio,
-            }
+      ...(isChangingArabicBio
+        ? { bioAr: input.arabicBio! }
+        : isChangingEnglishBio
+          ? { bioEn: input.englishBio! }
           : {}),
     });
   }

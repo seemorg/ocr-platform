@@ -19,15 +19,31 @@ import { useDebounce } from "use-debounce";
 
 const DEFAULT_POPOVER_WIDTH = "w-[250px]";
 
+interface DataComboboxProps<DataT> {
+  data?: DataT[];
+  isLoading: boolean;
+  isError: boolean;
+  onQueryChange: (query: string) => void;
+  selected: DataT | null;
+  onChange: (group: DataT | null) => void;
+  itemName: keyof DataT | ((item: DataT) => React.ReactNode);
+  messages?: {
+    placeholder?: string;
+    loading?: string;
+    empty?: string;
+    error?: string;
+    search?: string;
+  };
+  widthClassName?: string;
+}
+
 function DataCombobox<DataT extends { id: string } | { slug: string }>({
   data,
   isLoading,
   isError,
   onQueryChange,
-
   selected,
   onChange,
-
   itemName,
   messages: {
     placeholder: placeholder = "Select item",
@@ -37,26 +53,7 @@ function DataCombobox<DataT extends { id: string } | { slug: string }>({
     search: searchMessage = "Search for an item",
   } = {},
   widthClassName = DEFAULT_POPOVER_WIDTH,
-}: {
-  data?: DataT[];
-  isLoading: boolean;
-  isError: boolean;
-  onQueryChange: (query: string) => void;
-
-  selected: DataT | null;
-  onChange: (group: DataT | null) => void;
-
-  itemName: keyof DataT | ((item: DataT) => React.ReactNode);
-  messages?: {
-    placeholder?: string;
-    loading?: string;
-    empty?: string;
-    error?: string;
-    search?: string;
-  };
-
-  widthClassName?: string;
-}) {
+}: DataComboboxProps<DataT>) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
@@ -91,8 +88,10 @@ function DataCombobox<DataT extends { id: string } | { slug: string }>({
     if (!selectedId) return false;
     if (
       data?.find((group) => {
-        const id = "id" in group ? group.id : group.slug;
-        return selectedId === id;
+        return (
+          ("id" in group && group.id === selectedId) ||
+          ("slug" in group && group.slug === selectedId)
+        );
       })
     )
       return false;

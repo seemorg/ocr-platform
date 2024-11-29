@@ -68,6 +68,9 @@ export default function EditTextClientPage({ author }: { author: Author }) {
         toast.success("Author updated successfully!");
         router.push("/usul/authors");
       },
+      onError: () => {
+        toast.error("Failed to update author");
+      },
     });
 
   const onSubmit = async (data: z.infer<typeof schema>) => {
@@ -80,6 +83,17 @@ export default function EditTextClientPage({ author }: { author: Author }) {
     const otherNames = data.arabicNames.filter(
       (_, idx) => idx !== data.primaryArabicNameIndex,
     );
+
+    // if changes were made to both bios, throw an error
+    if (
+      data.arabicBio !== author.arabicBio &&
+      data.englishBio !== author.englishBio
+    ) {
+      toast.error(
+        "Cannot change both Arabic and English bios, reset one of them first",
+      );
+      return;
+    }
 
     // only send select bio mode + only send it if it changed
     let bioToSend: { arabicBio?: string } | { englishBio?: string } | null =
