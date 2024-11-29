@@ -4,6 +4,7 @@ import type { AppRouter } from "@/server/api/root";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import LatestAuthorBooks from "@/components/latest-author-books";
 import TextArrayInput from "@/components/text-array-input";
 import TransliterationHelper from "@/components/transliteration-helper";
 import { Button } from "@/components/ui/button";
@@ -135,6 +136,8 @@ export default function EditTextClientPage({ author }: { author: Author }) {
         onSubmit={form.handleSubmit(onSubmit)}
         className="flex flex-col gap-10"
       >
+        <LatestAuthorBooks authorSlug={author.slug} />
+
         <FormField
           control={form.control}
           name="arabicNames"
