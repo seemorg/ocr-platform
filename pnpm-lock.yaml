@@ -157,6 +157,9 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.670.0
         version: 3.670.0
+      '@cantoo/pdf-lib':
+        specifier: ^2.2.3
+        version: 2.2.3
       '@hookform/resolvers':
         specifier: ^3.9.0
         version: 3.9.0(react-hook-form@7.52.1(react@18.3.1))

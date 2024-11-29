@@ -1,5 +1,5 @@
+import { PDFDocument } from "@cantoo/pdf-lib";
 import { useMutation } from "@tanstack/react-query";
-import { PDFDocument } from "pdf-lib";
 import toast from "react-hot-toast";
 
 const mergePdfAndGetSplits = async (files: File[]) => {
@@ -9,7 +9,10 @@ const mergePdfAndGetSplits = async (files: File[]) => {
 
   for (let file of files) {
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await PDFDocument.load(arrayBuffer);
+    const pdf = await PDFDocument.load(arrayBuffer, {
+      ignoreEncryption: true,
+      password: "",
+    });
     const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
     copiedPages.forEach((page) => {
       mergedPdf.addPage(page);
