@@ -19,6 +19,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import Toggle from "@/components/ui/toggle";
+import {
+  gregorianYearToHijriYear,
+  hijriYearToGregorianYear,
+} from "@/lib/hijri";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -91,6 +96,30 @@ export default function AddAuthorPage() {
   };
 
   const currentYearStatus = form.watch("yearStatus");
+
+  const [isGregorianMode, setIsGregorianMode] = useState(false);
+
+  const convertHijriToGregorian = () => {
+    const hijriYear = form.watch("deathYear");
+    if (!hijriYear) {
+      toast.error("Please enter a Hijri year first");
+      return;
+    }
+    const gregorianYear = hijriYearToGregorianYear(hijriYear);
+    form.setValue("deathYear", gregorianYear);
+    setIsGregorianMode(true);
+  };
+
+  const convertGregorianToHijri = () => {
+    const gregorianYear = form.watch("deathYear");
+    if (!gregorianYear) {
+      toast.error("Please enter a Gregorian year first");
+      return;
+    }
+    const hijriYear = gregorianYearToHijriYear(gregorianYear + 1);
+    form.setValue("deathYear", hijriYear);
+    setIsGregorianMode(false);
+  };
 
   return (
     <PageLayout title="Add Author" backHref="/usul/authors">
@@ -201,9 +230,31 @@ export default function AddAuthorPage() {
                 </div>
 
                 {!currentYearStatus && (
-                  <FormControl>
-                    <Input {...field} disabled={isMutating} type="number" />
-                  </FormControl>
+                  <>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled={isMutating}
+                        type="number"
+                        placeholder={
+                          isGregorianMode ? "Gregorian Year" : "Hijri Year"
+                        }
+                      />
+                    </FormControl>
+
+                    <div className="mt-2 flex gap-2">
+                      <Toggle
+                        value={isGregorianMode}
+                        onChange={(v) =>
+                          v
+                            ? convertHijriToGregorian()
+                            : convertGregorianToHijri()
+                        }
+                        renderLabel={(v) => (v ? "Gregorian" : "Hijri")}
+                        disabled={isMutating}
+                      />
+                    </div>
+                  </>
                 )}
 
                 <FormMessage />

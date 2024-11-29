@@ -36,8 +36,6 @@ import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
 
-import { AuthorYearStatus } from "@usul-ocr/usul-db";
-
 const schema = z.object({
   arabicNames: z.array(z.string()).min(1),
   primaryArabicNameIndex: z.number().default(0),
@@ -48,8 +46,6 @@ const schema = z.object({
     slug: z.string(),
     arabicName: z.string(),
     transliteratedName: z.string(),
-    year: z.coerce.number().optional(),
-    yearStatus: z.nativeEnum(AuthorYearStatus).nullable(),
   }),
   physicalDetails: physicalDetailsSchema,
 });
@@ -78,6 +74,9 @@ export default function AddTextPage() {
       onSuccess: () => {
         toast.success("Book created successfully!");
         router.push("/usul/texts");
+      },
+      onError: () => {
+        toast.error("Failed to create book");
       },
     });
 

@@ -29,6 +29,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import Toggle from "@/components/ui/toggle";
 import { useUploadPdfs } from "@/hooks/useUploadPdfs";
 import { commandScore } from "@/lib/command-score";
 import { textToSlug } from "@/lib/slug";
@@ -68,36 +69,6 @@ const dropzoneOptions = {
   maxFiles: 10,
   maxSize: MAX_FILE_SIZE_IN_MB * 1024 * 1024,
 } satisfies DropzoneOptions;
-
-const Toggle = ({
-  value,
-  onChange,
-  renderLabel,
-}: {
-  value: boolean;
-  onChange: (newValue: boolean) => void;
-  renderLabel: (v: boolean) => string;
-}) => {
-  return (
-    <div className="flex items-center">
-      {new Array(2).fill(null).map((_, idx) => (
-        <button
-          key={idx}
-          type="button"
-          className={cn(
-            "w-full px-3 py-2 text-xs font-medium",
-            value === (idx === 0)
-              ? "rounded-full bg-primary text-primary-foreground"
-              : "text-muted-foreground",
-          )}
-          onClick={() => onChange(idx === 0)}
-        >
-          {renderLabel(idx === 0)}
-        </button>
-      ))}
-    </div>
-  );
-};
 
 export default function NewBookForm({
   airtableTexts,

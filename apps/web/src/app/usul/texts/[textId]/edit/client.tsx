@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import VersionsInput, { Version } from "@/components/versions-input";
 import { useUploadPdfs } from "@/hooks/useUploadPdfs";
 import { textToSlug } from "@/lib/slug";
@@ -35,8 +34,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { z } from "zod";
-
-import { AuthorYearStatus } from "@usul-ocr/usul-db";
 
 import CoverImage from "./cover-image";
 
@@ -52,8 +49,6 @@ const schema = z.object({
     slug: z.string(),
     arabicName: z.string(),
     transliteratedName: z.string().nullable(),
-    year: z.coerce.number().optional(),
-    yearStatus: z.nativeEnum(AuthorYearStatus).nullable(),
   }),
 });
 
@@ -72,6 +67,8 @@ export default function EditTextClientPage({ text }: { text: Text }) {
       physicalDetails: text.physicalDetails,
     },
   });
+
+  console.log(form.formState.errors.author);
 
   const [versions, setVersions] = useState<Version[]>(() =>
     text.versions.map((v) => {
@@ -105,8 +102,10 @@ export default function EditTextClientPage({ text }: { text: Text }) {
     api.usulBook.update.useMutation({
       onSuccess: () => {
         toast.success("Book updated successfully!");
-
         router.push("/usul/texts");
+      },
+      onError: () => {
+        toast.error("Failed to update book");
       },
     });
 
