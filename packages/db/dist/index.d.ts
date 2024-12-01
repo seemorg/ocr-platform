@@ -1,1 +1,1 @@
-export * from '@usul-ocr/client/db/index.js';
+export * from "@usul-ocr/client/db";
