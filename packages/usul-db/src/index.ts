@@ -62,4 +62,4 @@ declare global {
   }
 }
 
-export * from "@usul-ocr/client/usul-db/index.js";
+export * from "@usul-ocr/client/usul-db";
