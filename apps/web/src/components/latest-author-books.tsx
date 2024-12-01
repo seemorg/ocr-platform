@@ -37,6 +37,14 @@ export default function LatestAuthorBooks({
               >
                 View on usul
               </a>
+
+              <a
+                href={`/usul/texts/${book.id}/edit`}
+                className="text-sm text-primary underline"
+                target="_blank"
+              >
+                View on internal tool
+              </a>
             </div>
           ))
         ) : (

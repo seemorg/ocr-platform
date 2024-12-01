@@ -5,8 +5,8 @@ import { secureHeaders } from "hono/secure-headers";
 
 import routes from "./routes";
 
-// import "./book-worker";
-// import "./page-worker";
+import "./book-worker";
+import "./page-worker";
 
 const app = new Hono();
 
