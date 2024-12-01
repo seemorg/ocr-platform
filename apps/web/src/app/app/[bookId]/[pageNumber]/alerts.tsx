@@ -1,5 +1,3 @@
-import { ComponentProps } from "react";
-import { Alert, AlertTitle } from "@/components/ui/alert";
 import { formatDate } from "@/lib/date";
 import { AlertCircle, CheckCircle } from "lucide-react";
 

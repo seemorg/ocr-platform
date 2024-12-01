@@ -83,7 +83,9 @@ export default function EditTextClientPage({ text }: { text: Text }) {
       return {
         type: v.source as any,
         url: v.value,
-        ...(v.source === "pdf" ? { files: [], mode: "url" } : {}),
+        ...(v.source === "pdf"
+          ? { files: [], mode: "url", ocrBookId: v.ocrBookId }
+          : {}),
         ...v.publicationDetails,
       };
     }),
@@ -121,6 +123,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
       type: "pdf" | "external";
       url: string;
       splitsData?: { start: number; end: number }[];
+      ocrBookId?: string;
     } & Pick<
       Version,
       | "publisher"
@@ -160,12 +163,13 @@ export default function EditTextClientPage({ text }: { text: Text }) {
           finalVersions.push({
             type: "pdf",
             url: finalPdfUrl,
-            splitsData: finalSplitsData,
             publisher: version.publisher,
             publisherLocation: version.publisherLocation,
             publicationYear: version.publicationYear,
             investigator: version.investigator,
             editionNumber: version.editionNumber,
+            splitsData: finalSplitsData,
+            ocrBookId: version.ocrBookId,
           });
         }
       }

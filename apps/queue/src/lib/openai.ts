@@ -4,10 +4,10 @@ import type {
   ChatRequestSystemMessage,
   ChatRequestUserMessage,
 } from "@azure/openai";
+import type { ChatCompletionSystemMessageParam } from "openai/resources/index.mjs";
+import type { ChatCompletionUserMessageParam } from "openai/src/resources/index.js";
 import { AzureKeyCredential, OpenAIClient } from "@azure/openai";
 import OpenAI from "openai";
-import { ChatCompletionSystemMessageParam } from "openai/resources/index.mjs";
-import { ChatCompletionUserMessageParam } from "openai/src/resources/index.js";
 
 import { env } from "../env";
 
@@ -50,7 +50,7 @@ export const getChatCompletions = async (
     model: "gpt-4o",
     temperature: extraOptions?.temperature,
     response_format: extraOptions?.responseFormat?.type
-      ? { type: extraOptions?.responseFormat?.type }
+      ? { type: extraOptions.responseFormat.type }
       : undefined,
     messages: params.map((message) => {
       return {

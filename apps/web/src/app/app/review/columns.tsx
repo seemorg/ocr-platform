@@ -19,11 +19,11 @@ export type Book = {
   arabicName?: string | null;
   englishName?: string | null;
   status: BookStatus;
-  author: {
+  author?: {
     id: string;
     arabicName: string;
     englishName?: string | null;
-  };
+  } | null;
   pdfUrl: string;
   totalPages: number;
   reviewedPages: number;
@@ -86,7 +86,7 @@ export const columns: ColumnDef<Book>[] = [
     header: "Author",
     cell: ({ row }) => {
       const author = row.getValue("author") as Book["author"];
-      return <div>{author.arabicName}</div>;
+      return <div>{author?.arabicName ?? "-"}</div>;
     },
   },
   {

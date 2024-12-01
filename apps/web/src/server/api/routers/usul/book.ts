@@ -136,4 +136,63 @@ export const usulBookRouter = createTRPCRouter({
         },
       });
     }),
+  search: protectedProcedure
+    .input(z.object({ query: z.string().optional() }))
+    .query(async ({ ctx, input }) => {
+      const books = await ctx.usulDb.book.findMany({
+        where: {
+          OR: [
+            {
+              transliteration: {
+                contains: input.query,
+                mode: "insensitive",
+              },
+            },
+            {
+              primaryNameTranslations: {
+                some: {
+                  text: {
+                    mode: "insensitive",
+                    contains: input.query,
+                  },
+                },
+              },
+            },
+          ],
+        },
+        ...(!input.query
+          ? {
+              take: 10,
+              orderBy: { createdAt: "desc" },
+            }
+          : {}),
+        select: {
+          id: true,
+          transliteration: true,
+          slug: true,
+          versions: true,
+          primaryNameTranslations: {
+            where: {
+              locale: {
+                in: ["ar", "en"],
+              },
+            },
+          },
+        },
+      });
+
+      const preparedBooks = books.map((book) => {
+        const primaryNames = book.primaryNameTranslations;
+        return {
+          id: book.id,
+          slug: book.slug,
+          arabicName: primaryNames.find((name) => name.locale === "ar")?.text,
+          englishName: primaryNames.find((name) => name.locale === "en")?.text,
+          transliteratedName: book.transliteration,
+          versions: book.versions,
+        };
+      });
+
+      return preparedBooks;
+    }),
 });

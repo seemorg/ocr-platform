@@ -37,11 +37,13 @@ async function getData(): Promise<Book[]> {
     arabicName: book.arabicName,
     englishName: book.englishName,
     status: book.status,
-    author: {
-      id: book.author.id,
-      arabicName: book.author.arabicName,
-      englishName: book.author.englishName,
-    },
+    author: book.author
+      ? {
+          id: book.author.id,
+          arabicName: book.author.arabicName,
+          englishName: book.author.englishName,
+        }
+      : null,
     pdfUrl: book.pdfUrl,
     totalPages: book.totalPages,
     reviewedPages: book.reviewedPages,

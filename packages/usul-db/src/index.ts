@@ -1,17 +1,29 @@
+interface PublicationDetails {
+  investigator?: string;
+  publisher?: string;
+  publisherLocation?: string;
+  editionNumber?: string;
+  publicationYear?: number; // hijri
+}
+
+type SplitsData = { start: number; end: number }[];
+
 /* eslint-disable @typescript-eslint/no-namespace */
 declare global {
   namespace PrismaJson {
-    interface BookVersion {
-      source: "openiti" | "turath" | "external" | "pdf";
-      value: string;
-      publicationDetails?: {
-        investigator?: string;
-        publisher?: string;
-        publisherLocation?: string;
-        editionNumber?: string;
-        publicationYear?: number; // hijri
-      };
-    }
+    type BookVersion =
+      | {
+          source: "openiti" | "turath" | "external";
+          value: string;
+          publicationDetails?: PublicationDetails;
+        }
+      | {
+          source: "pdf";
+          value: string;
+          publicationDetails?: PublicationDetails;
+          ocrBookId?: string;
+          splitsData?: SplitsData;
+        };
 
     interface BookFlags {
       aiSupported?: boolean;
@@ -35,7 +47,7 @@ declare global {
         | {
             type: "manuscript";
           };
-      splitsData?: { start: number; end: number }[];
+      splitsData?: SplitsData;
       _airtableReference?: string;
     }
 

@@ -1,11 +1,10 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 
-import NewBookServerForm from "./form-server";
+import NewBookForm from "./form";
 
-export default async function NewBookPage() {
+export default function NewBookPage() {
   return (
     <main className="flex min-h-screen w-full flex-col pb-28 pt-14">
       <Container>
@@ -15,9 +14,8 @@ export default async function NewBookPage() {
             <Button>Back</Button>
           </Link>
         </div>
-        <Suspense fallback={<div>Loading...</div>}>
-          <NewBookServerForm />
-        </Suspense>
+
+        <NewBookForm />
       </Container>
     </main>
   );

@@ -81,23 +81,27 @@ enum BookStatus {
 }
 
 model Book {
-    id            String     @id @default(cuid())
-    splitsData    Json       @default("{}")
+    id            String  @id @default(cuid())
+    splitsData    Json    @default("{}")
     arabicName    String?
     englishName   String?
-    airtableId    String?    @unique
+    airtableId    String? @unique
+    usulBookId    String?
     pdfUrl        String
     pages         Page[]
-    totalPages    Int        @default(0)
-    reviewedPages Int        @default(0)
-    author        Author     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-    authorId      String
-    status        BookStatus @default(UNPROCESSED)
+    totalPages    Int     @default(0)
+    reviewedPages Int     @default(0)
+
+    author   Author?    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+    authorId String?
+    status   BookStatus @default(UNPROCESSED)
 
     createdAt DateTime @default(now())
 
     assignedGroupId String?
     assignedGroup   Group?  @relation(fields: [assignedGroupId], references: [id], onDelete: SetNull)
+
+    @@unique([usulBookId, pdfUrl])
 }
 
 enum PageFlag {

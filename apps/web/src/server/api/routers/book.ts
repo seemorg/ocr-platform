@@ -32,84 +32,75 @@ export const bookRouter = createTRPCRouter({
   create: protectedProcedure
     .input(
       z.object({
-        airtableId: z.string().optional(),
-        pdfUrl: z.string().url(),
-        arabicName: z.string().min(1),
-        englishName: z.string().min(1).optional(),
-        author: z.object({
-          id: z.string().optional(),
-          airtableId: z.string().optional(),
-          arabicName: z.string().optional(),
-          englishName: z.string().optional(),
-        }),
+        usulBookId: z.string(),
+        pdfUrl: z.string().url().startsWith("https://assets.usul.ai/pdfs/"),
         groupId: z.string().optional(),
-        splitsData: z
-          .object({
-            splits: z.array(
-              z.object({
-                start: z.number(),
-                end: z.number(),
-              }),
-            ),
-          })
-          .optional(),
+        arabicName: z.string().optional(),
+        englishName: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       // check if book already exists
-      if (input.airtableId) {
-        const book = await ctx.db.book.findFirst({
-          where: { airtableId: input.airtableId },
-          select: { id: true },
-        });
+      const book = await ctx.db.book.findUnique({
+        where: {
+          usulBookId_pdfUrl: {
+            usulBookId: input.usulBookId,
+            pdfUrl: input.pdfUrl,
+          },
+        },
+        select: { id: true },
+      });
 
-        if (book) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message: "Book already exists",
-          });
-        }
-      }
-
-      if (
-        !input.author.id &&
-        !input.author.arabicName &&
-        !input.author.englishName
-      ) {
+      if (book) {
         throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Author is required",
+          code: "CONFLICT",
+          message: "Book already exists",
         });
       }
 
-      const existingAuthor = input.author.airtableId
-        ? await ctx.db.author.findFirst({
-            where: { airtableId: input.author.airtableId },
-          })
-        : null;
+      const usulBook = await ctx.usulDb.book.findUnique({
+        where: { id: input.usulBookId },
+        select: { id: true, versions: true },
+      });
+
+      if (!usulBook) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Usul book not found",
+        });
+      }
+
+      const versionIndex = usulBook.versions.findIndex(
+        (v) => v.source === "pdf" && v.value === input.pdfUrl,
+      );
+      if (versionIndex === -1) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Usul book version not found",
+        });
+      }
+
+      const versionToAdd = usulBook.versions[versionIndex]! as Extract<
+        PrismaJson.BookVersion,
+        { source: "pdf" }
+      >;
+
+      if (versionToAdd.ocrBookId) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "Book version already has an OCR book id",
+        });
+      }
 
       const newBook = await ctx.db.book.create({
         data: {
-          author: {
-            ...(input.author.id || existingAuthor
-              ? {
-                  connect: {
-                    id: (input.author.id || existingAuthor?.id) as string,
-                  },
-                }
-              : {
-                  create: {
-                    arabicName: input.author.arabicName as string,
-                    englishName: input.author.englishName,
-                    airtableId: input.author.airtableId,
-                  },
-                }),
-          },
+          usulBookId: input.usulBookId,
           pdfUrl: input.pdfUrl,
           arabicName: input.arabicName,
           englishName: input.englishName,
-          airtableId: input.airtableId,
-          splitsData: input.splitsData,
+          ...(versionToAdd.splitsData
+            ? { splitsData: versionToAdd.splitsData }
+            : {}),
           ...(input.groupId
             ? {
                 assignedGroup: {
@@ -122,6 +113,22 @@ export const bookRouter = createTRPCRouter({
         },
       });
 
+      const newVersions = structuredClone(usulBook.versions);
+      (
+        newVersions[versionIndex]! as Extract<
+          PrismaJson.BookVersion,
+          { source: "pdf" }
+        >
+      ).ocrBookId = newBook.id;
+
+      try {
+        // update the book version with the ocr book id
+        await ctx.usulDb.book.update({
+          where: { id: usulBook.id },
+          data: { versions: newVersions },
+        });
+      } catch (e) {}
+
       const response = await fetch(
         `${env.NEXT_PUBLIC_OCR_SERVER_URL}book/ocr`,
         {
@@ -132,7 +139,6 @@ export const bookRouter = createTRPCRouter({
           body: JSON.stringify({ bookId: newBook.id }),
         },
       );
-
       const data = (await response.json()) as { ok: boolean };
 
       return {

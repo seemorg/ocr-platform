@@ -6,22 +6,36 @@ import { PrismaClient } from "@usul-ocr/db";
 import { PrismaClient as UsulDbClient } from "@usul-ocr/usul-db";
 
 const createPrismaClient = () => {
-  const pool = new Pool({ connectionString: env.DATABASE_URL });
-  const adapter = new PrismaNeon(pool);
+  let adapter: PrismaNeon | null = null;
+  if (typeof WebSocket !== "undefined") {
+    const pool = new Pool({ connectionString: env.DATABASE_URL });
+    adapter = new PrismaNeon(pool);
+  }
 
   return new PrismaClient({
-    adapter,
+    ...(adapter
+      ? { adapter }
+      : ({
+          datasourceUrl: env.DATABASE_URL,
+        } as any)),
     log:
       env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
   });
 };
 
 const createUsulDbClient = () => {
-  const pool = new Pool({ connectionString: env.USUL_DATABASE_URL });
-  const adapter = new PrismaNeon(pool);
+  let adapter: PrismaNeon | null = null;
+  if (typeof WebSocket !== "undefined") {
+    const pool = new Pool({ connectionString: env.USUL_DATABASE_URL });
+    adapter = new PrismaNeon(pool);
+  }
 
   return new UsulDbClient({
-    adapter,
+    ...(adapter
+      ? { adapter }
+      : ({
+          datasourceUrl: env.USUL_DATABASE_URL,
+        } as any)),
     log:
       env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
   });

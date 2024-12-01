@@ -17,6 +17,7 @@ export const bookVersionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("pdf"),
     url: z.string().url().startsWith("https://assets.usul.ai/pdfs/"),
+    ocrBookId: z.string().optional(),
     splitsData: z
       .array(
         z.object({
@@ -65,6 +66,7 @@ export const prepareBookVersions = (
       final.push({
         source: "pdf" as const,
         value: version.url,
+        ocrBookId: version.ocrBookId,
         publicationDetails,
         ...(version.splitsData && version.splitsData.length > 0
           ? { splitsData: version.splitsData }

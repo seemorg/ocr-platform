@@ -211,8 +211,8 @@ export default function AddTextFromAirtable() {
           oldIndex === null ? oldIndex : oldIndex + 1,
         );
       },
-      onError: () => {
-        toast.error("Something went wrong");
+      onError: (error) => {
+        toast.error(error.message ?? "Something went wrong");
       },
     });
 
@@ -292,7 +292,7 @@ export default function AddTextFromAirtable() {
       (_, idx) => idx !== data.primaryArabicNameIndex,
     );
 
-    // console.log(data);
+    console.log(data);
 
     await createBook({
       _airtableReference: data._airtableReference,

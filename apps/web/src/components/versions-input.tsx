@@ -24,6 +24,7 @@ type PdfVersion = {
   mode: "upload" | "url";
   files: File[];
   url?: string;
+  ocrBookId?: string;
 } & PublicationDetails;
 
 type TurathVersion = {
