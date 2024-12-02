@@ -66,8 +66,8 @@ export const prepareBookVersions = (
       final.push({
         source: "pdf" as const,
         value: version.url,
-        ocrBookId: version.ocrBookId,
         publicationDetails,
+        ...(version.ocrBookId ? { ocrBookId: version.ocrBookId } : {}),
         ...(version.splitsData && version.splitsData.length > 0
           ? { splitsData: version.splitsData }
           : {}),

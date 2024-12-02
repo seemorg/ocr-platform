@@ -258,18 +258,21 @@ export default function AddTextFromAirtable() {
           }
         }
 
-        if (finalPdfUrl) {
-          finalVersions.push({
-            type: "pdf",
-            url: finalPdfUrl,
-            splitsData: finalSplitsData,
-            publisher: version.publisher,
-            publisherLocation: version.publisherLocation,
-            publicationYear: version.publicationYear,
-            investigator: version.investigator,
-            editionNumber: version.editionNumber,
-          });
+        if (!finalPdfUrl) {
+          toast.error("Could not upload version!");
+          return;
         }
+
+        finalVersions.push({
+          type: "pdf",
+          url: finalPdfUrl,
+          splitsData: finalSplitsData,
+          publisher: version.publisher,
+          publisherLocation: version.publisherLocation,
+          publicationYear: version.publicationYear,
+          investigator: version.investigator,
+          editionNumber: version.editionNumber,
+        });
       }
     }
 
@@ -291,8 +294,6 @@ export default function AddTextFromAirtable() {
     const otherArabicNames = data.arabicNames.filter(
       (_, idx) => idx !== data.primaryArabicNameIndex,
     );
-
-    console.log(data);
 
     await createBook({
       _airtableReference: data._airtableReference,
