@@ -1,12 +1,12 @@
 import { env } from "@/env";
 import { getPdfPageAsImage } from "@/lib/ocr";
 import { pagesQueue } from "@/page-queue";
+import { getBookPdfUrl } from "@/services/book";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 import { cache } from "hono/cache";
 import { stream } from "hono/streaming";
 import { validator } from "hono/validator";
-import { LRUCache } from "lru-cache";
 import { z } from "zod";
 
 import { BookStatus, PageOcrStatus } from "@usul-ocr/db";
@@ -50,30 +50,6 @@ const schema = z.object({
   bookId: z.string().min(1),
   pageNumber: z.coerce.number().min(1),
 });
-
-const bookIdToPdfUrlCache = new LRUCache<
-  string,
-  { pdfUrl: string; totalPages: number }
->({
-  max: 1000, // Maximum number of items to store in the cache
-});
-
-const getBookPdfUrl = async (bookId: string) => {
-  if (bookIdToPdfUrlCache.has(bookId)) {
-    return bookIdToPdfUrlCache.get(bookId)!;
-  }
-
-  const book = await db.book.findUnique({
-    where: {
-      id: bookId,
-    },
-  });
-  if (!book) return null;
-
-  const value = { pdfUrl: book.pdfUrl, totalPages: book.totalPages };
-  bookIdToPdfUrlCache.set(bookId, value);
-  return value;
-};
 
 ocrRoutes.get(
   "/book/:bookId/:pageNumber",

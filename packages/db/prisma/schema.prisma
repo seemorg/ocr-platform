@@ -142,8 +142,20 @@ model Page {
 
     totalWords Int @default(0)
 
+    azureOcrOutput AzureOcrOutput?
+
     @@unique([bookId, pdfPageNumber])
     @@index([totalWords])
+}
+
+model AzureOcrOutput {
+    id        String   @id @default(cuid())
+    pageId    String
+    page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+    output    String
+    createdAt DateTime @default(now())
+
+    @@unique([pageId])
 }
 
 enum GroupRole {

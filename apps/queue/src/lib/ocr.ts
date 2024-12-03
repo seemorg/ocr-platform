@@ -13,7 +13,7 @@ const client = (
 )(env.AZURE_OCR_ENDPOINT, new AzureKeyCredential(env.AZURE_OCR_KEY));
 
 const cache = new LRUCache<string, PDFDocument>({
-  max: 20, // Maximum number of items to store in the cache
+  max: 100, // Maximum number of items to store in the cache
   ttl: 60 * 60 * 1000 * 2, // 2 hours
 });
 
@@ -118,5 +118,52 @@ export async function ocrPage(pdfUrl: string, pageIndex: number) {
     pageNumber: pageIndex + 1,
     text: analyzeResult.content,
     imageBase64: imgBase64,
+  };
+}
+
+export async function ocrPageAsBuffer(pdfUrl: string, pageIndex: number) {
+  const pageUint8Array = await getPdfPage(pdfUrl, pageIndex);
+  const singlePagePdfBytes = Buffer.from(pageUint8Array).toString("base64");
+
+  const initialResponse = await client
+    .path("/documentModels/{modelId}:analyze", "prebuilt-read")
+    .post({
+      contentType: "application/json",
+      body: {
+        base64Source: singlePagePdfBytes,
+      },
+    });
+
+  if (isUnexpected(initialResponse)) {
+    throw initialResponse.body.error;
+  }
+
+  const pollResult = await (
+    await getLongRunningPoller(client, initialResponse)
+  ).pollUntilDone();
+  const { analyzeResult } = pollResult.body as {
+    analyzeResult: {
+      content: string;
+    };
+  };
+
+  if (!analyzeResult) {
+    throw {
+      code: "OCR_FAILED",
+      message: "Expected at least one document in the result.",
+      response: pollResult,
+    };
+  }
+
+  let imgBuffer: Buffer | null = null;
+  for await (const page of await pdfToImg(pageUint8Array, { scale: 2 })) {
+    imgBuffer = page;
+    break;
+  }
+
+  return {
+    pageNumber: pageIndex + 1,
+    text: analyzeResult.content,
+    imgBuffer,
   };
 }

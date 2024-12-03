@@ -7,12 +7,12 @@ import routes from "./routes";
 
 import "./book-worker";
 import "./page-worker";
+import "./upload-worker";
 
 const app = new Hono();
 
 app.use(
   secureHeaders({
-    // crossOriginOpenerPolicy: "same-origin",
     crossOriginResourcePolicy: "cross-origin",
   }),
 );

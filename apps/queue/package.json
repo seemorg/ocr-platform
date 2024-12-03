@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.25.0",
+    "@aws-sdk/client-s3": "^3.670.0",
     "@azure-rest/ai-document-intelligence": "1.0.0-beta.2",
     "@azure/core-auth": "^1.7.2",
     "@azure/openai": "^1.0.0-beta.12",

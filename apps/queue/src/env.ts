@@ -3,10 +3,6 @@ import { z } from "zod";
 
 export const env = createEnv({
   isServer: true,
-  /**
-   * Specify your server-side environment variables schema here. This way you can ensure the app
-   * isn't built with invalid env vars.
-   */
   server: {
     DATABASE_URL: z.string().url(),
     NODE_ENV: z
@@ -24,17 +20,11 @@ export const env = createEnv({
     DASHBOARD_PASSWORD: z.string(),
     OCR_SERVER_API_KEY: z.string(),
     ANTHROPIC_API_KEY: z.string(),
+    R2_ENDPOINT: z.string(),
+    R2_ACCESS_KEY_ID: z.string(),
+    R2_SECRET_KEY: z.string(),
+    R2_BUCKET: z.string(),
   },
-
-  /**
-   * You can't destruct `process.env` as a regular object in the Next.js edge runtimes (e.g.
-   * middlewares) or client-side so we need to destruct manually.
-   */
   runtimeEnv: process.env,
-
-  /**
-   * Makes it so that empty strings are treated as undefined. `SOME_VAR: z.string()` and
-   * `SOME_VAR=''` will throw an error.
-   */
   emptyStringAsUndefined: true,
 });
