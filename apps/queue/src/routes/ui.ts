@@ -1,3 +1,4 @@
+import { uploadQueue } from "@/upload-queue";
 import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/dist/src/queueAdapters/bullMQ.js";
 import { HonoAdapter } from "@bull-board/hono";
@@ -22,7 +23,11 @@ uiRoutes.use(
 const serverAdapter = new HonoAdapter(serveStatic).setBasePath(basePath);
 
 createBullBoard({
-  queues: [new BullMQAdapter(booksQueue), new BullMQAdapter(pagesQueue)],
+  queues: [
+    new BullMQAdapter(booksQueue),
+    new BullMQAdapter(pagesQueue),
+    new BullMQAdapter(uploadQueue),
+  ],
   serverAdapter,
 });
 
