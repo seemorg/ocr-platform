@@ -2,6 +2,8 @@ import type { usulDb } from "@/server/db";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
+import { Prisma } from "@usul-ocr/usul-db";
+
 import { createUniqueBookSlug } from "../book";
 import { bookVersionSchema, prepareBookVersions } from "../book-versions";
 
@@ -52,7 +54,6 @@ export const updateBook = async (
       transliteration: true,
       authorId: true,
       versions: true,
-      extraProperties: true,
       genres: {
         select: {
           id: true,
@@ -241,15 +242,7 @@ export const updateBook = async (
       });
     }
 
-    const versions = prepareBookVersions(data.versions);
-
-    const finalVersions = [
-      // old versions that are not usul or external
-      ...currentBook.versions.filter(
-        (version) => version.source !== "pdf" && version.source !== "external",
-      ),
-      ...versions,
-    ];
+    const versions = prepareBookVersions(data.versions, currentBook.versions);
 
     return tx.book.update({
       where: {
@@ -327,26 +320,11 @@ export const updateBook = async (
               author: { connect: { id: data.authorId } },
             }
           : {}),
-        versions: finalVersions,
-        numberOfVersions: finalVersions.length,
-        physicalDetails: data.physicalDetails?.details
-          ? data.physicalDetails.details
-          : null,
-        extraProperties: {
-          ...currentBook.extraProperties,
-          physicalDetails: data.physicalDetails
-            ? {
-                type: data.physicalDetails.type,
-                ...(data.physicalDetails.type === "published" && {
-                  investigator: data.physicalDetails.investigator,
-                  publisher: data.physicalDetails.publisher,
-                  publisherLocation: data.physicalDetails.publisherLocation,
-                  editionNumber: data.physicalDetails.editionNumber,
-                  publicationYear: data.physicalDetails.publicationYear,
-                }),
-              }
-            : undefined,
-        },
+        versions: versions,
+        numberOfVersions: versions.length,
+        physicalDetails: data.physicalDetails
+          ? data.physicalDetails
+          : Prisma.DbNull,
       },
     });
   });

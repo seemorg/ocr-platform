@@ -1,4 +1,7 @@
+import { nanoid } from "nanoid";
 import { z } from "zod";
+
+const createVersionId = () => nanoid(10);
 
 const publicationDetailsSchema = {
   publisher: z.string().optional(),
@@ -10,13 +13,19 @@ const publicationDetailsSchema = {
 
 export const bookVersionSchema = z.discriminatedUnion("type", [
   z.object({
+    id: z.string().optional(),
     type: z.literal("external"),
     url: z.string().url(),
+    aiSupported: z.boolean().optional(),
+    keywordSupported: z.boolean().optional(),
     ...publicationDetailsSchema,
   }),
   z.object({
+    id: z.string().optional(),
     type: z.literal("pdf"),
     url: z.string().url().startsWith("https://assets.usul.ai/pdfs/"),
+    aiSupported: z.boolean().optional(),
+    keywordSupported: z.boolean().optional(),
     ocrBookId: z.string().optional(),
     splitsData: z
       .array(
@@ -32,6 +41,7 @@ export const bookVersionSchema = z.discriminatedUnion("type", [
 
 export const prepareBookVersions = (
   versions: z.infer<typeof bookVersionSchema>[],
+  currentVersions?: PrismaJson.BookVersion[],
 ) => {
   const final: PrismaJson.BookVersion[] = [];
 
@@ -56,6 +66,7 @@ export const prepareBookVersions = (
 
     if (version.type === "external") {
       final.push({
+        id: version.id ?? createVersionId(),
         source: "external" as const,
         value: version.url,
         publicationDetails,
@@ -64,6 +75,7 @@ export const prepareBookVersions = (
 
     if (version.type === "pdf") {
       final.push({
+        id: version.id ?? createVersionId(),
         source: "pdf" as const,
         value: version.url,
         publicationDetails,
@@ -74,6 +86,21 @@ export const prepareBookVersions = (
       });
     }
   });
+
+  if (currentVersions) {
+    return [
+      ...currentVersions
+        .filter(
+          (version) =>
+            version.source !== "pdf" && version.source !== "external",
+        )
+        .map(({ id, ...rest }) => ({
+          id: id ?? createVersionId(),
+          ...rest,
+        })),
+      ...final,
+    ];
+  }
 
   return final;
 };
