@@ -64,17 +64,19 @@ export const prepareBookVersions = (
         : {}),
     };
 
+    let obj: Partial<PrismaJson.BookVersion> | null = null;
+
     if (version.type === "external") {
-      final.push({
+      obj = {
         id: version.id ?? createVersionId(),
         source: "external" as const,
         value: version.url,
         publicationDetails,
-      });
+      };
     }
 
     if (version.type === "pdf") {
-      final.push({
+      obj = {
         id: version.id ?? createVersionId(),
         source: "pdf" as const,
         value: version.url,
@@ -82,6 +84,17 @@ export const prepareBookVersions = (
         ...(version.ocrBookId ? { ocrBookId: version.ocrBookId } : {}),
         ...(version.splitsData && version.splitsData.length > 0
           ? { splitsData: version.splitsData }
+          : {}),
+      };
+    }
+
+    if (obj) {
+      let existingVersion = currentVersions?.find((v) => v.id === obj.id);
+      final.push({
+        ...(obj as PrismaJson.BookVersion),
+        ...(existingVersion?.aiSupported ? { aiSupported: true } : {}),
+        ...(existingVersion?.keywordSupported
+          ? { keywordSupported: true }
           : {}),
       });
     }

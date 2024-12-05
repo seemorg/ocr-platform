@@ -14,7 +14,5 @@ export default async function UsulLayout({
     redirect("/login");
   }
 
-  redirect("/maintenance");
-
   return <UsulProviders>{children}</UsulProviders>;
 }

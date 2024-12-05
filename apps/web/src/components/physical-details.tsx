@@ -21,9 +21,9 @@ export const physicalDetailsSchema = z
       publisherLocation: z.string().optional(),
       editionNumber: z.string().optional(),
       publicationYear: z.number().optional(),
-      details: z.string().optional(),
+      notes: z.string().optional(),
     }),
-    z.object({ type: z.literal("manuscript"), details: z.string() }),
+    z.object({ type: z.literal("manuscript"), notes: z.string().optional() }),
   ])
   .nullable()
   .default(null);
@@ -130,7 +130,7 @@ export default function PhysicalDetails({ form, disabled }: Props) {
 
       <FormField
         control={form.control}
-        name="physicalDetails.details"
+        name="physicalDetails.notes"
         render={({ field }) => (
           <FormItem>
             <FormLabel>

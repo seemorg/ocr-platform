@@ -29,7 +29,7 @@ export const createBookSchema = z.object({
       }),
       z.object({
         type: z.literal("manuscript"),
-        notes: z.string(),
+        notes: z.string().optional(),
       }),
     ])
     .nullable(),

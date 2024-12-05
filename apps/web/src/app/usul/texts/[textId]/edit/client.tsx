@@ -68,12 +68,11 @@ export default function EditTextClientPage({ text }: { text: Text }) {
     },
   });
 
-  console.log(form.formState.errors.author);
-
   const [versions, setVersions] = useState<Version[]>(() =>
     text.versions.map((v) => {
       if (v.source === "turath" || v.source === "openiti") {
         return {
+          id: v.id,
           type: v.source as any,
           value: v.value,
           ...v.publicationDetails,
@@ -81,6 +80,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
       }
 
       return {
+        id: v.id,
         type: v.source as any,
         url: v.value,
         ...(v.source === "pdf"
@@ -161,6 +161,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
 
         if (finalPdfUrl) {
           finalVersions.push({
+            ...(version.id ? { id: version.id } : {}),
             type: "pdf",
             url: finalPdfUrl,
             publisher: version.publisher,

@@ -14,10 +14,14 @@ type PublicationDetails = {
   publicationYear?: number;
 };
 
+type Common = {
+  id?: string;
+} & PublicationDetails;
+
 type ExternalVersion = {
   type: "external";
   url: string;
-} & PublicationDetails;
+} & Common;
 
 type PdfVersion = {
   type: "pdf";
@@ -25,17 +29,17 @@ type PdfVersion = {
   files: File[];
   url?: string;
   ocrBookId?: string;
-} & PublicationDetails;
+} & Common;
 
 type TurathVersion = {
   type: "turath";
   value: string;
-} & PublicationDetails;
+} & Common;
 
 type OpenitiVersion = {
   type: "openiti";
   value: string;
-} & PublicationDetails;
+} & Common;
 
 export type Version =
   | ExternalVersion
@@ -79,7 +83,7 @@ export default function VersionsInput({
     field: T,
     value: T extends keyof ExternalVersion ? ExternalVersion[T] : PdfVersion[T],
   ) => {
-    const newVersions = [...versions];
+    const newVersions = structuredClone(versions);
     (newVersions[idx] as any)![field]! = value;
     setVersions(newVersions);
   };

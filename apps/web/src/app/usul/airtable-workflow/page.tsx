@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -170,7 +169,7 @@ export default function AddTextFromAirtable() {
         transliteration: airtableText.transliteration ?? "",
         advancedGenres: advancedGenresInDb,
         physicalDetails: airtableText.physicalDetails
-          ? { type: "published", details: airtableText.physicalDetails }
+          ? { type: "published", notes: airtableText.physicalDetails }
           : null,
         author: {
           isUsul: author?.isUsul ?? false,

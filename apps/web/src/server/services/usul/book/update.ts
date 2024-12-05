@@ -22,11 +22,11 @@ export const updateBookSchema = z.object({
         publisherLocation: z.string().optional(),
         editionNumber: z.string().optional(),
         publicationYear: z.number().optional(),
-        details: z.string().optional(),
+        notes: z.string().optional(),
       }),
       z.object({
         type: z.literal("manuscript"),
-        details: z.string(),
+        notes: z.string().optional(),
       }),
     ])
     .nullable(),
