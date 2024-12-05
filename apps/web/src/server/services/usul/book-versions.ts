@@ -68,19 +68,15 @@ export const prepareBookVersions = (
 
     if (version.type === "external") {
       obj = {
-        id: version.id ?? createVersionId(),
         source: "external" as const,
         value: version.url,
-        publicationDetails,
       };
     }
 
     if (version.type === "pdf") {
       obj = {
-        id: version.id ?? createVersionId(),
         source: "pdf" as const,
         value: version.url,
-        publicationDetails,
         ...(version.ocrBookId ? { ocrBookId: version.ocrBookId } : {}),
         ...(version.splitsData && version.splitsData.length > 0
           ? { splitsData: version.splitsData }
@@ -92,6 +88,8 @@ export const prepareBookVersions = (
       let existingVersion = currentVersions?.find((v) => v.id === obj.id);
       final.push({
         ...(obj as PrismaJson.BookVersion),
+        id: version.id ?? createVersionId(),
+        publicationDetails,
         ...(existingVersion?.aiSupported ? { aiSupported: true } : {}),
         ...(existingVersion?.keywordSupported
           ? { keywordSupported: true }
