@@ -1,6 +1,8 @@
 import type { usulDb } from "@/server/db";
 import { textToSlug } from "@/lib/slug";
 
+import type { Prisma } from "@usul-ocr/usul-db";
+
 const doesAuthorSlugExist = async (slug: string, db: typeof usulDb) => {
   const author = await db.author.findUnique({
     where: { slug },
@@ -35,16 +37,24 @@ export const getAuthor = async (
       },
   db: typeof usulDb,
 ) => {
+  let filter: Prisma.AuthorWhereInput;
+  if ("_airtableReference" in data) {
+    filter = {
+      extraProperties: {
+        path: ["_airtableReference"],
+        equals: data._airtableReference,
+      },
+    };
+  } else if ("slug" in data) {
+    filter = {
+      OR: [{ slug: data.slug, alternateSlugs: { some: { slug: data.slug } } }],
+    };
+  } else {
+    filter = { id: data.id };
+  }
+
   const author = await db.author.findFirst({
-    where:
-      "_airtableReference" in data
-        ? {
-            extraProperties: {
-              path: ["_airtableReference"],
-              equals: data._airtableReference,
-            },
-          }
-        : data,
+    where: filter,
     select: {
       id: true,
       primaryNameTranslations: {

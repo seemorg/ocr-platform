@@ -407,6 +407,8 @@ export default function AddTextFromAirtable() {
   };
 
   const currentYearStatus = form.watch("author.yearStatus");
+  const selectedAuthorId =
+    selectedAuthor?.id || airtableReferenceCheck?.authorId;
 
   return (
     <PageLayout title="Import Text From Airtable" backHref="/usul">
@@ -520,15 +522,15 @@ export default function AddTextFromAirtable() {
                 </a>
               )}
 
-              {selectedAuthor?.id && (
+              {selectedAuthor && selectedAuthorId ? (
                 <a
-                  href={`/usul/authors/${selectedAuthor?.id}/edit`}
+                  href={`/usul/authors/${selectedAuthorId}/edit`}
                   target="_blank"
                   className="text-primary underline"
                 >
                   View on Internal Tool
                 </a>
-              )}
+              ) : null}
             </div>
           ) : null}
 
