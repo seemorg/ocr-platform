@@ -26,12 +26,35 @@ export const columns: ColumnDef<Genre>[] = [
     header: "English Name",
   },
   {
-    accessorKey: "slug",
-    header: "Slug",
+    accessorKey: "numberOfBooks",
+    header: "Books",
+    cell: ({ row }) => {
+      const { numberOfBooks, id } = row.original;
+      return (
+        <Link
+          href={`/usul/texts?genre=${id}`}
+          className="text-primary underline"
+        >
+          {numberOfBooks} (View)
+        </Link>
+      );
+    },
   },
   {
-    accessorKey: "numberOfBooks",
-    header: "Number of Books",
+    accessorKey: "slug",
+    header: "Usul",
+    cell: ({ row }) => {
+      const { slug } = row.original;
+      return (
+        <a
+          target="_blank"
+          href={`https://usul.ai/genres/${slug}`}
+          className="text-primary underline"
+        >
+          View on Usul
+        </a>
+      );
+    },
   },
   {
     header: "Actions",

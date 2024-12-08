@@ -18,6 +18,14 @@ export type Text = {
   englishAuthorName?: string;
   createdAt?: Date | null;
   updatedAt?: Date | null;
+  genres: {
+    id: string;
+    arabicName?: string;
+  }[];
+  advancedGenres: {
+    id: string;
+    arabicName?: string;
+  }[];
 };
 
 export const columns: ColumnDef<Text>[] = [
@@ -52,6 +60,26 @@ export const columns: ColumnDef<Text>[] = [
           <p className="truncate" title={englishAuthorName}>
             {englishAuthorName}
           </p>
+        </div>
+      );
+    },
+  },
+  {
+    header: "Advanced Genres",
+    cell: ({ row }) => {
+      const { advancedGenres } = row.original;
+
+      return (
+        <div className="flex flex-wrap gap-2">
+          {advancedGenres.map((g) => (
+            <Link
+              key={g.id}
+              href={`/usul/advanced-genres/${g.id}/edit`}
+              className="rounded-md bg-muted px-2 py-1"
+            >
+              {g.arabicName}
+            </Link>
+          ))}
         </div>
       );
     },

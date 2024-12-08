@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -44,6 +44,18 @@ export default function AirtableSelector({
   setBase?: (value: (typeof airtableBases)[number]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const selectedItemRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open && selectedIndex !== null) {
+      // Wait for next tick to ensure the popover content is rendered
+      setTimeout(() => {
+        selectedItemRef.current?.scrollIntoView({
+          block: "center",
+        });
+      }, 0);
+    }
+  }, [open, selectedIndex]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -99,6 +111,7 @@ export default function AirtableSelector({
                 <CommandItem
                   key={idx.toString()}
                   value={idx.toString()}
+                  ref={selectedIndex === idx ? selectedItemRef : undefined}
                   keywords={[
                     text.id.toString(),
                     text.arabicName ?? "",

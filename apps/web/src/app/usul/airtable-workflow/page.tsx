@@ -68,6 +68,7 @@ const schema = z.object({
       primaryArabicNameIndex: z.number().min(0).default(0),
       transliteratedName: z.string(),
       slug: z.string().optional(),
+      id: z.string().optional(),
       diedYear: z.coerce.number().optional(),
       yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
     })
@@ -332,9 +333,11 @@ export default function AddTextFromAirtable() {
     isLoadingAirtableReferenceCheck || isUsulBook || !airtableText;
 
   const author = form.watch("author");
+
   const selectedAuthor = useMemo(() => {
     if (!author || !author.isUsul || !author.slug) return null;
     return {
+      id: author.id,
       slug: author.slug,
       arabicName: author.arabicNames[author.primaryArabicNameIndex]!,
       transliteratedName: author.transliteratedName,
@@ -483,27 +486,50 @@ export default function AddTextFromAirtable() {
           </div>
 
           {isUsulAuthor ? (
-            <AuthorsCombobox
-              selected={selectedAuthor as any}
-              onSelect={(author) => {
-                if (author) {
-                  form.setValue("author.slug", author.slug);
-                  form.setValue("author.arabicNames", [author.arabicName!]);
-                  form.setValue("author.primaryArabicNameIndex", 0);
-                  form.setValue(
-                    "author.transliteratedName",
-                    author.transliteratedName!,
-                  );
-                  form.setValue("author.diedYear", author.year!);
-                } else {
-                  form.resetField("author.slug");
-                  form.resetField("author.arabicNames");
-                  form.resetField("author.primaryArabicNameIndex");
-                  form.resetField("author.transliteratedName");
-                  form.resetField("author.diedYear");
-                }
-              }}
-            />
+            <div className="flex items-center gap-4">
+              <AuthorsCombobox
+                selected={selectedAuthor as any}
+                onSelect={(author) => {
+                  if (author) {
+                    form.setValue("author.id", author.id);
+                    form.setValue("author.slug", author.slug);
+                    form.setValue("author.arabicNames", [author.arabicName!]);
+                    form.setValue("author.primaryArabicNameIndex", 0);
+                    form.setValue(
+                      "author.transliteratedName",
+                      author.transliteratedName!,
+                    );
+                    form.setValue("author.diedYear", author.year!);
+                  } else {
+                    form.resetField("author.slug");
+                    form.resetField("author.arabicNames");
+                    form.resetField("author.primaryArabicNameIndex");
+                    form.resetField("author.transliteratedName");
+                    form.resetField("author.diedYear");
+                  }
+                }}
+              />
+
+              {selectedAuthor?.slug && (
+                <a
+                  href={`https://usul.ai/author/${selectedAuthor.slug}`}
+                  target="_blank"
+                  className="text-primary underline"
+                >
+                  View on Usul
+                </a>
+              )}
+
+              {selectedAuthor?.id && (
+                <a
+                  href={`/usul/authors/${selectedAuthor?.id}/edit`}
+                  target="_blank"
+                  className="text-primary underline"
+                >
+                  View on Internal Tool
+                </a>
+              )}
+            </div>
           ) : null}
 
           <FormField

@@ -14,7 +14,10 @@ import { columns } from "./columns";
 export default async function TextsPage({
   searchParams,
 }: {
-  searchParams: PaginationSearchParams;
+  searchParams: PaginationSearchParams & {
+    genre?: string;
+    advancedGenre?: string;
+  };
 }) {
   const query = getQuery(searchParams);
   const pagination = getPagination(searchParams);
@@ -49,6 +52,24 @@ export default async function TextsPage({
     };
   }
 
+  if (searchParams.advancedGenre) {
+    filter = {
+      ...(filter ?? {}),
+      advancedGenres: {
+        some: { id: searchParams.advancedGenre },
+      },
+    };
+  }
+
+  if (searchParams.genre) {
+    filter = {
+      ...(filter ?? {}),
+      genres: {
+        some: { id: searchParams.genre },
+      },
+    };
+  }
+
   const [count, books] = await Promise.all([
     usulDb.book.count({
       where: filter,
@@ -62,6 +83,26 @@ export default async function TextsPage({
         primaryNameTranslations: {
           where: {
             OR: [{ locale: "ar" }, { locale: "en" }],
+          },
+        },
+        advancedGenres: {
+          select: {
+            id: true,
+            nameTranslations: {
+              where: {
+                locale: "ar",
+              },
+            },
+          },
+        },
+        genres: {
+          select: {
+            id: true,
+            nameTranslations: {
+              where: {
+                locale: "ar",
+              },
+            },
           },
         },
         author: {
@@ -103,6 +144,14 @@ export default async function TextsPage({
       englishAuthorName: authorNames.en,
       createdAt: book.createdAt,
       updatedAt: book.updatedAt,
+      genres: book.genres.map((g) => ({
+        id: g.id,
+        arabicName: g.nameTranslations[0]?.text,
+      })),
+      advancedGenres: book.advancedGenres.map((g) => ({
+        id: g.id,
+        arabicName: g.nameTranslations[0]?.text,
+      })),
     };
   });
 

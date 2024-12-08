@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DataCombobox from "@/components/data-combobox";
 import { Button } from "@/components/ui/button";
@@ -87,6 +86,20 @@ export default function NewBookForm() {
       }
     },
   });
+
+  useEffect(() => {
+    if (selectedBook) {
+      const pdfVersions = selectedBook.versions.filter(
+        (v) => v.source === "pdf",
+      )!;
+
+      if (pdfVersions.length === 1) {
+        setSelectedVersion(pdfVersions[0]!);
+      } else {
+        setSelectedVersion(null);
+      }
+    }
+  }, [selectedBook]);
 
   // 2. Define a submit handler.
   async function onSubmit(values: z.infer<typeof schema>) {
@@ -260,7 +273,7 @@ export default function NewBookForm() {
             </div>
 
             <div>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || !selectedVersion}>
                 {isPending ? "Submitting..." : "Submit"}
               </Button>
             </div>
