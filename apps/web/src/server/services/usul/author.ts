@@ -47,7 +47,10 @@ export const getAuthor = async (
     };
   } else if ("slug" in data) {
     filter = {
-      OR: [{ slug: data.slug, alternateSlugs: { some: { slug: data.slug } } }],
+      OR: [
+        { slug: data.slug },
+        { alternateSlugs: { some: { slug: data.slug } } },
+      ],
     };
   } else {
     filter = { id: data.id };
