@@ -1,14 +1,13 @@
-import { uploadQueue } from "@/upload-queue";
+import { env } from "@/env";
+import { booksQueue } from "@/queues/book/queue";
+import { pagesQueue } from "@/queues/page/queue";
+import { uploadQueue } from "@/queues/upload/queue";
 import { createBullBoard } from "@bull-board/api";
 import { BullMQAdapter } from "@bull-board/api/dist/src/queueAdapters/bullMQ.js";
 import { HonoAdapter } from "@bull-board/hono";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
 import { basicAuth } from "hono/basic-auth";
-
-import { booksQueue } from "../book-queue";
-import { env } from "../env";
-import { pagesQueue } from "../page-queue";
 
 const basePath = "/ui";
 const uiRoutes = new Hono().basePath(basePath);

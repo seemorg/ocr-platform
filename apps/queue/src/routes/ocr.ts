@@ -1,6 +1,8 @@
 import { env } from "@/env";
+import { db } from "@/lib/db";
 import { getPdfPageAsImage } from "@/lib/ocr";
-import { pagesQueue } from "@/page-queue";
+import { booksQueue } from "@/queues/book/queue";
+import { pagesQueue } from "@/queues/page/queue";
 import { getBookPdfUrl } from "@/services/book";
 import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
@@ -10,9 +12,6 @@ import { validator } from "hono/validator";
 import { z } from "zod";
 
 import { BookStatus, PageOcrStatus } from "@usul-ocr/db";
-
-import { booksQueue } from "../book-queue";
-import { db } from "../lib/db";
 
 const ocrRoutes = new Hono();
 

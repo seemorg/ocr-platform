@@ -1,12 +1,12 @@
+import { db } from "@/lib/db";
+import { getPdfPages } from "@/lib/ocr";
+import { chunk } from "@/lib/utils";
 import { Worker } from "bullmq";
 
 import { BookStatus } from "@usul-ocr/db";
 
-import { BOOKS_QUEUE_NAME, BOOKS_QUEUE_REDIS } from "./book-queue";
-import { db } from "./lib/db";
-import { getPdfPages } from "./lib/ocr";
-import { chunk } from "./lib/utils";
-import { pagesQueue } from "./page-queue";
+import { pagesQueue } from "../page/queue";
+import { BOOKS_QUEUE_NAME, BOOKS_QUEUE_REDIS } from "./queue";
 
 export const worker = new Worker<{ bookId: string }>(
   BOOKS_QUEUE_NAME,

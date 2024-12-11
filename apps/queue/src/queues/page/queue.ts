@@ -1,6 +1,5 @@
+import { createRedis } from "@/lib/redis";
 import { Queue } from "bullmq";
-
-import { createRedis } from "./lib/redis";
 
 export const PAGES_QUEUE_NAME = "pages_queue";
 export const PAGES_QUEUE_REDIS = createRedis();

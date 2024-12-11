@@ -1,12 +1,13 @@
+import { db } from "@/lib/db";
+import { executePipelineForPage } from "@/pipeline";
 import { Worker } from "bullmq";
 import { stripHtml } from "string-strip-html";
 
-import { BookStatus, PageFlag, PageOcrStatus, Prisma } from "@usul-ocr/db";
+import type { Prisma } from "@usul-ocr/db";
+import { BookStatus, PageFlag, PageOcrStatus } from "@usul-ocr/db";
 
-import type { PagesQueueData } from "./page-queue";
-import { db } from "./lib/db";
-import { PAGES_QUEUE_NAME, PAGES_QUEUE_REDIS } from "./page-queue";
-import { executePipelineForPage } from "./pipeline";
+import type { PagesQueueData } from "./queue";
+import { PAGES_QUEUE_NAME, PAGES_QUEUE_REDIS } from "./queue";
 
 function countWords(text: string): number {
   const strippedText = stripHtml(text).result;

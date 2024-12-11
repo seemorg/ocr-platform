@@ -5,9 +5,9 @@ import { secureHeaders } from "hono/secure-headers";
 
 import routes from "./routes";
 
-import "./book-worker";
-import "./page-worker";
-import "./upload-worker";
+import "./queues/book/worker";
+import "./queues/page/worker";
+import "./queues/upload/worker";
 
 const app = new Hono();
 

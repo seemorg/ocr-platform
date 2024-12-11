@@ -1,14 +1,11 @@
+import { db } from "@/lib/db";
+import { ocrPageAsBuffer } from "@/lib/ocr";
+import { uploadToR2 } from "@/lib/r2";
+import { getBookPdfUrl } from "@/services/book";
 import { Worker } from "bullmq";
 
-import { db } from "./lib/db";
-import { ocrPageAsBuffer } from "./lib/ocr";
-import { uploadToR2 } from "./lib/r2";
-import { getBookPdfUrl } from "./services/book";
-import {
-  UPLOAD_QUEUE_NAME,
-  UPLOAD_QUEUE_REDIS,
-  UploadQueueData,
-} from "./upload-queue";
+import type { UploadQueueData } from "./queue";
+import { UPLOAD_QUEUE_NAME, UPLOAD_QUEUE_REDIS } from "./queue";
 
 export const uploadWorker = new Worker<UploadQueueData>(
   UPLOAD_QUEUE_NAME,
