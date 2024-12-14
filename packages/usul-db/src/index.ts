@@ -18,6 +18,7 @@ declare global {
       | {
           source: "openiti" | "turath";
           pdfUrl?: string;
+          splitsData?: SplitsData;
         }
       | {
           source: "pdf";

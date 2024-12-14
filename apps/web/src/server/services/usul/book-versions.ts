@@ -125,6 +125,18 @@ export const prepareBookVersions = (
         ...(existingVersion?.keywordSupported
           ? { keywordSupported: true }
           : {}),
+
+        ...(existingVersion?.source === "pdf" &&
+        obj.source === "pdf" &&
+        existingVersion?.value === obj.value
+          ? { splitsData: existingVersion.splitsData }
+          : {}),
+        ...(existingVersion?.source === "turath" ||
+        (existingVersion?.source === "openiti" &&
+          (obj.source === "turath" || obj.source === "openiti") &&
+          existingVersion?.pdfUrl === obj.pdfUrl)
+          ? { splitsData: existingVersion.splitsData }
+          : {}),
       });
     }
   });
