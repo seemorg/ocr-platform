@@ -80,6 +80,9 @@ export default function EditTextClientPage({ text }: { text: Text }) {
           mode: v.pdfUrl ? "url" : "upload",
           files: [],
           ...v.publicationDetails,
+          ...(v.publicationDetails?.publicationYear
+            ? { publicationYear: String(v.publicationDetails.publicationYear) }
+            : {}),
         };
       }
 
@@ -91,6 +94,9 @@ export default function EditTextClientPage({ text }: { text: Text }) {
           ? { files: [], mode: "url", ocrBookId: v.ocrBookId }
           : {}),
         ...v.publicationDetails,
+        ...(v.publicationDetails?.publicationYear
+          ? { publicationYear: String(v.publicationDetails.publicationYear) }
+          : {}),
       };
     }),
   );
