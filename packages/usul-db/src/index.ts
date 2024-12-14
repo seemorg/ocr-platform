@@ -3,7 +3,7 @@ interface PublicationDetails {
   publisher?: string;
   publisherLocation?: string;
   editionNumber?: string;
-  publicationYear?: number; // hijri
+  publicationYear?: string; // hijri
 }
 
 type SplitsData = { start: number; end: number }[];
@@ -13,7 +13,11 @@ declare global {
   namespace PrismaJson {
     type BookVersion = (
       | {
-          source: "openiti" | "turath" | "external";
+          source: "external";
+        }
+      | {
+          source: "openiti" | "turath";
+          pdfUrl?: string;
         }
       | {
           source: "pdf";

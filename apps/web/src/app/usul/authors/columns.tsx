@@ -18,16 +18,28 @@ export type Text = {
 
 export const columns: ColumnDef<Text>[] = [
   {
-    accessorKey: "slug",
-    header: "Slug",
-  },
-  {
     accessorKey: "arabicName",
     header: "Arabic Name",
   },
   {
     accessorKey: "englishName",
     header: "English Name",
+  },
+  {
+    accessorKey: "slug",
+    header: "Usul",
+    cell: ({ row }) => {
+      const { slug } = row.original;
+      return (
+        <a
+          target="_blank"
+          href={`https://usul.ai/author/${slug}`}
+          className="text-primary underline"
+        >
+          View on Usul
+        </a>
+      );
+    },
   },
   {
     accessorKey: "numberOfBooks",

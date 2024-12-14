@@ -21,7 +21,7 @@ export const updateBookSchema = z.object({
         publisher: z.string().optional(),
         publisherLocation: z.string().optional(),
         editionNumber: z.string().optional(),
-        publicationYear: z.number().optional(),
+        publicationYear: z.string().optional(),
         notes: z.string().optional(),
       }),
       z.object({

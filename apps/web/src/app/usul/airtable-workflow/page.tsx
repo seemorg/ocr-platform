@@ -37,6 +37,7 @@ import VersionsInput, {
 import useAirtableTexts from "@/hooks/useAirtableTexts";
 import { useUploadPdfs } from "@/hooks/useUploadPdfs";
 import { textToSlug } from "@/lib/slug";
+import { bookVersionSchema } from "@/server/services/usul/book-versions";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RefreshCcwIcon } from "lucide-react";
@@ -219,25 +220,23 @@ export default function AddTextFromAirtable() {
   const onSubmit = async (data: z.infer<typeof schema>) => {
     const inferredSlug = textToSlug(data.transliteration);
 
-    const finalVersions: ({
-      type: "pdf" | "external";
-      url: string;
-      splitsData?: { start: number; end: number }[];
-    } & Pick<
-      Version,
-      | "publisher"
-      | "publicationYear"
-      | "investigator"
-      | "editionNumber"
-      | "publisherLocation"
-    >)[] = [];
+    if (data.author.isUsul && !data.author.slug) {
+      toast.error("Author slug is required");
+      return;
+    }
+
+    if (
+      !data.author.isUsul &&
+      !data.author.yearStatus &&
+      !data.author.diedYear
+    ) {
+      toast.error("Author death year or year status is required");
+      return;
+    }
+
+    const finalVersions: z.infer<typeof bookVersionSchema>[] = [];
 
     for (const version of versions) {
-      if (version.type === "openiti" || version.type === "turath") {
-        // skip turath and openiti versions and don't send them to the backend
-        continue;
-      }
-
       if (version.type === "external") {
         if (version.url) {
           finalVersions.push(version);
@@ -252,42 +251,46 @@ export default function AddTextFromAirtable() {
             finalSplitsData = response?.splitsData;
           }
         } else {
-          if (version.url) {
-            const response = await uploadFromUrl(version.url, inferredSlug);
+          const versionUrl =
+            version.type === "pdf" ? version.url : version.pdfUrl;
+          if (versionUrl) {
+            const response = await uploadFromUrl(versionUrl, inferredSlug);
             finalPdfUrl = response?.url;
           }
         }
 
-        if (!finalPdfUrl) {
+        if (version.type === "pdf" && !finalPdfUrl) {
           toast.error("Could not upload version!");
           return;
         }
 
-        finalVersions.push({
-          type: "pdf",
-          url: finalPdfUrl,
-          splitsData: finalSplitsData,
+        const shared = {
+          ...(version.id ? { id: version.id } : {}),
           publisher: version.publisher,
           publisherLocation: version.publisherLocation,
           publicationYear: version.publicationYear,
           investigator: version.investigator,
           editionNumber: version.editionNumber,
-        });
+          splitsData: finalSplitsData,
+        };
+
+        if (version.type === "pdf") {
+          if (finalPdfUrl) {
+            finalVersions.push({
+              type: "pdf",
+              url: finalPdfUrl,
+              ...shared,
+            });
+          }
+        } else {
+          finalVersions.push({
+            value: version.value,
+            type: version.type,
+            ...shared,
+            pdfUrl: finalPdfUrl,
+          });
+        }
       }
-    }
-
-    if (data.author.isUsul && !data.author.slug) {
-      toast.error("Author slug is required");
-      return;
-    }
-
-    if (
-      !data.author.isUsul &&
-      !data.author.yearStatus &&
-      !data.author.diedYear
-    ) {
-      toast.error("Author death year or year status is required");
-      return;
     }
 
     const primaryArabicName = data.arabicNames[data.primaryArabicNameIndex]!;
@@ -368,7 +371,7 @@ export default function AddTextFromAirtable() {
             publisherLocation: result.publisherLocation,
           }),
           ...(result?.publicationYear && {
-            publicationYear: result.publicationYear,
+            publicationYear: String(result.publicationYear),
           }),
           ...(result?.editionNumber && {
             editionNumber: result.editionNumber,

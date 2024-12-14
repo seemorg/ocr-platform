@@ -24,7 +24,7 @@ export const createBookSchema = z.object({
         publisher: z.string().optional(),
         publisherLocation: z.string().optional(),
         editionNumber: z.string().optional(),
-        publicationYear: z.number().optional(),
+        publicationYear: z.string().optional(),
         notes: z.string().optional(),
       }),
       z.object({
@@ -40,7 +40,7 @@ export const createBookSchema = z.object({
     }),
     z.object({
       isUsul: z.literal(false),
-      _airtableReference: z.string(),
+      _airtableReference: z.string().optional(),
       arabicName: z.string(),
       otherNames: z.array(z.string()).optional(),
       transliteratedName: z.string(),
@@ -97,10 +97,12 @@ export const createBook = async (
     authorArabicName = author.name;
     authorId = author.id;
   } else {
-    const author = await getAuthor(
-      { _airtableReference: data.author._airtableReference },
-      db,
-    );
+    const author = data.author._airtableReference
+      ? await getAuthor(
+          { _airtableReference: data.author._airtableReference },
+          db,
+        )
+      : null;
 
     if (author) {
       authorId = author.id;

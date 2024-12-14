@@ -20,7 +20,7 @@ export const physicalDetailsSchema = z
       publisher: z.string().optional(),
       publisherLocation: z.string().optional(),
       editionNumber: z.string().optional(),
-      publicationYear: z.number().optional(),
+      publicationYear: z.string().optional(),
       notes: z.string().optional(),
     }),
     z.object({ type: z.literal("manuscript"), notes: z.string().optional() }),

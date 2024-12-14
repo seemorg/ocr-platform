@@ -21,5 +21,5 @@ export const publicationDetailsSchema = {
   publisher: z.string().optional(),
   publisherLocation: z.string().optional(),
   editionNumber: z.string().optional(),
-  publicationYear: z.coerce.number().optional(),
+  publicationYear: z.string().optional(),
 };

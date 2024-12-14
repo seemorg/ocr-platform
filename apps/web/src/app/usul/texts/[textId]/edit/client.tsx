@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import VersionsInput, { Version } from "@/components/versions-input";
 import { useUploadPdfs } from "@/hooks/useUploadPdfs";
 import { textToSlug } from "@/lib/slug";
+import { bookVersionSchema } from "@/server/services/usul/book-versions";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -75,6 +76,9 @@ export default function EditTextClientPage({ text }: { text: Text }) {
           id: v.id,
           type: v.source as any,
           value: v.value,
+          pdfUrl: v.pdfUrl,
+          mode: v.pdfUrl ? "url" : "upload",
+          files: [],
           ...v.publicationDetails,
         };
       }
@@ -119,26 +123,9 @@ export default function EditTextClientPage({ text }: { text: Text }) {
       (_, idx) => idx !== data.primaryArabicNameIndex,
     );
 
-    const finalVersions: ({
-      type: "pdf" | "external";
-      url: string;
-      splitsData?: { start: number; end: number }[];
-      ocrBookId?: string;
-    } & Pick<
-      Version,
-      | "publisher"
-      | "publicationYear"
-      | "investigator"
-      | "editionNumber"
-      | "publisherLocation"
-    >)[] = [];
+    const finalVersions: z.infer<typeof bookVersionSchema>[] = [];
 
     for (const version of versions) {
-      if (version.type === "openiti" || version.type === "turath") {
-        // skip turath and openiti versions and don't send them to the backend
-        continue;
-      }
-
       if (version.type === "external") {
         if (version.url) {
           finalVersions.push(version);
@@ -153,24 +140,39 @@ export default function EditTextClientPage({ text }: { text: Text }) {
             finalSplitsData = response?.splitsData;
           }
         } else {
-          if (version.url) {
-            const response = await uploadFromUrl(version.url, inferredSlug);
+          const versionUrl =
+            version.type === "pdf" ? version.url : version.pdfUrl;
+          if (versionUrl) {
+            const response = await uploadFromUrl(versionUrl, inferredSlug);
             finalPdfUrl = response?.url;
           }
         }
 
-        if (finalPdfUrl) {
+        const shared = {
+          ...(version.id ? { id: version.id } : {}),
+          publisher: version.publisher,
+          publisherLocation: version.publisherLocation,
+          publicationYear: version.publicationYear,
+          investigator: version.investigator,
+          editionNumber: version.editionNumber,
+          splitsData: finalSplitsData,
+        };
+
+        if (version.type === "pdf") {
+          if (finalPdfUrl) {
+            finalVersions.push({
+              type: "pdf",
+              url: finalPdfUrl,
+              ...shared,
+              ocrBookId: version.ocrBookId,
+            });
+          }
+        } else {
           finalVersions.push({
-            ...(version.id ? { id: version.id } : {}),
-            type: "pdf",
-            url: finalPdfUrl,
-            publisher: version.publisher,
-            publisherLocation: version.publisherLocation,
-            publicationYear: version.publicationYear,
-            investigator: version.investigator,
-            editionNumber: version.editionNumber,
-            splitsData: finalSplitsData,
-            ocrBookId: version.ocrBookId,
+            type: version.type,
+            value: version.value,
+            ...shared,
+            pdfUrl: finalPdfUrl,
           });
         }
       }

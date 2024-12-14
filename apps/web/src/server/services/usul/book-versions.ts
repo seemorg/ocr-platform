@@ -7,35 +7,55 @@ const publicationDetailsSchema = {
   publisher: z.string().optional(),
   publisherLocation: z.string().optional(),
   editionNumber: z.string().optional(),
-  publicationYear: z.number().optional(),
+  publicationYear: z.string().optional(),
   investigator: z.string().optional(),
 };
 
+const sharedSchema = {
+  id: z.string().optional(),
+  aiSupported: z.boolean().optional(),
+  keywordSupported: z.boolean().optional(),
+  ...publicationDetailsSchema,
+};
+
+const splitsDataSchema = z.array(
+  z.object({
+    start: z.number(),
+    end: z.number(),
+  }),
+);
+
+const pdfUrlSchema = z
+  .string()
+  .url()
+  .startsWith("https://assets.usul.ai/pdfs/");
+
 export const bookVersionSchema = z.discriminatedUnion("type", [
   z.object({
-    id: z.string().optional(),
+    ...sharedSchema,
     type: z.literal("external"),
     url: z.string().url(),
-    aiSupported: z.boolean().optional(),
-    keywordSupported: z.boolean().optional(),
-    ...publicationDetailsSchema,
   }),
   z.object({
-    id: z.string().optional(),
+    ...sharedSchema,
     type: z.literal("pdf"),
-    url: z.string().url().startsWith("https://assets.usul.ai/pdfs/"),
-    aiSupported: z.boolean().optional(),
-    keywordSupported: z.boolean().optional(),
+    url: pdfUrlSchema,
     ocrBookId: z.string().optional(),
-    splitsData: z
-      .array(
-        z.object({
-          start: z.number(),
-          end: z.number(),
-        }),
-      )
-      .optional(),
-    ...publicationDetailsSchema,
+    splitsData: splitsDataSchema.optional(),
+  }),
+  z.object({
+    ...sharedSchema,
+    type: z.literal("openiti"),
+    value: z.string().min(1),
+    pdfUrl: pdfUrlSchema.optional(),
+    splitsData: splitsDataSchema.optional(),
+  }),
+  z.object({
+    ...sharedSchema,
+    type: z.literal("turath"),
+    value: z.string().min(1),
+    pdfUrl: pdfUrlSchema.optional(),
+    splitsData: splitsDataSchema.optional(),
   }),
 ]);
 
@@ -84,6 +104,17 @@ export const prepareBookVersions = (
       };
     }
 
+    if (version.type === "turath" || version.type === "openiti") {
+      obj = {
+        source: version.type as "turath" | "openiti",
+        value: version.value,
+        ...(version.pdfUrl ? { pdfUrl: version.pdfUrl } : {}),
+        ...(version.splitsData && version.splitsData.length > 0
+          ? { splitsData: version.splitsData }
+          : {}),
+      };
+    }
+
     if (obj) {
       let existingVersion = currentVersions?.find((v) => v.id === obj.id);
       final.push({
@@ -97,21 +128,6 @@ export const prepareBookVersions = (
       });
     }
   });
-
-  if (currentVersions) {
-    return [
-      ...currentVersions
-        .filter(
-          (version) =>
-            version.source !== "pdf" && version.source !== "external",
-        )
-        .map(({ id, ...rest }) => ({
-          id: id ?? createVersionId(),
-          ...rest,
-        })),
-      ...final,
-    ];
-  }
 
   return final;
 };

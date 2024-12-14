@@ -11,7 +11,7 @@ type PublicationDetails = {
   publisher?: string;
   publisherLocation?: string;
   editionNumber?: string;
-  publicationYear?: number;
+  publicationYear?: string;
 };
 
 type Common = {
@@ -34,11 +34,17 @@ type PdfVersion = {
 type TurathVersion = {
   type: "turath";
   value: string;
+  pdfUrl?: string;
+  mode: "upload" | "url";
+  files: File[];
 } & Common;
 
 type OpenitiVersion = {
   type: "openiti";
   value: string;
+  pdfUrl?: string;
+  mode: "upload" | "url";
+  files: File[];
 } & Common;
 
 export type Version =
@@ -77,11 +83,17 @@ export default function VersionsInput({
   disabled?: boolean;
 }) {
   const fieldChangeHandler = <
-    T extends keyof ExternalVersion | keyof PdfVersion,
+    T extends keyof ExternalVersion | keyof PdfVersion | keyof TurathVersion,
   >(
     idx: number,
     field: T,
-    value: T extends keyof ExternalVersion ? ExternalVersion[T] : PdfVersion[T],
+    value: T extends keyof ExternalVersion
+      ? ExternalVersion[T]
+      : T extends keyof PdfVersion
+        ? PdfVersion[T]
+        : T extends keyof TurathVersion
+          ? TurathVersion[T]
+          : never,
   ) => {
     const newVersions = structuredClone(versions);
     (newVersions[idx] as any)![field]! = value;
@@ -90,7 +102,6 @@ export default function VersionsInput({
 
   const renderPublicationDetails = (idx: number) => {
     const version = versions[idx]!;
-    const isReadonly = version.type === "turath" || version.type === "openiti";
 
     return (
       <div className="mt-10">
@@ -101,15 +112,12 @@ export default function VersionsInput({
               Investigator (المحقق)
             </Label>
             <Input
-              disabled={disabled || isReadonly}
+              disabled={disabled}
               id={`version-${idx}.investigator`}
               className="bg-white"
               value={version?.investigator}
-              onChange={
-                isReadonly
-                  ? undefined
-                  : (e) =>
-                      fieldChangeHandler(idx, "investigator", e.target.value)
+              onChange={(e) =>
+                fieldChangeHandler(idx, "investigator", e.target.value)
               }
             />
           </div>
@@ -120,13 +128,11 @@ export default function VersionsInput({
             </Label>
             <Input
               id={`version-${idx}.publisher`}
-              disabled={disabled || isReadonly}
+              disabled={disabled}
               value={version?.publisher}
               className="bg-white"
-              onChange={
-                isReadonly
-                  ? undefined
-                  : (e) => fieldChangeHandler(idx, "publisher", e.target.value)
+              onChange={(e) =>
+                fieldChangeHandler(idx, "publisher", e.target.value)
               }
             />
           </div>
@@ -137,18 +143,11 @@ export default function VersionsInput({
             </Label>
             <Input
               id={`version-${idx}.publisherLocation`}
-              disabled={disabled || isReadonly}
+              disabled={disabled}
               value={version?.publisherLocation}
               className="bg-white"
-              onChange={
-                isReadonly
-                  ? undefined
-                  : (e) =>
-                      fieldChangeHandler(
-                        idx,
-                        "publisherLocation",
-                        e.target.value,
-                      )
+              onChange={(e) =>
+                fieldChangeHandler(idx, "publisherLocation", e.target.value)
               }
             />
           </div>
@@ -158,15 +157,12 @@ export default function VersionsInput({
               Edition Number (رقم الطبعة)
             </Label>
             <Input
-              disabled={disabled || isReadonly}
+              disabled={disabled}
               id={`version-${idx}.editionNumber`}
               className="bg-white"
               value={version?.editionNumber}
-              onChange={
-                isReadonly
-                  ? undefined
-                  : (e) =>
-                      fieldChangeHandler(idx, "editionNumber", e.target.value)
+              onChange={(e) =>
+                fieldChangeHandler(idx, "editionNumber", e.target.value)
               }
             />
           </div>
@@ -176,23 +172,14 @@ export default function VersionsInput({
               Publication Year (سنة النشر)
             </Label>
             <Input
-              disabled={disabled || isReadonly}
+              disabled={disabled}
               id={`version-${idx}.publicationYear`}
-              type="number"
+              type="text"
               className="bg-white"
               value={version?.publicationYear}
-              onChange={
-                isReadonly
-                  ? undefined
-                  : (e) => {
-                      const newValue = e.target.value.trim();
-                      fieldChangeHandler(
-                        idx,
-                        "publicationYear",
-                        newValue ? Number(newValue) : undefined,
-                      );
-                    }
-              }
+              onChange={(e) => {
+                fieldChangeHandler(idx, "publicationYear", e.target.value);
+              }}
             />
           </div>
         </div>
@@ -221,6 +208,107 @@ export default function VersionsInput({
     ]);
   };
 
+  const addTurathVersion = () => {
+    setVersions([
+      ...versions,
+      {
+        type: "turath",
+        value: "",
+        mode: "upload",
+        files: [],
+      },
+    ]);
+  };
+
+  const renderPdfInput = (idx: number, id: string, url?: string) => {
+    const version = versions[idx]! as Version & { type: "pdf" };
+    const mode = version.mode;
+    const files = version.files;
+
+    return (
+      <>
+        <div className="flex items-center gap-2">
+          <Label
+            className="text-lg font-semibold"
+            htmlFor={`version-${idx}.${id}`}
+          >
+            PDF
+          </Label>
+
+          <Button
+            size="sm"
+            variant="secondary"
+            type="button"
+            onClick={() => fieldChangeHandler(idx, "mode", "url")}
+            disabled={disabled}
+          >
+            {mode === "upload" ? "Mode: Upload" : "Mode: URL"}
+          </Button>
+        </div>
+
+        <div>
+          {mode === "upload" ? (
+            <>
+              {files.length > 0 ? (
+                <div className="my-4 flex flex-col">
+                  {files.map((file, idx) => (
+                    <div key={idx}>
+                      <span className="flex-shrink-0">
+                        {file.name} ({(file.size / 1024 / 1024).toFixed(1)} MB)
+                      </span>
+
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          const newFiles = files.filter(
+                            (f, fIdx) => fIdx !== idx,
+                          );
+                          fieldChangeHandler(idx, "files", newFiles);
+                        }}
+                      >
+                        <XIcon className="size-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              <FileUploader
+                id={`version-${idx}.${id}`}
+                value={files}
+                onValueChange={(files) =>
+                  fieldChangeHandler(idx, "files", files ?? [])
+                }
+                dropzoneOptions={{
+                  ...dropzoneOptions,
+                  disabled,
+                }}
+              >
+                <FileInput>
+                  <div className="mt-4 flex h-32 w-full items-center justify-center rounded-md border bg-background">
+                    <p className="text-gray-400">Drop files here</p>
+                  </div>
+                </FileInput>
+              </FileUploader>
+            </>
+          ) : (
+            <div className="mt-4">
+              <Input
+                id={`version-${idx}.${id}`}
+                placeholder="Enter PDF Url"
+                className="bg-white"
+                type="url"
+                value={url ?? ""}
+                onChange={(e) => fieldChangeHandler(idx, "url", e.target.value)}
+                disabled={disabled}
+              />
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
   return (
     <div>
       <div>
@@ -233,19 +321,38 @@ export default function VersionsInput({
               content = (
                 <>
                   <div className="space-y-4">
-                    <Label
-                      htmlFor={`version-${idx}.url`}
-                      className="text-lg font-semibold"
-                    >
-                      {version.type === "turath" ? "Turath" : "Openiti"}
-                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Label
+                        htmlFor={`version-${idx}.value`}
+                        className="text-lg font-semibold"
+                      >
+                        {version.type === "turath" ? "Turath" : "Openiti"}
+                      </Label>
+
+                      {version.type === "turath" && version.value && (
+                        <a
+                          href={`https://app.turath.io/book/${version.value}`}
+                          target="_blank"
+                          className="text-sm text-primary underline"
+                        >
+                          View on turath
+                        </a>
+                      )}
+                    </div>
 
                     <Input
-                      disabled
-                      id={`version-${idx}.url`}
+                      disabled={version.type === "openiti"}
+                      id={`version-${idx}.value`}
                       className="bg-white"
                       value={version.value}
+                      onChange={(e) =>
+                        fieldChangeHandler(idx, "value", e.target.value)
+                      }
                     />
+                  </div>
+
+                  <div className="mt-10">
+                    {renderPdfInput(idx, "pdfUrl", version.pdfUrl)}
                   </div>
                 </>
               );
@@ -277,116 +384,26 @@ export default function VersionsInput({
             }
 
             if (version.type === "pdf") {
-              const typedVersion = version as Version & { type: "pdf" };
-              content = (
-                <>
-                  <div className="flex items-center gap-2">
-                    <Label
-                      className="text-lg font-semibold"
-                      htmlFor={`version-${idx}.input`}
-                    >
-                      PDF
-                    </Label>
-
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      type="button"
-                      onClick={() => fieldChangeHandler(idx, "mode", "url")}
-                      disabled={disabled}
-                    >
-                      {typedVersion.mode === "upload"
-                        ? "Mode: Upload"
-                        : "Mode: URL"}
-                    </Button>
-                  </div>
-
-                  <div>
-                    {typedVersion.mode === "upload" ? (
-                      <>
-                        {typedVersion.files.length > 0 ? (
-                          <div className="my-4 flex flex-col">
-                            {typedVersion.files.map((file, idx) => (
-                              <div key={idx}>
-                                <span className="flex-shrink-0">
-                                  {file.name} (
-                                  {(file.size / 1024 / 1024).toFixed(1)} MB)
-                                </span>
-
-                                <Button
-                                  type="button"
-                                  onClick={() => {
-                                    const newFiles = typedVersion.files.filter(
-                                      (f, fIdx) => fIdx !== idx,
-                                    );
-                                    fieldChangeHandler(idx, "files", newFiles);
-                                  }}
-                                >
-                                  <XIcon className="size-4" />
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : null}
-
-                        <FileUploader
-                          id={`version-${idx}.input`}
-                          value={typedVersion.files}
-                          onValueChange={(files) =>
-                            fieldChangeHandler(idx, "files", files ?? [])
-                          }
-                          dropzoneOptions={{
-                            ...dropzoneOptions,
-                            disabled,
-                          }}
-                        >
-                          <FileInput>
-                            <div className="mt-4 flex h-32 w-full items-center justify-center rounded-md border bg-background">
-                              <p className="text-gray-400">Drop files here</p>
-                            </div>
-                          </FileInput>
-                        </FileUploader>
-                      </>
-                    ) : (
-                      <div className="mt-4">
-                        <Input
-                          id={`version-${idx}.input`}
-                          placeholder="Enter PDF Url"
-                          className="bg-white"
-                          type="url"
-                          value={typedVersion.url}
-                          onChange={(e) =>
-                            fieldChangeHandler(idx, "url", e.target.value)
-                          }
-                          disabled={disabled}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </>
-              );
+              content = renderPdfInput(idx, "input", version.url);
             }
 
             return (
               <div className="relative rounded-md bg-gray-50 px-8 py-4">
-                {/* Don't show remove button for turath and openiti versions */}
-                {version.type !== "turath" && version.type !== "openiti" && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-2"
-                    disabled={disabled}
-                    onClick={() => {
-                      const newVersions = versions.filter(
-                        (_, vIdx) => vIdx !== idx,
-                      );
-                      setVersions(newVersions);
-                    }}
-                  >
-                    <XIcon className="size-4" />
-                  </Button>
-                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-2"
+                  disabled={disabled}
+                  onClick={() => {
+                    const newVersions = versions.filter(
+                      (_, vIdx) => vIdx !== idx,
+                    );
+                    setVersions(newVersions);
+                  }}
+                >
+                  <XIcon className="size-4" />
+                </Button>
 
                 {content}
                 {renderPublicationDetails(idx)}
@@ -404,6 +421,7 @@ export default function VersionsInput({
           >
             Add PDF Version
           </Button>
+
           <Button
             type="button"
             variant="ghost"
@@ -411,6 +429,15 @@ export default function VersionsInput({
             disabled={disabled}
           >
             Add External Version
+          </Button>
+
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={addTurathVersion}
+            disabled={disabled}
+          >
+            Add Turath Version
           </Button>
         </div>
       </div>
