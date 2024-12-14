@@ -3,8 +3,8 @@ import { executePipelineForPage } from "@/pipeline";
 import { Worker } from "bullmq";
 import { stripHtml } from "string-strip-html";
 
-import type { Prisma } from "@usul-ocr/db";
-import { BookStatus, PageFlag, PageOcrStatus } from "@usul-ocr/db";
+import type { Prisma } from "@usul-ocr/db/single";
+import { BookStatus, PageFlag, PageOcrStatus } from "@usul-ocr/db/single";
 
 import type { PagesQueueData } from "./queue";
 import { PAGES_QUEUE_NAME, PAGES_QUEUE_REDIS } from "./queue";

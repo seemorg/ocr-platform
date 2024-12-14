@@ -3,7 +3,7 @@ import { getPdfPages } from "@/lib/ocr";
 import { chunk } from "@/lib/utils";
 import { Worker } from "bullmq";
 
-import { BookStatus } from "@usul-ocr/db";
+import { BookStatus } from "@usul-ocr/db/single";
 
 import { pagesQueue } from "../page/queue";
 import { BOOKS_QUEUE_NAME, BOOKS_QUEUE_REDIS } from "./queue";

@@ -1,4 +1,4 @@
-import { PrismaClient } from "@usul-ocr/db";
+import { PrismaClient } from "@usul-ocr/db/single";
 
 import { env } from "../env";
 

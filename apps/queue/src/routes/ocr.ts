@@ -11,7 +11,7 @@ import { stream } from "hono/streaming";
 import { validator } from "hono/validator";
 import { z } from "zod";
 
-import { BookStatus, PageOcrStatus } from "@usul-ocr/db";
+import { BookStatus, PageOcrStatus } from "@usul-ocr/db/single";
 
 const ocrRoutes = new Hono();
 
