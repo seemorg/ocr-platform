@@ -156,11 +156,19 @@ export default function EditTextClientPage({ text }: { text: Text }) {
 
         const shared = {
           ...(version.id ? { id: version.id } : {}),
-          publisher: version.publisher,
-          publisherLocation: version.publisherLocation,
-          publicationYear: version.publicationYear,
-          investigator: version.investigator,
-          editionNumber: version.editionNumber,
+          publisher: version.publisher ? String(version.publisher) : undefined,
+          publisherLocation: version.publisherLocation
+            ? String(version.publisherLocation)
+            : undefined,
+          publicationYear: version.publicationYear
+            ? String(version.publicationYear)
+            : undefined,
+          investigator: version.investigator
+            ? String(version.investigator)
+            : undefined,
+          editionNumber: version.editionNumber
+            ? String(version.editionNumber)
+            : undefined,
           splitsData: finalSplitsData,
         };
 
