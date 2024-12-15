@@ -1,7 +1,6 @@
 import { useState } from "react";
+import { airtableBases } from "@/lib/airtable/bases";
 import { api } from "@/trpc/react";
-
-export const airtableBases = ["hanafi", "maliki", "shafii", "texts"] as const;
 
 export default function useAirtableTexts() {
   const utils = api.useUtils();
@@ -11,7 +10,7 @@ export default function useAirtableTexts() {
   >(null);
 
   const { data: airtableTexts, isLoading: isLoadingAirtableTexts } =
-    api.airtable.getAirtableTexts.useQuery();
+    api.airtable.getAirtableTexts.useQuery({ base });
 
   const {
     mutateAsync: invalidateAirtableTexts,
@@ -30,7 +29,7 @@ export default function useAirtableTexts() {
   };
 
   return {
-    airtableTexts: airtableTexts ? airtableTexts[base] : undefined,
+    airtableTexts,
     setBase: handleBaseChange,
     base,
     isLoadingAirtableTexts,

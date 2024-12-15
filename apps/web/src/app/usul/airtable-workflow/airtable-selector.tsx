@@ -1,3 +1,4 @@
+import type { AirtableText } from "@/lib/airtable";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,8 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { airtableBases } from "@/hooks/useAirtableTexts";
-import { AirtableText } from "@/lib/airtable";
+import { airtableBases } from "@/lib/airtable/bases";
 import { commandScore } from "@/lib/command-score";
 import { cn } from "@/lib/utils";
 import { Check, ChevronsUpDownIcon } from "lucide-react";
