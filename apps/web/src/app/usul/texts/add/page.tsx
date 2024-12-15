@@ -371,9 +371,9 @@ export default function AddTextPage() {
                         getText={() => {
                           const primaryArabicName =
                             form.watch("author.arabicNames")?.[
-                              form.watch("author.primaryArabicNameIndex")
-                            ];
-                          return primaryArabicName ?? "";
+                              form.watch("author.primaryArabicNameIndex") ?? 0
+                            ] ?? "";
+                          return primaryArabicName;
                         }}
                         setTransliteration={(text) => field.onChange(text)}
                         disabled={isMutating}
@@ -493,8 +493,8 @@ export default function AddTextPage() {
                   <TransliterationHelper
                     getText={() => {
                       const primaryArabicName =
-                        form.watch("arabicNames")[
-                          form.watch("primaryArabicNameIndex")
+                        form.watch("arabicNames")?.[
+                          form.watch("primaryArabicNameIndex") ?? 0
                         ] ?? "";
                       return primaryArabicName;
                     }}
