@@ -6,4 +6,5 @@ export const airtableBases = [
   "iraq",
   "azhari",
   "hasan-work",
+  "ismail-texts",
 ] as const;

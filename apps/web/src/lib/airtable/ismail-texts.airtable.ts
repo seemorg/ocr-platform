@@ -3,43 +3,43 @@ import { AirtableAdvancedGenre } from "./advanced-genres.airtable";
 import { AirtableAuthor } from "./authors.airtable";
 import { airtable } from "./base";
 
-enum HasanWorkTextField {
+enum IsmailTextField {
   ID = "id",
   NAME_ARABIC = "Name (Arabic)",
   AUTHOR = "Author",
-  OTHER_NAMES = "Other Names (comma separated)",
-  PUBLICATION_DETAILS = "Publication Details",
   ADVANCED_GENRES = "Advanced Genres",
+  PUBLICATION_DETAILS = "Publication Details",
+  OTHER_NAMES = "Other Names (comma separated)",
   TRANSLITERATION = "Transliteration",
   CORE = "In Core Corpus?",
   CORE_CORPUS_ID = "Core Corpus Id",
+  PDF_URL = "Scanned PDF URL",
   USUL = "Usul",
   USUL_URL = "Usul URL",
   TURATH = "Turath.io",
   TURATH_ID = "Turath.io ID",
   DIGITIZED_URL = "Digitized Text URL",
-  PDF_URL = "Scanned PDF URL",
   PHYSICAL_ONLY = "Physical Only",
   PHYSICAL_DETAILS = "Physical Details",
   NOTES = "Notes",
   NEEDS_REVIEW = "Needs Review",
 }
 
-export const fetchHasanWork = async () => {
-  return airtable("Hasan Work")
+export const fetchIsmailTexts = async () => {
+  return airtable("Ismail Texts")
     .select({
       fields: [
-        HasanWorkTextField.ID,
-        HasanWorkTextField.PDF_URL,
-        HasanWorkTextField.DIGITIZED_URL,
-        HasanWorkTextField.NAME_ARABIC,
-        HasanWorkTextField.OTHER_NAMES,
-        HasanWorkTextField.TRANSLITERATION,
-        HasanWorkTextField.AUTHOR,
-        HasanWorkTextField.NOTES,
-        HasanWorkTextField.ADVANCED_GENRES,
-        HasanWorkTextField.PHYSICAL_DETAILS,
-        HasanWorkTextField.PUBLICATION_DETAILS,
+        IsmailTextField.ID,
+        IsmailTextField.PDF_URL,
+        IsmailTextField.DIGITIZED_URL,
+        IsmailTextField.NAME_ARABIC,
+        IsmailTextField.OTHER_NAMES,
+        IsmailTextField.TRANSLITERATION,
+        IsmailTextField.AUTHOR,
+        IsmailTextField.NOTES,
+        IsmailTextField.ADVANCED_GENRES,
+        IsmailTextField.PHYSICAL_DETAILS,
+        IsmailTextField.PUBLICATION_DETAILS,
       ],
       // make sure `Usul` and `Turath.io` are not checked
       filterByFormula: `AND({Usul} = 0, {Turath.io} = 0)`,
@@ -47,8 +47,8 @@ export const fetchHasanWork = async () => {
     .all();
 };
 
-export const formatHasanWork = (
-  texts: Awaited<ReturnType<typeof fetchHasanWork>>,
+export const formatIsmailTexts = (
+  texts: Awaited<ReturnType<typeof fetchIsmailTexts>>,
   authorsById: Record<string, AirtableAuthor>,
   genresById: Record<string, AirtableAdvancedGenre>,
 ) => {
@@ -57,34 +57,31 @@ export const formatHasanWork = (
       const fields = t.fields;
 
       const transliteratedName =
-        (fields[HasanWorkTextField.TRANSLITERATION] as string | undefined) ??
-        null;
+        (fields[IsmailTextField.TRANSLITERATION] as string | undefined) ?? null;
 
       const arabicName =
-        (fields[HasanWorkTextField.NAME_ARABIC] as string | undefined) ?? null;
+        (fields[IsmailTextField.NAME_ARABIC] as string | undefined) ?? null;
       const otherNames =
-        (fields[HasanWorkTextField.OTHER_NAMES] as string | undefined) ?? null;
+        (fields[IsmailTextField.OTHER_NAMES] as string | undefined) ?? null;
       const pdfUrl =
-        (fields[HasanWorkTextField.PDF_URL] as string | undefined) ?? null;
+        (fields[IsmailTextField.PDF_URL] as string | undefined) ?? null;
       const notes =
-        (fields[HasanWorkTextField.NOTES] as string | undefined) ?? null;
+        (fields[IsmailTextField.NOTES] as string | undefined) ?? null;
       const advancedGenres =
-        (fields[HasanWorkTextField.ADVANCED_GENRES] as string[] | undefined) ??
-        [];
+        (fields[IsmailTextField.ADVANCED_GENRES] as string[] | undefined) ?? [];
       const digitizedUrl =
-        (fields[HasanWorkTextField.DIGITIZED_URL] as string | undefined) ??
-        null;
+        (fields[IsmailTextField.DIGITIZED_URL] as string | undefined) ?? null;
       const physicalDetails =
-        (fields[HasanWorkTextField.PHYSICAL_DETAILS] as string | undefined) ??
+        (fields[IsmailTextField.PHYSICAL_DETAILS] as string | undefined) ??
         null;
 
       const authorId =
-        (fields[HasanWorkTextField.AUTHOR] as string[])?.[0] ?? null;
+        (fields[IsmailTextField.AUTHOR] as string[])?.[0] ?? null;
       const author = authorId ? authorsById[authorId] : null;
 
-      const publicationDetails = fields[
-        HasanWorkTextField.PUBLICATION_DETAILS
-      ] as string | undefined;
+      const publicationDetails = fields[IsmailTextField.PUBLICATION_DETAILS] as
+        | string
+        | undefined;
 
       return {
         _airtableReference: t.id,

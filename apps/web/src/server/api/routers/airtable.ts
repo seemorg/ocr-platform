@@ -5,6 +5,7 @@ import {
   getAirtableHanafiTexts,
   getAirtableHasanWork,
   getAirtableIraqTexts,
+  getAirtableIsmailTexts,
   getAirtableMalikiTexts,
   getAirtableShafiiTexts,
   invalidateAirtableTexts,
@@ -25,6 +26,7 @@ const baseToMethod: Record<
   iraq: getAirtableIraqTexts,
   azhari: getAirtableAzhariTexts,
   "hasan-work": getAirtableHasanWork,
+  "ismail-texts": getAirtableIsmailTexts,
 };
 
 export const airtableRouter = createTRPCRouter({

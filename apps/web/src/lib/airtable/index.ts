@@ -6,6 +6,7 @@ import { fetchAzhariTexts, formatAzhariTexts } from "./azhari.airtable";
 import { fetchHanafiTexts, formatHanafiTexts } from "./hanafi.airtable";
 import { fetchHasanWork, formatHasanWork } from "./hasan-work.airtable";
 import { fetchIraqTexts, formatIraqTexts } from "./iraq.airtable";
+import { fetchIsmailTexts, formatIsmailTexts } from "./ismail-texts.airtable";
 import { fetchMalikiTexts, formatMalikiTexts } from "./maliki.airtable";
 import { fetchShafiiTexts, formatShafiiTexts } from "./shafii.airtable";
 import { fetchTexts, formatTexts } from "./texts.airtable";
@@ -129,6 +130,21 @@ export const getAirtableHasanWork = unstable_cache(
     return formatHasanWork(hasanWork, authors, advancedGenres);
   },
   ["hasan-work"],
+  {
+    tags: ["airtable-data"],
+    revalidate: 60 * 60 * 24, // 1 day
+  },
+);
+
+export const getAirtableIsmailTexts = unstable_cache(
+  async () => {
+    const [{ authors, advancedGenres }, ismail] = await Promise.all([
+      cachedAuthorsAndAdvancedGenres(),
+      fetchIsmailTexts(),
+    ]);
+    return formatIsmailTexts(ismail, authors, advancedGenres);
+  },
+  ["ismail-texts"],
   {
     tags: ["airtable-data"],
     revalidate: 60 * 60 * 24, // 1 day
