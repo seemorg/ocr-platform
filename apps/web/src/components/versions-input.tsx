@@ -388,7 +388,10 @@ export default function VersionsInput({
             }
 
             return (
-              <div className="relative rounded-md bg-gray-50 px-8 py-4">
+              <div
+                className="relative rounded-md bg-gray-50 px-8 py-4"
+                key={idx}
+              >
                 <Button
                   type="button"
                   variant="ghost"

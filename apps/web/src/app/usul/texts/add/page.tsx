@@ -92,6 +92,9 @@ export default function AddTextPage() {
       advancedGenres: [],
       arabicNames: [],
       primaryArabicNameIndex: 0,
+      author: {
+        isUsul: false,
+      },
     },
   });
 

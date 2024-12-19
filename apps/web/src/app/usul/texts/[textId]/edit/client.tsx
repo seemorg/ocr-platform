@@ -65,7 +65,17 @@ export default function EditTextClientPage({ text }: { text: Text }) {
       transliteration: text.transliteratedName ?? "",
       advancedGenres: text.advancedGenres,
       otherNames: text.otherNames ?? [],
-      physicalDetails: text.physicalDetails,
+      physicalDetails: text.physicalDetails
+        ? {
+            ...text.physicalDetails,
+            ...(text.physicalDetails.type === "published" &&
+            text.physicalDetails.publicationYear
+              ? {
+                  publicationYear: String(text.physicalDetails.publicationYear),
+                }
+              : {}),
+          }
+        : null,
     },
   });
 

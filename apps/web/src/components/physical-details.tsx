@@ -112,15 +112,7 @@ export default function PhysicalDetails({ form, disabled }: Props) {
               <FormItem>
                 <FormLabel>Publication Year (سنة النشر)</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    disabled={disabled}
-                    {...field}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      field.onChange(val ? Number(val) : undefined);
-                    }}
-                  />
+                  <Input disabled={disabled} {...field} />
                 </FormControl>
               </FormItem>
             )}
