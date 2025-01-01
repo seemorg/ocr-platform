@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   MultiSelector,
   MultiSelectorContent,
@@ -22,17 +22,22 @@ export default function AdvancedGenresSelector({
     name: string;
   }[];
 }) {
+
+  const advancedGenresMap = useMemo(() => {
+    const map = (advancedGenres ?? []).reduce(
+      (acc, genre) => {
+        acc[genre.id] = genre.name;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
+
+    return map
+  }, [advancedGenres])
+
   const renderLabel = useCallback(
     (id: string) => {
-      const map = (advancedGenres ?? []).reduce(
-        (acc, genre) => {
-          acc[genre.id] = genre.name;
-          return acc;
-        },
-        {} as Record<string, string>,
-      );
-
-      return map[id] ?? id;
+      return advancedGenresMap[id] ?? id;
     },
     [advancedGenres],
   );
