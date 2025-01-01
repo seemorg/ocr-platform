@@ -9,6 +9,7 @@ export const env = createEnv({
   server: {
     DATABASE_URL: z.string().url(),
     USUL_DATABASE_URL: z.string().url(),
+    PRISMA_ADAPTER: z.enum(['neon', 'pg']).default('neon'),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
