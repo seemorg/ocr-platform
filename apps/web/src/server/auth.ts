@@ -91,6 +91,13 @@ export const authOptions: NextAuthOptions = {
         },
       },
       from: env.EMAIL_FROM,
+      ...(env.NODE_ENV === "development"
+        ? {
+            sendVerificationRequest(params) {
+              console.log(`LOGIN URL: ${params.url}`);
+            },
+          }
+        : {}),
     }),
     /**
      * ...add more providers here.

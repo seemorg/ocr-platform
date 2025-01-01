@@ -3,15 +3,15 @@ import { _Object, PutObjectCommand, S3 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const s3 = new S3({
-  endpoint: `https://${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  endpoint: env.R2_ENDPOINT,
   credentials: {
-    accessKeyId: env.CLOUDFLARE_R2_ID,
-    secretAccessKey: env.CLOUDFLARE_R2_SECRET,
+    accessKeyId: env.R2_ACCESS_KEY_ID,
+    secretAccessKey: env.R2_SECRET_KEY,
   },
   region: "auto",
 });
 
-const bucketName = env.CLOUDFLARE_R2_BUCKET;
+const bucketName = env.R2_BUCKET;
 
 export const createPresignedUrl = async ({
   key,

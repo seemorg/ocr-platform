@@ -41,7 +41,7 @@ export const uploadsRouter = createTRPCRouter({
         contentType: "application/pdf",
       });
 
-      const publicUrl = `${env.CLOUDFLARE_R2_BUCKET_URL}/${finalKey}`;
+      const publicUrl = `${env.R2_BUCKET_URL}/${finalKey}`;
 
       return {
         publicUrl,
