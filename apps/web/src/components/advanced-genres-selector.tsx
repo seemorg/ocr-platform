@@ -22,7 +22,6 @@ export default function AdvancedGenresSelector({
     name: string;
   }[];
 }) {
-
   const advancedGenresMap = useMemo(() => {
     const map = (advancedGenres ?? []).reduce(
       (acc, genre) => {
@@ -32,8 +31,8 @@ export default function AdvancedGenresSelector({
       {} as Record<string, string>,
     );
 
-    return map
-  }, [advancedGenres])
+    return map;
+  }, [advancedGenres]);
 
   const renderLabel = useCallback(
     (id: string) => {
@@ -52,6 +51,23 @@ export default function AdvancedGenresSelector({
         <MultiSelectorInput
           placeholder={isLoading ? "Loading..." : "Select advanced genres"}
           disabled={isLoading}
+          onPaste={(event) => {
+            event.preventDefault();
+
+            const text = event.clipboardData.getData("text");
+            const names = text.split(",").map((it) => it.trim());
+            const genreIds = advancedGenres?.reduce((ids, { name, id }) => {
+              if (names.includes(name)) {
+                ids.push(id);
+              }
+              return ids;
+            }, [] as string[]);
+
+            if (genreIds)
+              setSelectedAdvancedGenreIds(
+                Array.from(new Set(selectedAdvancedGenreIds.concat(genreIds))),
+              );
+          }}
         />
       </MultiSelectorTrigger>
 
