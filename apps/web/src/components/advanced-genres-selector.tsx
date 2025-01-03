@@ -55,7 +55,7 @@ export default function AdvancedGenresSelector({
             event.preventDefault();
 
             const text = event.clipboardData.getData("text");
-            const names = text.split(",").map((it) => it.trim());
+            const names = text.split(/[,،]/).map((it) => it.trim());
             const genreIds = advancedGenres?.reduce((ids, { name, id }) => {
               if (names.includes(name)) {
                 ids.push(id);
