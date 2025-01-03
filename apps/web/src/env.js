@@ -61,6 +61,7 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     USUL_DATABASE_URL: process.env.USUL_DATABASE_URL,
+    PRISMA_ADAPTER: process.env.PRISMA_ADAPTER,
     NODE_ENV: process.env.NODE_ENV,
     NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,

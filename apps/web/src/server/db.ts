@@ -1,26 +1,16 @@
 import { env } from "@/env";
-import { Pool as NeonPool } from "@neondatabase/serverless";
+import { Pool, PoolConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool as PgPool } from "pg";
+
 import { PrismaClient } from "@usul-ocr/db";
 import { PrismaClient as UsulDbClient } from "@usul-ocr/usul-db";
 
-const createAdapter = (
-  connectionString: string,
-): PrismaNeon | PrismaPg | null => {
-  let adapter: PrismaNeon | PrismaPg | null = null;
+const createAdapter = (connectionString: string): PrismaNeon | null => {
+  const poolConfig: PoolConfig = { connectionString };
 
-  const poolConfig = { connectionString };
-
-  if (typeof WebSocket !== "undefined") {
-    adapter =
-      env.PRISMA_ADAPTER === "neon"
-        ? new PrismaNeon(new NeonPool(poolConfig))
-        : new PrismaPg(new PgPool(poolConfig));
-  }
-
-  return adapter;
+  return env.PRISMA_ADAPTER === "neon"
+    ? new PrismaNeon(new Pool(poolConfig))
+    : null;
 };
 
 const createPrismaClient = () => {
