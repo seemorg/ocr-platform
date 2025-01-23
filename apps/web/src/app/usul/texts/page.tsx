@@ -10,6 +10,7 @@ import type { Prisma } from "@usul-ocr/usul-db";
 
 import { SearchBar } from "../search-bar";
 import { columns } from "./columns";
+import { Filter } from "./filter";
 
 export default async function TextsPage({
   searchParams,
@@ -17,6 +18,7 @@ export default async function TextsPage({
   searchParams: PaginationSearchParams & {
     genre?: string;
     advancedGenre?: string;
+    excludeEmptyAdvancedGenre?: "true" | "false";
   };
 }) {
   const query = getQuery(searchParams);
@@ -66,6 +68,15 @@ export default async function TextsPage({
       ...(filter ?? {}),
       genres: {
         some: { id: searchParams.genre },
+      },
+    };
+  }
+
+  if (searchParams.excludeEmptyAdvancedGenre === "true") {
+    filter = {
+      ...(filter ?? {}),
+      advancedGenres: {
+        none: {},
       },
     };
   }
@@ -165,7 +176,10 @@ export default async function TextsPage({
         </Button>
       }
     >
-      <SearchBar />
+      <div className="mb-5 flex flex-col">
+        <SearchBar className="mb-0" />
+        <Filter />
+      </div>
       <DefaultDataTable
         columns={columns}
         data={preparedBooks}
