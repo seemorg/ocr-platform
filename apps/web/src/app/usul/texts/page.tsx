@@ -130,6 +130,9 @@ export default async function TextsPage({
         {
           createdAt: "desc",
         },
+        {
+          id: 'desc'
+        },
       ],
       skip: (pagination.page - 1) * pagination.pageSize,
       take: pagination.pageSize,
