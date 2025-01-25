@@ -1,5 +1,6 @@
 "use client";
 
+import type { ClassNameValue } from "tailwind-merge";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,7 @@ import { cn } from "@/lib/utils";
 import { SearchIcon } from "lucide-react";
 import { parseAsString, parseAsStringLiteral, useQueryState } from "nuqs";
 
-export const SearchBar = () => {
+export const SearchBar = ({ className }: { className?: ClassNameValue }) => {
   const [isPending, startTransition] = useTransition();
 
   const [mode, setMode] = useQueryState(
@@ -43,7 +44,7 @@ export const SearchBar = () => {
   };
 
   return (
-    <div className="mb-10">
+    <div className={cn("mb-10", className)}>
       <form className="flex max-w-2xl items-center" onSubmit={handleSubmit}>
         <Button
           type="submit"
