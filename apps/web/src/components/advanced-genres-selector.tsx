@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   MultiSelector,
   MultiSelectorContent,
@@ -22,6 +22,7 @@ export default function AdvancedGenresSelector({
     name: string;
   }[];
 }) {
+  const [inputValue, setInputValue] = useState("");
   const advancedGenresMap = useMemo(() => {
     const map = (advancedGenres ?? []).reduce(
       (acc, genre) => {
@@ -49,16 +50,21 @@ export default function AdvancedGenresSelector({
     >
       <MultiSelectorTrigger renderLabel={renderLabel}>
         <MultiSelectorInput
+          value={inputValue}
+          onValueChange={(value) => setInputValue(value)}
           placeholder={isLoading ? "Loading..." : "Select advanced genres"}
           disabled={isLoading}
           onPaste={(event) => {
             event.preventDefault();
 
             const text = event.clipboardData.getData("text");
-            const names = text.split(/[,،]/).map((it) => it.trim());
+            const names = new Set(text.split(/[,،]/).map((it) => it.trim()));
+
             const genreIds = advancedGenres?.reduce((ids, { name, id }) => {
-              if (names.includes(name)) {
+              const trimmedGenreName = name.trim();
+              if (names.has(trimmedGenreName)) {
                 ids.push(id);
+                names.delete(trimmedGenreName);
               }
               return ids;
             }, [] as string[]);
@@ -67,6 +73,13 @@ export default function AdvancedGenresSelector({
               setSelectedAdvancedGenreIds(
                 Array.from(new Set(selectedAdvancedGenreIds.concat(genreIds))),
               );
+
+            if (names.size > 0) {
+              console.log(names);
+
+              // update the input value with the remaining names
+              setInputValue(Array.from(names).join(", "));
+            }
           }}
         />
       </MultiSelectorTrigger>

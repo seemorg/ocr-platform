@@ -287,11 +287,11 @@ const MultiSelectorInput = forwardRef<
 
   return (
     <CommandPrimitive.Input
+      value={inputValue}
+      onValueChange={activeIndex === -1 ? setInputValue : undefined}
       {...props}
       tabIndex={0}
       ref={inputRef}
-      value={inputValue}
-      onValueChange={activeIndex === -1 ? setInputValue : undefined}
       onSelect={handleSelect}
       onBlur={() => setOpen(false)}
       onFocus={() => setOpen(true)}

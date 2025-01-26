@@ -1,7 +1,4 @@
-import { nanoid } from "nanoid";
 import { z } from "zod";
-
-const createVersionId = () => nanoid(10);
 
 const publicationDetailsSchema = {
   publisher: z.string().optional(),
@@ -12,7 +9,7 @@ const publicationDetailsSchema = {
 };
 
 const sharedSchema = {
-  id: z.string().optional(),
+  id: z.string(),
   aiSupported: z.boolean().optional(),
   keywordSupported: z.boolean().optional(),
   ...publicationDetailsSchema,
@@ -119,7 +116,7 @@ export const prepareBookVersions = (
       let existingVersion = currentVersions?.find((v) => v.id === obj.id);
       final.push({
         ...(obj as PrismaJson.BookVersion),
-        id: version.id ?? createVersionId(),
+        id: version.id,
         publicationDetails,
         ...(existingVersion?.aiSupported ? { aiSupported: true } : {}),
         ...(existingVersion?.keywordSupported

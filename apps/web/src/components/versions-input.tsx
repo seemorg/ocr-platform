@@ -1,3 +1,4 @@
+import { createVersionId } from "@/lib/utils";
 import { XIcon } from "lucide-react";
 import { DropzoneOptions } from "react-dropzone";
 
@@ -15,7 +16,7 @@ type PublicationDetails = {
 };
 
 type Common = {
-  id?: string;
+  id: string;
 } & PublicationDetails;
 
 type ExternalVersion = {
@@ -66,6 +67,7 @@ const dropzoneOptions = {
 export const makeVersionsInitialState = (): Version[] => {
   return [
     {
+      id: createVersionId(),
       type: "pdf",
       mode: "upload",
       files: [],
@@ -108,12 +110,12 @@ export default function VersionsInput({
         <h3 className="text-lg font-semibold">Publication Details</h3>
         <div className="mt-5 grid grid-cols-2 gap-10">
           <div className="space-y-2">
-            <Label htmlFor={`version-${idx}.investigator`}>
+            <Label htmlFor={`version-${version.id}.investigator`}>
               Investigator (المحقق)
             </Label>
             <Input
               disabled={disabled}
-              id={`version-${idx}.investigator`}
+              id={`version-${version.id}.investigator`}
               className="bg-white"
               value={version?.investigator}
               onChange={(e) =>
@@ -123,11 +125,11 @@ export default function VersionsInput({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`version-${idx}.publisher`}>
+            <Label htmlFor={`version-${version.id}.publisher`}>
               Publisher (دار النشر)
             </Label>
             <Input
-              id={`version-${idx}.publisher`}
+              id={`version-${version.id}.publisher`}
               disabled={disabled}
               value={version?.publisher}
               className="bg-white"
@@ -138,11 +140,11 @@ export default function VersionsInput({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`version-${idx}.publisherLocation`}>
+            <Label htmlFor={`version-${version.id}.publisherLocation`}>
               Publisher Location (مدينة النشر)
             </Label>
             <Input
-              id={`version-${idx}.publisherLocation`}
+              id={`version-${version.id}.publisherLocation`}
               disabled={disabled}
               value={version?.publisherLocation}
               className="bg-white"
@@ -153,12 +155,12 @@ export default function VersionsInput({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`version-${idx}.editionNumber`}>
+            <Label htmlFor={`version-${version.id}.editionNumber`}>
               Edition Number (رقم الطبعة)
             </Label>
             <Input
               disabled={disabled}
-              id={`version-${idx}.editionNumber`}
+              id={`version-${version.id}.editionNumber`}
               className="bg-white"
               value={version?.editionNumber}
               onChange={(e) =>
@@ -168,12 +170,12 @@ export default function VersionsInput({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`version-${idx}.publicationYear`}>
+            <Label htmlFor={`version-${version.id}.publicationYear`}>
               Publication Year (سنة النشر)
             </Label>
             <Input
               disabled={disabled}
-              id={`version-${idx}.publicationYear`}
+              id={`version-${version.id}.publicationYear`}
               type="text"
               className="bg-white"
               value={version?.publicationYear}
@@ -191,6 +193,7 @@ export default function VersionsInput({
     setVersions([
       ...versions,
       {
+        id: createVersionId(),
         type: "pdf",
         mode: "upload",
         files: [],
@@ -202,6 +205,7 @@ export default function VersionsInput({
     setVersions([
       ...versions,
       {
+        id: createVersionId(),
         type: "external",
         url: "",
       },
@@ -212,6 +216,7 @@ export default function VersionsInput({
     setVersions([
       ...versions,
       {
+        id: createVersionId(),
         type: "turath",
         value: "",
         mode: "upload",
@@ -220,17 +225,34 @@ export default function VersionsInput({
     ]);
   };
 
-  const renderPdfInput = (idx: number, id: string, url?: string) => {
-    const version = versions[idx]! as Version & { type: "pdf" };
+  const removeVersion = (id: string) => {
+    setVersions(versions.filter((version) => version.id !== id));
+  };
+
+  const renderPdfInput = (idx: number, fieldName: string) => {
+    const version = versions[idx]! as
+      | PdfVersion
+      | TurathVersion
+      | OpenitiVersion;
     const mode = version.mode;
     const files = version.files;
+
+    let pdfFieldName;
+    let pdfUrl;
+    if (version.type === "pdf") {
+      pdfFieldName = "url";
+      pdfUrl = version.url;
+    } else {
+      pdfFieldName = "pdfUrl";
+      pdfUrl = version.pdfUrl;
+    }
 
     return (
       <>
         <div className="flex items-center gap-2">
           <Label
             className="text-lg font-semibold"
-            htmlFor={`version-${idx}.${id}`}
+            htmlFor={`version.${version.id}.${fieldName}`}
           >
             PDF
           </Label>
@@ -239,7 +261,13 @@ export default function VersionsInput({
             size="sm"
             variant="secondary"
             type="button"
-            onClick={() => fieldChangeHandler(idx, "mode", "url")}
+            onClick={() =>
+              fieldChangeHandler(
+                idx,
+                "mode",
+                mode === "upload" ? "url" : "upload",
+              )
+            }
             disabled={disabled}
           >
             {mode === "upload" ? "Mode: Upload" : "Mode: URL"}
@@ -274,7 +302,7 @@ export default function VersionsInput({
               ) : null}
 
               <FileUploader
-                id={`version-${idx}.${id}`}
+                id={`version.${version.id}.${fieldName}`}
                 value={files}
                 onValueChange={(files) =>
                   fieldChangeHandler(idx, "files", files ?? [])
@@ -294,12 +322,14 @@ export default function VersionsInput({
           ) : (
             <div className="mt-4">
               <Input
-                id={`version-${idx}.${id}`}
+                id={`version.${version.id}.${fieldName}`}
                 placeholder="Enter PDF Url"
                 className="bg-white"
                 type="url"
-                value={url ?? ""}
-                onChange={(e) => fieldChangeHandler(idx, "url", e.target.value)}
+                value={pdfUrl ?? ""}
+                onChange={(e) =>
+                  fieldChangeHandler(idx, pdfFieldName as any, e.target.value)
+                }
                 disabled={disabled}
               />
             </div>
@@ -323,7 +353,7 @@ export default function VersionsInput({
                   <div className="space-y-4">
                     <div className="flex items-center gap-2">
                       <Label
-                        htmlFor={`version-${idx}.value`}
+                        htmlFor={`version-${version.id}.value`}
                         className="text-lg font-semibold"
                       >
                         {version.type === "turath" ? "Turath" : "Openiti"}
@@ -342,7 +372,7 @@ export default function VersionsInput({
 
                     <Input
                       disabled={version.type === "openiti"}
-                      id={`version-${idx}.value`}
+                      id={`version-${version.id}.value`}
                       className="bg-white"
                       value={version.value}
                       onChange={(e) =>
@@ -351,9 +381,7 @@ export default function VersionsInput({
                     />
                   </div>
 
-                  <div className="mt-10">
-                    {renderPdfInput(idx, "pdfUrl", version.pdfUrl)}
-                  </div>
+                  <div className="mt-10">{renderPdfInput(idx, "pdfUrl")}</div>
                 </>
               );
             }
@@ -363,7 +391,7 @@ export default function VersionsInput({
                 <>
                   <div className="space-y-4">
                     <Label
-                      htmlFor={`version-${idx}.url`}
+                      htmlFor={`version-${version.id}.url`}
                       className="text-lg font-semibold"
                     >
                       External Digitized Book URL
@@ -371,7 +399,7 @@ export default function VersionsInput({
 
                     <Input
                       disabled={disabled}
-                      id={`version-${idx}.url`}
+                      id={`version-${version.id}.url`}
                       className="bg-white"
                       value={version.url}
                       onChange={(e) =>
@@ -384,13 +412,13 @@ export default function VersionsInput({
             }
 
             if (version.type === "pdf") {
-              content = renderPdfInput(idx, "input", version.url);
+              content = renderPdfInput(idx, "input");
             }
 
             return (
               <div
                 className="relative rounded-md bg-gray-50 px-8 py-4"
-                key={idx}
+                key={version.id}
               >
                 <Button
                   type="button"
@@ -398,12 +426,7 @@ export default function VersionsInput({
                   size="icon"
                   className="absolute right-2 top-2"
                   disabled={disabled}
-                  onClick={() => {
-                    const newVersions = versions.filter(
-                      (_, vIdx) => vIdx !== idx,
-                    );
-                    setVersions(newVersions);
-                  }}
+                  onClick={() => removeVersion(version.id)}
                 >
                   <XIcon className="size-4" />
                 </Button>
