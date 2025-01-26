@@ -45,7 +45,10 @@ export default function AdvancedGenresSelector({
   return (
     <MultiSelector
       values={selectedAdvancedGenreIds}
-      onValuesChange={setSelectedAdvancedGenreIds}
+      onValuesChange={(values) => {
+        setSelectedAdvancedGenreIds(values);
+        setInputValue("");
+      }}
       loop
     >
       <MultiSelectorTrigger renderLabel={renderLabel}>
