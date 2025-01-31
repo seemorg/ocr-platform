@@ -167,7 +167,7 @@ export default async function TextsPage({
         id: g.id,
         arabicName: g.nameTranslations[0]?.text,
       })),
-      versions: Array.from(new Set(book.versions.map((v) => v.source))),
+      versions: Array.from(new Set(book.versions.map((v) => v.source))).sort(),
     };
   });
 
