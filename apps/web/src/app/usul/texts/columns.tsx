@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DeleteModal } from "@/components/delete-modal";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Spinner from "@/components/ui/spinner";
 import { api } from "@/trpc/react";
 import { ColumnDef } from "@tanstack/react-table";
 import { PenBoxIcon, Trash2Icon } from "lucide-react";
 import toast from "react-hot-toast";
+import { Version } from "@/components/versions-input";
 
 export type Text = {
   id: string;
@@ -18,6 +20,7 @@ export type Text = {
   englishAuthorName?: string;
   createdAt?: Date | null;
   updatedAt?: Date | null;
+  versions: Version['type'][];
   genres: {
     id: string;
     arabicName?: string;
@@ -79,6 +82,22 @@ export const columns: ColumnDef<Text>[] = [
             >
               {g.arabicName}
             </Link>
+          ))}
+        </div>
+      );
+    },
+  },
+  {
+    header: "Version(s)",
+    cell: ({ row }) => {
+      const { versions } = row.original;
+
+      return (
+        <div className="flex flex-wrap gap-2">
+          {versions.map((v) => (
+            <Badge variant="secondary" className="font-normal">
+              {v === "pdf" || v === 'openiti' || v === 'turath' ? "PDF" : "E-Book"}
+            </Badge>
           ))}
         </div>
       );
