@@ -113,10 +113,13 @@ export const prepareBookVersions = (
     }
 
     if (obj) {
-      let existingVersion = currentVersions?.find((v) => v.id === obj.id);
+      const currentVersionId = version.id;
+      let existingVersion = currentVersions?.find(
+        (v) => v.id === currentVersionId,
+      );
       final.push({
         ...(obj as PrismaJson.BookVersion),
-        id: version.id,
+        id: currentVersionId,
         publicationDetails,
         ...(existingVersion?.aiSupported ? { aiSupported: true } : {}),
         ...(existingVersion?.keywordSupported
