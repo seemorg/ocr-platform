@@ -1,5 +1,7 @@
 import {
   getTypesenseStatus,
+  purgeApiCache,
+  purgeApiSlugsCache,
   purgeCloudflareCache,
   reIndexTypesense,
 } from "@/lib/usul-pipeline";
@@ -24,5 +26,11 @@ export const cacheRouter = createTRPCRouter({
   }),
   purgeCloudflare: adminProcedure.mutation(async () => {
     return purgeCloudflareCache();
+  }),
+  purgeApi: adminProcedure.mutation(async () => {
+    return purgeApiCache();
+  }),
+  purgeApiSlugs: adminProcedure.mutation(async () => {
+    return purgeApiSlugsCache();
   }),
 });

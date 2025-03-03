@@ -16,6 +16,22 @@ const makePipelinePostRequest = async <T>(
   return response.json() as Promise<T>;
 };
 
+const makeApiPostRequest = async <T>(
+  endpoint: string,
+  body?: Record<string, any>,
+) => {
+  const response = await fetch(`https://api.usul.ai${endpoint}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.USUL_API_SECRET}`,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  return response.json() as Promise<T>;
+};
+
 const makePipelineGetRequest = async <T>(endpoint: string) => {
   const response = await fetch(`${env.USUL_PIPELINE_BASE_URL}${endpoint}`, {
     method: "GET",
@@ -114,4 +130,12 @@ export const getTypesenseStatus = async () => {
 
 export const purgeCloudflareCache = async () => {
   return makePipelinePostRequest<{ success: boolean }>("/cache/purge");
+};
+
+export const purgeApiCache = async () => {
+  return makeApiPostRequest<{ success: boolean }>("/reset-cache");
+};
+
+export const purgeApiSlugsCache = async () => {
+  return makeApiPostRequest<{ success: boolean }>("/reset-cache/slugs");
 };

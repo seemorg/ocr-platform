@@ -49,6 +49,24 @@ function CachingPage() {
       },
     });
 
+  const { mutate: purgeApiCache, isPending: isPurgingApiCache } =
+    api.cache.purgeApi.useMutation({
+      onSuccess: (data) => {
+        if (data.success) {
+          toast.success("Purged api cache");
+        }
+      },
+    });
+
+  const { mutate: purgeApiSlugsCache, isPending: isPurgingApiSlugsCache } =
+    api.cache.purgeApiSlugs.useMutation({
+      onSuccess: (data) => {
+        if (data.success) {
+          toast.success("Purged api slugs cache");
+        }
+      },
+    });
+
   useEffect(() => {
     if (typesenseStatus) {
       if (typesenseStatus.status === "IDLE") {
@@ -137,6 +155,43 @@ function CachingPage() {
                 </Button>
               }
               onDelete={() => reIndexTypesense({ clearCloudflareCache: true })}
+            />
+          </div>
+        </div>
+
+        <div>
+          <p className="text-2xl font-bold">API Cache</p>
+          <div className="flex items-center gap-2">
+            <DeleteModal
+              description="This action will purge the api cache."
+              action="Purge"
+              trigger={
+                <Button
+                  className="mt-3 text-lg"
+                  variant="destructive"
+                  disabled={isPurgingApiCache}
+                >
+                  {isPurgingApiCache ? "Purging..." : "Purge API Cache"}
+                </Button>
+              }
+              onDelete={() => purgeApiCache()}
+            />
+
+            <DeleteModal
+              description="This action will purge the api slugs cache."
+              action="Purge"
+              trigger={
+                <Button
+                  className="mt-3 text-lg"
+                  variant="destructive"
+                  disabled={isPurgingApiSlugsCache}
+                >
+                  {isPurgingApiSlugsCache
+                    ? "Purging..."
+                    : "Purge API Slugs Cache"}
+                </Button>
+              }
+              onDelete={() => purgeApiSlugsCache()}
             />
           </div>
         </div>

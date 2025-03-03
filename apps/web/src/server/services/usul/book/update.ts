@@ -1,4 +1,5 @@
 import type { usulDb } from "@/server/db";
+import { purgeApiSlugsCache } from "@/lib/usul-pipeline";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -53,6 +54,7 @@ export const updateBook = async (
       id: true,
       transliteration: true,
       authorId: true,
+      slug: true,
       versions: true,
       genres: {
         select: {
@@ -155,7 +157,7 @@ export const updateBook = async (
     ]);
   }
 
-  await db.$transaction(async (tx) => {
+  const newBook = await db.$transaction(async (tx) => {
     if (addedAdvancedGenres) {
       await tx.advancedGenre.updateMany({
         where: {
@@ -328,6 +330,21 @@ export const updateBook = async (
       },
     });
   });
+
+  // add old slug as alternative slug
+  if (newBook.slug !== currentBook.slug) {
+    try {
+      await db.bookAlternateSlug.create({
+        data: {
+          book: { connect: { id: newBook.id } },
+          slug: currentBook.slug,
+        },
+      });
+      await purgeApiSlugsCache();
+    } catch (e) {
+      console.log(e);
+    }
+  }
 
   return {
     id: currentBook.id,

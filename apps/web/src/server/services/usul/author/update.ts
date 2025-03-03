@@ -1,5 +1,5 @@
 import type { usulDb } from "@/server/db";
-import { regenerateAuthor } from "@/lib/usul-pipeline";
+import { purgeApiSlugsCache, regenerateAuthor } from "@/lib/usul-pipeline";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -35,6 +35,7 @@ export const updateAuthor = async (
     where: { id: input.id },
     select: {
       id: true,
+      slug: true,
       transliteration: true,
       primaryNameTranslations: {
         where: {
@@ -54,7 +55,7 @@ export const updateAuthor = async (
   const didNameChange =
     input.arabicName !== currentAuthor?.primaryNameTranslations[0]?.text;
 
-  await db.author.update({
+  const newAuthor = await db.author.update({
     where: { id: input.id },
     data: {
       transliteration: input.transliteration,
@@ -142,6 +143,21 @@ export const updateAuthor = async (
       },
     },
   });
+
+  // add old slug as alternative slug
+  if (newAuthor.slug !== currentAuthor.slug) {
+    try {
+      await db.authorAlternateSlug.create({
+        data: {
+          author: { connect: { id: newAuthor.id } },
+          slug: currentAuthor.slug,
+        },
+      });
+      await purgeApiSlugsCache();
+    } catch (e) {
+      console.log(e);
+    }
+  }
 
   if (didNameChange || isChangingArabicBio || isChangingEnglishBio) {
     await regenerateAuthor({
