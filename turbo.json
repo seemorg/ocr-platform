@@ -90,6 +90,7 @@
     "NEXT_PUBLIC_AXIOM_TOKEN",
     "USUL_PIPELINE_API_KEY",
     "USUL_PIPELINE_BASE_URL",
+    "USUL_API_SECRET",
     "PORT"
   ],
   "globalPassThroughEnv": [
