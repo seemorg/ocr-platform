@@ -6,18 +6,23 @@ import { getPagination, getQuery } from "@/lib/pagination";
 import { usulDb } from "@/server/db";
 import { PaginationSearchParams } from "@/types/pagination";
 
-import type { Prisma } from "@usul-ocr/usul-db";
+import { Prisma } from "@usul-ocr/usul-db";
 
 import { SearchBar } from "../search-bar";
 import { columns } from "./columns";
+import { AuthorSort } from "./sort";
 
 export default async function AuthorsPage({
   searchParams,
 }: {
-  searchParams: PaginationSearchParams;
+  searchParams: PaginationSearchParams & {
+    sort?: "year-asc" | "year-desc";
+  };
 }) {
   const query = getQuery(searchParams);
   const pagination = getPagination(searchParams);
+
+  const sort = searchParams.sort;
 
   let filter: Prisma.AuthorWhereInput | undefined;
   if (query) {
@@ -64,10 +69,25 @@ export default async function AuthorsPage({
       },
       skip: (pagination.page - 1) * pagination.pageSize,
       take: pagination.pageSize,
+      orderBy: [
+        ...(sort
+          ? [
+              {
+                year:
+                  sort === "year-asc"
+                    ? Prisma.SortOrder.asc
+                    : Prisma.SortOrder.desc,
+              },
+            ]
+          : []),
+        {
+          createdAt: Prisma.SortOrder.desc,
+        },
+      ],
     }),
   ]);
 
-  const preparedBooks = authors.map((author) => {
+  const preparedAuthors = authors.map((author) => {
     const titles: Record<string, string> = {};
     author.primaryNameTranslations.forEach((t) => {
       titles[t.locale] = t.text;
@@ -76,6 +96,8 @@ export default async function AuthorsPage({
     return {
       id: author.id,
       slug: author.slug,
+      year: author.year,
+      yearStatus: author.yearStatus,
       arabicName: titles.ar,
       englishName: titles.en,
       numberOfBooks: author.numberOfBooks,
@@ -92,10 +114,13 @@ export default async function AuthorsPage({
         </Button>
       }
     >
-      <SearchBar />
+      <div className="mb-10 flex items-start justify-between">
+        <SearchBar className="mb-0 min-w-[500px]" />
+        <AuthorSort />
+      </div>
       <DefaultDataTable
         columns={columns}
-        data={preparedBooks}
+        data={preparedAuthors}
         totalItems={count}
       />
     </PageLayout>

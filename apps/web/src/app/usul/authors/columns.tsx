@@ -8,9 +8,13 @@ import { api } from "@/trpc/react";
 import { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
 
+import { AuthorYearStatus } from "@usul-ocr/usul-db";
+
 export type Text = {
   id: string;
   slug: string;
+  year: number | null;
+  yearStatus: AuthorYearStatus | null;
   arabicName?: string;
   englishName?: string;
   numberOfBooks: number;
@@ -24,6 +28,18 @@ export const columns: ColumnDef<Text>[] = [
   {
     accessorKey: "englishName",
     header: "English Name",
+  },
+  {
+    accessorKey: "year",
+    header: "Year",
+    cell: ({ row }) => {
+      const { year, yearStatus } = row.original;
+      return (
+        <div className="flex items-center gap-2">
+          {year && year >= 0 ? year : yearStatus || "-"}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "slug",
