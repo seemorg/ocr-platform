@@ -11,18 +11,25 @@ import { Prisma } from "@usul-ocr/usul-db";
 import { SearchBar } from "../search-bar";
 import { columns } from "./columns";
 import { AuthorSort } from "./sort";
+import { YearSearchBar } from "./year-search";
 
 export default async function AuthorsPage({
   searchParams,
 }: {
   searchParams: PaginationSearchParams & {
     sort?: "year-asc" | "year-desc";
+    year?: string;
   };
 }) {
   const query = getQuery(searchParams);
   const pagination = getPagination(searchParams);
 
   const sort = searchParams.sort;
+  const year = searchParams.year;
+  let yearNumber: number | undefined;
+  if (year && !isNaN(parseInt(year))) {
+    yearNumber = parseInt(year);
+  }
 
   let filter: Prisma.AuthorWhereInput | undefined;
   if (query) {
@@ -51,6 +58,13 @@ export default async function AuthorsPage({
               : { equals: query.text },
         },
       ],
+    };
+  }
+
+  if (yearNumber !== undefined) {
+    filter = {
+      ...(filter ?? {}),
+      year: { equals: yearNumber },
     };
   }
 
@@ -115,7 +129,11 @@ export default async function AuthorsPage({
       }
     >
       <div className="mb-10 flex items-start justify-between">
-        <SearchBar className="mb-0 min-w-[500px]" />
+        <div className="flex items-center gap-4">
+          <SearchBar className="mb-0 min-w-[500px]" />
+          <YearSearchBar />
+        </div>
+
         <AuthorSort />
       </div>
       <DefaultDataTable
