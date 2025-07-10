@@ -185,8 +185,14 @@ ul[data-type="taskList"] li[data-checked="true"] > div > p {
   text-align: left;
 }
 
-/* p.is-editor-empty:first-child::before، p.is-empty::before {
+.rtl-editor p.is-editor-empty:first-child::before,
+.rtl-editor p.is-empty::before {
   float: right;
-} */
+}
+
+.ltr-editor p.is-editor-empty:first-child::before,
+.ltr-editor p.is-empty::before {
+  float: left;
+}
 
 @import "./table.css";

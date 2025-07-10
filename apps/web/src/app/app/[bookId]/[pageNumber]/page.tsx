@@ -42,6 +42,7 @@ import { PageFlag, PageOcrStatus } from "@usul-ocr/db";
 import { useAppContext } from "../../providers";
 import Alerts from "./alerts";
 import Presence from "./presence";
+import { useSettingsStore } from "@/stores/settings-store";
 
 // recursively loop over `value` and remove all `textStyle` marks
 const removeTextStyleMarks = (value: JSONContent) => {
@@ -190,6 +191,7 @@ const InnerPage = ({
   };
   user: Session["user"];
 }) => {
+  const { direction, setDirection } = useSettingsStore();
   const email = user.email ?? user.id;
   const log = useLogger({
     source: "app/[bookId]/[pageNumber]/page.tsx",
@@ -358,6 +360,14 @@ const InnerPage = ({
               <DropdownMenuLabel>{email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
 
+              <DropdownMenuItem
+                onClick={() =>
+                  setDirection(direction === "ltr" ? "rtl" : "ltr")
+                }
+              >
+                Switch to {direction === "ltr" ? "RTL" : "LTR"}
+              </DropdownMenuItem>
+
               <DropdownMenuItem className="text-destructive" onClick={logout}>
                 Logout
               </DropdownMenuItem>
@@ -391,7 +401,9 @@ const InnerPage = ({
               className="min-h-[200px] sm:rounded-none sm:border-none sm:shadow-none"
               initialValue={editorialNotesValue}
               onChange={(newValue) => setEditorialNotesValue(newValue)}
-              placeholderText="تعليقات موقع اصول"
+              placeholderText={
+                direction === "ltr" ? "Editorial Notes" : "تعليقات موقع اصول"
+              }
             />
             <ScrollBar orientation="vertical" />
           </ScrollArea>
@@ -413,7 +425,9 @@ const InnerPage = ({
               initialValue={footnotesValue}
               disabled={isRegenerating}
               onChange={(newValue) => setFootnotesValue(newValue)}
-              placeholderText="هوامش الصفحة"
+              placeholderText={
+                direction === "ltr" ? "Page Footnotes" : "هوامش الصفحة"
+              }
             />
             <ScrollBar orientation="vertical" />
           </ScrollArea>

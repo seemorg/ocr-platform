@@ -30,6 +30,7 @@ import { NodeSelector } from "./selectors/node-selector";
 import { TextButtons } from "./selectors/text-buttons";
 import { slashCommand, suggestionItems } from "./slash-command";
 import { TableMenus } from "./table";
+import { useSettingsStore } from "@/stores/settings-store";
 
 export const isTableGripSelected = (node: HTMLElement) => {
   let container = node;
@@ -95,9 +96,10 @@ const Editor = ({
   disabled,
   placeholderText,
 }: EditorProps) => {
+  const direction = useSettingsStore((s) => s.direction);
   const extensions = useMemo(
-    () => [...defaultExtensions(placeholderText), slashCommand],
-    [],
+    () => [...defaultExtensions(placeholderText, direction), slashCommand],
+    [direction],
   );
   const [openNode, setOpenNode] = useState(false);
   const [openLink, setOpenLink] = useState(false);
@@ -136,9 +138,15 @@ const Editor = ({
   }, [disabled, editorRef]);
 
   return (
-    <div className="relative w-full">
+    <div
+      className={cn(
+        "relative w-full",
+        direction === "ltr" ? "ltr-editor" : "rtl-editor",
+      )}
+    >
       <EditorRoot>
         <EditorContent
+          key={direction}
           immediatelyRender={false}
           initialContent={initialValue}
           extensions={extensions}
@@ -155,7 +163,7 @@ const Editor = ({
             attributes: {
               class:
                 "prose dark:prose-invert prose-headings:font-title font-default focus:outline-none max-w-full",
-              dir: "rtl",
+              dir: direction,
             },
           }}
           onCreate={({ editor }) => {
