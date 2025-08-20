@@ -57,6 +57,7 @@ export const authOptions: NextAuthOptions = {
       if (
         email.endsWith("@usul.ai") ||
         email.endsWith("@digitalseem.org") ||
+        email.endsWith("@fifthtribe.com") ||
         whitelistedEmails.includes(email)
       ) {
         return true;
