@@ -1,278 +1,395 @@
 generator client {
-    provider        = "prisma-client-js"
-    previewFeatures = ["driverAdapters"]
-    output          = "../../../node_modules/@usul-ocr/client/usul-db"
+  provider        = "prisma-client-js"
+  output          = "../../../node_modules/@usul-ocr/client/usul-db"
+  previewFeatures = ["driverAdapters"]
 }
 
 generator json {
-    provider = "prisma-json-types-generator"
+  provider = "prisma-json-types-generator"
 }
 
 datasource db {
-    provider  = "postgresql"
-    url       = env("DATABASE_URL")
-    directUrl = env("DATABASE_DIRECT_URL")
-}
-
-enum AuthorYearStatus {
-    Unknown
-    Alive
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_DIRECT_URL")
 }
 
 model Author {
-    id             String                @id
-    slug           String                @unique
-    alternateSlugs AuthorAlternateSlug[]
-
-    primaryNameTranslations AuthorPrimaryName[]
-    otherNameTranslations   AuthorOtherNames[]
-    transliteration         String?
-
-    year            Int?
-    yearStatus      AuthorYearStatus?
-    numberOfBooks   Int               @default(0)
-    bioTranslations AuthorBio[]
-
-    /// [AuthorExtraProperties]
-    extraProperties Json @default("{}")
-
-    books     Book[]
-    locations Location[]
-
-    createdAt DateTime  @default(now())
-    updatedAt DateTime? @updatedAt
+  id                        String                @id
+  slug                      String                @unique
+  year                      Int?
+  numberOfBooks             Int                   @default(0)
+  transliteration           String?
+  /// [AuthorExtraProperties]
+  extraProperties           Json                  @default("{}")
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime?             @updatedAt
+  yearStatus                AuthorYearStatus?
+  otherNameTransliterations String[]
+  alternateSlugs            AuthorAlternateSlug[]
+  bioTranslations           AuthorBio[]
+  otherNameTranslations     AuthorOtherNames[]
+  primaryNameTranslations   AuthorPrimaryName[]
+  books                     Book[]
+  AuthorToEmpire            AuthorToEmpire[]
+  AuthorToRegion            AuthorToRegion[]
 }
 
 model AuthorAlternateSlug {
-    slug     String @unique
-    authorId String
-    author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-    @@id([slug])
+  slug     String @id @unique
+  authorId String
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }
 
 model AuthorBio {
-    locale String
-    text   String
+  locale   String
+  text     String
+  authorId String
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-    authorId String
-    author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-    @@id([authorId, locale])
+  @@id([authorId, locale])
 }
 
 model AuthorPrimaryName {
-    locale String
-    text   String
+  locale   String
+  text     String
+  authorId String
+  author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-    authorId String
-    author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-    @@id([authorId, locale])
+  @@id([authorId, locale])
 }
 
 model AuthorOtherNames {
-    locale String
-    texts  String[]
+  locale   String
+  texts    String[]
+  authorId String
+  author   Author   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-    authorId String
-    author   Author @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-    @@id([authorId, locale])
+  @@id([authorId, locale])
 }
 
 model Book {
-    id             String              @id
-    slug           String              @unique
-    alternateSlugs BookAlternateSlug[]
-
-    primaryNameTranslations BookPrimaryName[]
-    otherNameTranslations   BookOtherNames[]
-    transliteration         String?
-
-    /// [BookVersion]
-    versions         Json[]
-    numberOfVersions Int    @default(0)
-
-    /// [BookExtraProperties]
-    extraProperties Json @default("{}")
-
-    /// [BookPhysicalDetails]
-    physicalDetails Json?
-
-    genres         Genre[]
-    advancedGenres AdvancedGenre[]
-    author         Author          @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-    authorId       String
-
-    coverImageUrl String?
-
-    createdAt DateTime  @default(now())
-    updatedAt DateTime? @updatedAt
+  id                        String                @id
+  slug                      String                @unique
+  numberOfVersions          Int                   @default(0)
+  authorId                  String
+  /// [BookVersion]
+  versions                  Json[]
+  transliteration           String?
+  /// [BookExtraProperties]
+  extraProperties           Json                  @default("{}")
+  createdAt                 DateTime              @default(now())
+  updatedAt                 DateTime?             @updatedAt
+  coverImageUrl             String?
+  /// [BookPhysicalDetails]
+  physicalDetails           Json?
+  otherNameTransliterations String[]
+  author                    Author                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  alternateSlugs            BookAlternateSlug[]
+  otherNameTranslations     BookOtherNames[]
+  primaryNameTranslations   BookPrimaryName[]
+  BookVersion               BookVersion[]
+  AdvancedGenreToBook       AdvancedGenreToBook[]
+  BookToGenre               BookToGenre[]
+  CollectionBooks           CollectionBooks[]
 }
 
 model BookAlternateSlug {
-    slug   String @unique
-    bookId String
-    book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-    @@id([slug])
+  slug   String @id @unique
+  bookId String
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
 }
 
 model BookPrimaryName {
-    locale String
-    text   String
+  locale String
+  text   String
+  bookId String
+  book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
-    bookId String
-    book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-    @@id([bookId, locale])
+  @@id([bookId, locale])
 }
 
 model BookOtherNames {
-    locale String
-    texts  String[]
+  locale String
+  texts  String[]
+  bookId String
+  book   Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
 
-    bookId String
-    book   Book   @relation(fields: [bookId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-    @@id([bookId, locale])
+  @@id([bookId, locale])
 }
 
 model Genre {
-    id   String @id
-    slug String @unique
-
-    nameTranslations GenreName[]
-    transliteration  String?
-
-    /// [GenreExtraProperties]
-    extraProperties Json @default("{}")
-
-    numberOfBooks Int    @default(0)
-    books         Book[]
-
-    createdAt DateTime  @default(now())
-    updatedAt DateTime? @updatedAt
+  id               String        @id
+  slug             String        @unique
+  numberOfBooks    Int           @default(0)
+  transliteration  String?
+  /// [GenreExtraProperties]
+  extraProperties  Json          @default("{}")
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime?     @updatedAt
+  nameTranslations GenreName[]
+  BookToGenre      BookToGenre[]
 }
 
 model GenreName {
-    locale String
-    text   String
+  locale  String
+  text    String
+  genreId String
+  genre   Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
 
-    genreId String
-    genre   Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-    @@id([genreId, locale])
+  @@id([genreId, locale])
 }
 
 model AdvancedGenre {
-    id   String @id
-    slug String @unique
-
-    nameTranslations AdvancedGenreName[]
-    transliteration  String?
-
-    /// [AdvancedGenreExtraProperties]
-    extraProperties Json @default("{}")
-
-    numberOfBooks Int    @default(0)
-    books         Book[]
-
-    createdAt DateTime  @default(now())
-    updatedAt DateTime? @updatedAt
+  id                  String                @id
+  slug                String                @unique
+  transliteration     String?
+  /// [AdvancedGenreExtraProperties]
+  extraProperties     Json                  @default("{}")
+  numberOfBooks       Int                   @default(0)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime?             @updatedAt
+  parentGenre         String?
+  nameTranslations    AdvancedGenreName[]
+  AdvancedGenreToBook AdvancedGenreToBook[]
 }
 
 model AdvancedGenreName {
-    locale String
-    text   String
+  locale  String
+  text    String
+  genreId String
+  genre   AdvancedGenre @relation(fields: [genreId], references: [id], onDelete: Cascade)
 
-    genreId String
-    genre   AdvancedGenre @relation(fields: [genreId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-    @@id([genreId, locale])
-}
-
-enum LocationType {
-    Died
-    Born
-    Visited
-    Resided
-}
-
-model Location {
-    id   String       @id
-    slug String
-    name String
-    type LocationType
-
-    transliteration      String?
-    cityNameTranslations LocationCityName[]
-    authors              Author[]
-
-    region   Region? @relation(fields: [regionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-    regionId String?
-
-    createdAt DateTime  @default(now())
-    updatedAt DateTime? @updatedAt
-
-    @@unique([slug, type])
-}
-
-model LocationCityName {
-    locale String
-    text   String
-
-    locationId String
-    location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-    @@id([locationId, locale])
+  @@id([genreId, locale])
 }
 
 model Region {
-    id   String @id
-    slug String @unique
-
-    transliteration            String?
-    currentNameTransliteration String?
-    currentNameTranslations    RegionCurrentName[]
-    nameTranslations           RegionName[]
-    overviewTranslations       RegionOverview[]
-
-    numberOfAuthors Int        @default(0)
-    numberOfBooks   Int        @default(0)
-    locations       Location[]
-
-    createdAt DateTime  @default(now())
-    updatedAt DateTime? @updatedAt
-}
-
-model RegionCurrentName {
-    locale String
-    text   String
-
-    regionId String
-    region   Region @relation(fields: [regionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-    @@id([regionId, locale])
+  id                   String           @id
+  slug                 String           @unique
+  numberOfAuthors      Int              @default(0)
+  numberOfBooks        Int              @default(0)
+  transliteration      String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime?        @updatedAt
+  nameTranslations     RegionName[]
+  overviewTranslations RegionOverview[]
+  AuthorToRegion       AuthorToRegion[]
+  RegionToEmpire       RegionToEmpire[]
 }
 
 model RegionName {
-    locale String
-    text   String
+  locale   String
+  text     String
+  regionId String
+  region   Region @relation(fields: [regionId], references: [id], onDelete: Cascade)
 
-    regionId String
-    region   Region @relation(fields: [regionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-
-    @@id([regionId, locale])
+  @@id([regionId, locale])
 }
 
 model RegionOverview {
-    locale String
-    text   String
+  locale   String
+  text     String
+  regionId String
+  region   Region @relation(fields: [regionId], references: [id], onDelete: Cascade)
 
-    regionId String
-    region   Region @relation(fields: [regionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  @@id([regionId, locale])
+}
 
-    @@id([regionId, locale])
+model BookVersion {
+  id                String            @id
+  source            BookVersionSource
+  value             String
+  investigator      String?
+  publisher         String?
+  publisherLocation String?
+  editionNumber     String?
+  publicationYear   String?
+  aiSupported       Boolean           @default(false)
+  keywordSupported  Boolean           @default(false)
+  pdfUrl            String?
+  ocrBookId         String?
+  splitsData        Json?
+  bookId            String
+  Book              Book              @relation(fields: [bookId], references: [id], onDelete: Cascade)
+}
+
+model Collection {
+  id              String               @id
+  name            String
+  description     String
+  slug            String               @unique
+  visibility      CollectionVisibility @default(PUBLIC)
+  userId          String
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime
+  user            user                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  CollectionBooks CollectionBooks[]
+}
+
+model Empire {
+  id              String           @id
+  slug            String           @unique
+  numberOfAuthors Int              @default(0)
+  numberOfBooks   Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime?
+  hijriEndYear    Int?
+  hijriStartYear  Int?
+  transliteration String?
+  EmpireName      EmpireName[]
+  EmpireOverview  EmpireOverview[]
+  AuthorToEmpire  AuthorToEmpire[]
+  RegionToEmpire  RegionToEmpire[]
+}
+
+model EmpireName {
+  locale   String
+  text     String
+  empireId String
+  Empire   Empire @relation(fields: [empireId], references: [id], onDelete: Cascade)
+
+  @@id([empireId, locale])
+}
+
+model EmpireOverview {
+  locale   String
+  text     String
+  empireId String
+  Empire   Empire @relation(fields: [empireId], references: [id], onDelete: Cascade)
+
+  @@id([empireId, locale])
+}
+
+model AdvancedGenreToBook {
+  A             String
+  B             String
+  AdvancedGenre AdvancedGenre @relation(fields: [A], references: [id], onDelete: Cascade)
+  Book          Book          @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_AdvancedGenreToBook_AB_pkey")
+  @@index([B], map: "_AdvancedGenreToBook_B_index")
+  @@map("_AdvancedGenreToBook")
+}
+
+model AuthorToEmpire {
+  A      String
+  B      String
+  Author Author @relation(fields: [A], references: [id], onDelete: Cascade)
+  Empire Empire @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_AuthorToEmpire_AB_pkey")
+  @@index([B], map: "_AuthorToEmpire_B_index")
+  @@map("_AuthorToEmpire")
+}
+
+model AuthorToRegion {
+  A      String
+  B      String
+  Author Author @relation(fields: [A], references: [id], onDelete: Cascade)
+  Region Region @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_AuthorToRegion_AB_pkey")
+  @@index([B], map: "_AuthorToRegion_B_index")
+  @@map("_AuthorToRegion")
+}
+
+model BookToGenre {
+  A     String
+  B     String
+  Book  Book   @relation(fields: [A], references: [id], onDelete: Cascade)
+  Genre Genre  @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_BookToGenre_AB_pkey")
+  @@index([B], map: "_BookToGenre_B_index")
+  @@map("_BookToGenre")
+}
+
+model CollectionBooks {
+  A          String
+  B          String
+  Book       Book       @relation(fields: [A], references: [id], onDelete: Cascade)
+  Collection Collection @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_CollectionBooks_AB_pkey")
+  @@index([B], map: "_CollectionBooks_B_index")
+  @@map("_CollectionBooks")
+}
+
+model RegionToEmpire {
+  A      String
+  B      String
+  Empire Empire @relation(fields: [A], references: [id], onDelete: Cascade)
+  Region Region @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_RegionToEmpire_AB_pkey")
+  @@index([B], map: "_RegionToEmpire_B_index")
+  @@map("_RegionToEmpire")
+}
+
+model account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+  user                  user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model user {
+  id            String       @id
+  name          String
+  email         String       @unique
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  Collection    Collection[]
+  account       account[]
+  session       session[]
+}
+
+model verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+}
+
+enum AuthorYearStatus {
+  Unknown
+  Alive
+}
+
+enum BookVersionSource {
+  Turath
+  Openiti
+  Pdf
+  External
+}
+
+enum CollectionVisibility {
+  PUBLIC
+  UNLISTED
 }

@@ -4,6 +4,73 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../../trpc";
 
 export const usulAdvancedGenreRouter = createTRPCRouter({
+  searchAdvancedGenres: protectedProcedure
+    .input(
+      z.object({
+        query: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const advancedGenres = await ctx.usulDb.advancedGenre.findMany({
+        where: {
+          OR: [
+            {
+              transliteration: {
+                contains: input.query,
+                mode: "insensitive",
+              },
+            },
+            {
+              nameTranslations: {
+                some: {
+                  text: {
+                    mode: "insensitive",
+                    contains: input.query,
+                  },
+                },
+              },
+            },
+          ],
+        },
+        ...(!input.query
+          ? {
+              take: 10,
+            }
+          : {}),
+        select: {
+          id: true,
+          transliteration: true,
+          slug: true,
+          nameTranslations: {
+            where: {
+              locale: {
+                in: ["ar", "en"],
+              },
+            },
+            select: {
+              text: true,
+              locale: true,
+            },
+          },
+        },
+      });
+
+      const preparedAdvancedGenres = advancedGenres.map((genre) => {
+        return {
+          id: genre.id,
+          slug: genre.slug,
+          arabicName:
+            genre.nameTranslations.find((n) => n.locale === "ar")?.text ??
+            null,
+          englishName:
+            genre.nameTranslations.find((n) => n.locale === "en")?.text ??
+            null,
+          transliteratedName: genre.transliteration,
+        };
+      });
+
+      return preparedAdvancedGenres;
+    }),
   allAdvancedGenres: protectedProcedure.query(async ({ ctx }) => {
     const advancedGenres = await ctx.usulDb.advancedGenre.findMany({
       select: {

@@ -15,6 +15,8 @@ export const createAuthorSchema = z.object({
   slug: z.string().optional(),
   deathYear: z.number().optional(),
   yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
+  empireIds: z.array(z.string()).optional(),
+  regionIds: z.array(z.string()).optional(),
 });
 
 export const createAuthor = async (
@@ -42,13 +44,13 @@ export const createAuthor = async (
       yearStatus: input.yearStatus,
       ...(input.otherArabicNames
         ? {
-            otherNameTranslations: {
-              create: {
-                locale: "ar",
-                texts: input.otherArabicNames,
-              },
+          otherNameTranslations: {
+            create: {
+              locale: "ar",
+              texts: input.otherArabicNames,
             },
-          }
+          },
+        }
         : {}),
       primaryNameTranslations: {
         create: {
@@ -58,10 +60,32 @@ export const createAuthor = async (
       },
       ...(input.arabicBio
         ? {
-            bioTranslations: {
-              create: { locale: "en", text: input.arabicBio },
-            },
-          }
+          bioTranslations: {
+            create: { locale: "en", text: input.arabicBio },
+          },
+        }
+        : {}),
+      ...(input.empireIds && input.empireIds.length > 0
+        ? {
+          AuthorToEmpire: {
+            create: input.empireIds.map((empireId) => ({
+              Empire: {
+                connect: { id: empireId },
+              },
+            })),
+          },
+        }
+        : {}),
+      ...(input.regionIds && input.regionIds.length > 0
+        ? {
+          AuthorToRegion: {
+            create: input.regionIds.map((regionId) => ({
+              Region: {
+                connect: { id: regionId },
+              },
+            })),
+          },
+        }
         : {}),
     },
   });

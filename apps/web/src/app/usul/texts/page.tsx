@@ -18,6 +18,8 @@ export default async function TextsPage({
   searchParams: PaginationSearchParams & {
     genre?: string;
     advancedGenre?: string;
+    empire?: string;
+    region?: string;
     excludeEmptyAdvancedGenre?: "true" | "false";
   };
 }) {
@@ -57,8 +59,8 @@ export default async function TextsPage({
   if (searchParams.advancedGenre) {
     filter = {
       ...(filter ?? {}),
-      advancedGenres: {
-        some: { id: searchParams.advancedGenre },
+      AdvancedGenreToBook: {
+        some: { A: searchParams.advancedGenre },
       },
     };
   }
@@ -66,8 +68,8 @@ export default async function TextsPage({
   if (searchParams.genre) {
     filter = {
       ...(filter ?? {}),
-      genres: {
-        some: { id: searchParams.genre },
+      BookToGenre: {
+        some: { B: searchParams.genre },
       },
     };
   }
@@ -75,9 +77,30 @@ export default async function TextsPage({
   if (searchParams.excludeEmptyAdvancedGenre === "true") {
     filter = {
       ...(filter ?? {}),
-      advancedGenres: {
+      AdvancedGenreToBook: {
         none: {},
       },
+    };
+  }
+
+  if (searchParams.empire || searchParams.region) {
+    const authorFilter: any = {};
+
+    if (searchParams.empire) {
+      authorFilter.AuthorToEmpire = {
+        some: { B: searchParams.empire },
+      };
+    }
+
+    if (searchParams.region) {
+      authorFilter.AuthorToRegion = {
+        some: { B: searchParams.region },
+      };
+    }
+
+    filter = {
+      ...(filter ?? {}),
+      author: authorFilter,
     };
   }
 
@@ -96,22 +119,30 @@ export default async function TextsPage({
             OR: [{ locale: "ar" }, { locale: "en" }],
           },
         },
-        advancedGenres: {
+        AdvancedGenreToBook: {
           select: {
-            id: true,
-            nameTranslations: {
-              where: {
-                locale: "ar",
+            AdvancedGenre: {
+              select: {
+                id: true,
+                nameTranslations: {
+                  where: {
+                    locale: "ar",
+                  },
+                },
               },
             },
           },
         },
-        genres: {
+        BookToGenre: {
           select: {
-            id: true,
-            nameTranslations: {
-              where: {
-                locale: "ar",
+            Genre: {
+              select: {
+                id: true,
+                nameTranslations: {
+                  where: {
+                    locale: "ar",
+                  },
+                },
               },
             },
           },
@@ -123,6 +154,34 @@ export default async function TextsPage({
                 OR: [{ locale: "ar" }, { locale: "en" }],
               },
             },
+            AuthorToEmpire: {
+              select: {
+                Empire: {
+                  select: {
+                    id: true,
+                    EmpireName: {
+                      where: {
+                        locale: "ar",
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            AuthorToRegion: {
+              select: {
+                Region: {
+                  select: {
+                    id: true,
+                    nameTranslations: {
+                      where: {
+                        locale: "ar",
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
@@ -131,7 +190,7 @@ export default async function TextsPage({
           createdAt: "desc",
         },
         {
-          id: 'desc'
+          id: "desc",
         },
       ],
       skip: (pagination.page - 1) * pagination.pageSize,
@@ -158,13 +217,21 @@ export default async function TextsPage({
       englishAuthorName: authorNames.en,
       createdAt: book.createdAt,
       updatedAt: book.updatedAt,
-      genres: book.genres.map((g) => ({
-        id: g.id,
-        arabicName: g.nameTranslations[0]?.text,
+      genres: book.BookToGenre.map((relation) => ({
+        id: relation.Genre.id,
+        arabicName: relation.Genre.nameTranslations[0]?.text,
       })),
-      advancedGenres: book.advancedGenres.map((g) => ({
-        id: g.id,
-        arabicName: g.nameTranslations[0]?.text,
+      advancedGenres: book.AdvancedGenreToBook.map((relation) => ({
+        id: relation.AdvancedGenre.id,
+        arabicName: relation.AdvancedGenre.nameTranslations[0]?.text,
+      })),
+      empires: book.author.AuthorToEmpire.map((relation) => ({
+        id: relation.Empire.id,
+        arabicName: relation.Empire.EmpireName[0]?.text,
+      })),
+      regions: book.author.AuthorToRegion.map((relation) => ({
+        id: relation.Region.id,
+        arabicName: relation.Region.nameTranslations[0]?.text,
       })),
     };
   });

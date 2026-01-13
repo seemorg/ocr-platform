@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GoogleIcon } from "@/components/icons";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ function AuthForm({ className, ...props }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
   const [isSent, setIsSent] = useState<boolean>(false);
+  const [loginUrl, setLoginUrl] = useState<string | null>(null);
 
   // const params = useSearchParams();
   // const redirect =
@@ -48,13 +49,68 @@ function AuthForm({ className, ...props }: UserAuthFormProps) {
     setIsLoading(false);
   };
 
+  // Poll for login URL in development mode
+  useEffect(() => {
+    if (!isSent || !email) return;
+
+    const pollForUrl = async () => {
+      try {
+        const response = await fetch(`/api/dev-login-url?email=${encodeURIComponent(email)}`);
+        const data = await response.json();
+        if (data.url) {
+          setLoginUrl(data.url);
+        }
+      } catch (error) {
+        console.error("Failed to fetch login URL:", error);
+      }
+    };
+
+    // Poll immediately and then every second for up to 10 seconds
+    pollForUrl();
+    const interval = setInterval(pollForUrl, 1000);
+    const timeout = setTimeout(() => clearInterval(interval), 10000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [isSent, email]);
+
   return (
     <div className={cn("grid gap-6", className)} {...props}>
       {isSent ? (
-        <Alert className="[&>svg+div]:translate-y-0">
-          <CheckCircle className="!top-3 h-4 w-4" />
-          <AlertTitle className="mb-0">Check your inbox at {email}</AlertTitle>
-        </Alert>
+        <div className="space-y-4">
+          <Alert className="[&>svg+div]:translate-y-0">
+            <CheckCircle className="!top-3 h-4 w-4" />
+            <AlertTitle className="mb-0">Check your inbox at {email}</AlertTitle>
+          </Alert>
+          {loginUrl && (
+            <Alert className="[&>svg+div]:translate-y-0 border-blue-500 bg-blue-50">
+              <div className="space-y-2">
+                <AlertTitle className="mb-0 text-blue-900">
+                  🔓 Development Login Link
+                </AlertTitle>
+                <p className="text-sm text-blue-800">
+                  Click the button below to log in (development mode only):
+                </p>
+                <Button
+                  onClick={() => window.location.href = loginUrl}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  Login Now
+                </Button>
+                <details className="text-xs">
+                  <summary className="cursor-pointer text-blue-700 hover:text-blue-900">
+                    Show full URL
+                  </summary>
+                  <code className="mt-2 block break-all rounded bg-blue-100 p-2 text-blue-900">
+                    {loginUrl}
+                  </code>
+                </details>
+              </div>
+            </Alert>
+          )}
+        </div>
       ) : (
         <form onSubmit={onSubmit}>
           <div className="grid gap-2">

@@ -4,6 +4,7 @@ import type { AppRouter } from "@/server/api/root";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import DataCombobox from "@/components/data-combobox";
 import LatestAuthorBooks from "@/components/latest-author-books";
 import TextArrayInput from "@/components/text-array-input";
 import TransliterationHelper from "@/components/transliteration-helper";
@@ -30,6 +31,11 @@ import { z } from "zod";
 
 import { AuthorYearStatus } from "@usul-ocr/usul-db";
 
+type Empire =
+  inferRouterOutputs<AppRouter>["usulEmpire"]["searchEmpires"][number];
+type Region =
+  inferRouterOutputs<AppRouter>["usulRegion"]["searchRegions"][number];
+
 const schema = z.object({
   arabicNames: z.array(z.string()).min(1),
   primaryArabicNameIndex: z.number().default(0),
@@ -39,6 +45,8 @@ const schema = z.object({
   englishBio: z.string().optional(),
   deathYear: z.coerce.number().optional(),
   yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
+  empireIds: z.array(z.string()).optional(),
+  regionIds: z.array(z.string()).optional(),
 });
 
 type Author = NonNullable<
@@ -49,6 +57,31 @@ export default function EditTextClientPage({ author }: { author: Author }) {
   const router = useRouter();
 
   const [bioMode, setBioMode] = useState<"ar" | "en">("ar");
+  const [empireSearchQuery, setEmpireSearchQuery] = useState<string>("");
+  const [regionSearchQuery, setRegionSearchQuery] = useState<string>("");
+  const [selectedEmpires, setSelectedEmpires] = useState<Empire[]>(
+    author.empires ?? [],
+  );
+  const [selectedRegions, setSelectedRegions] = useState<Region[]>(
+    author.regions ?? [],
+  );
+
+  const {
+    data: empires,
+    isLoading: isLoadingEmpires,
+    isError: isErrorEmpires,
+  } = api.usulEmpire.searchEmpires.useQuery({
+    query: empireSearchQuery || undefined,
+  });
+
+  const {
+    data: regions,
+    isLoading: isLoadingRegions,
+    isError: isErrorRegions,
+  } = api.usulRegion.searchRegions.useQuery({
+    query: regionSearchQuery || undefined,
+  });
+
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -60,6 +93,8 @@ export default function EditTextClientPage({ author }: { author: Author }) {
       otherArabicNames: author.otherArabicNames ?? [],
       arabicBio: author.arabicBio,
       englishBio: author.englishBio,
+      empireIds: author.empires?.map((e) => e.id) ?? [],
+      regionIds: author.regions?.map((r) => r.id) ?? [],
     },
   });
 
@@ -112,6 +147,8 @@ export default function EditTextClientPage({ author }: { author: Author }) {
       deathYear: data.yearStatus ? undefined : data.deathYear,
       yearStatus: data.yearStatus,
       otherArabicNames: otherNames,
+      empireIds: selectedEmpires.map((e) => e.id),
+      regionIds: selectedRegions.map((r) => r.id),
       ...(bioToSend ?? {}),
     });
   };
@@ -316,6 +353,120 @@ export default function EditTextClientPage({ author }: { author: Author }) {
             </Button>
           </TabsContent>
         </Tabs>
+
+        <div className="space-y-4">
+          <div>
+            <Label className="mb-2 block">Empires</Label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {selectedEmpires.map((empire) => (
+                <div
+                  key={empire.id}
+                  className="flex items-center gap-2 rounded-md bg-secondary px-3 py-1.5"
+                >
+                  <span className="text-sm">
+                    {empire.arabicName ?? empire.englishName ?? ""}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedEmpires((prev) =>
+                        prev.filter((e) => e.id !== empire.id),
+                      )
+                    }
+                    className="text-muted-foreground hover:text-foreground"
+                    disabled={isMutating}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            <DataCombobox<Empire>
+              data={empires}
+              isLoading={isLoadingEmpires}
+              isError={isErrorEmpires}
+              onQueryChange={setEmpireSearchQuery}
+              selected={null}
+              onChange={(empire) => {
+                if (
+                  empire &&
+                  !selectedEmpires.find((e) => e.id === empire.id)
+                ) {
+                  setSelectedEmpires((prev) => [...prev, empire]);
+                }
+              }}
+              itemName={(item) => {
+                const isSelected = selectedEmpires.find(
+                  (e) => e.id === item.id,
+                );
+                const name = item.arabicName ?? item.englishName ?? "";
+                return isSelected ? `✓ ${name}` : name;
+              }}
+              messages={{
+                placeholder: "Add empire",
+                search: "Search empires...",
+                empty: "No empires found",
+              }}
+              widthClassName="w-[300px]"
+            />
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Regions</Label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {selectedRegions.map((region) => (
+                <div
+                  key={region.id}
+                  className="flex items-center gap-2 rounded-md bg-secondary px-3 py-1.5"
+                >
+                  <span className="text-sm">
+                    {region.arabicName ?? region.englishName ?? ""}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedRegions((prev) =>
+                        prev.filter((r) => r.id !== region.id),
+                      )
+                    }
+                    className="text-muted-foreground hover:text-foreground"
+                    disabled={isMutating}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+            <DataCombobox<Region>
+              data={regions}
+              isLoading={isLoadingRegions}
+              isError={isErrorRegions}
+              onQueryChange={setRegionSearchQuery}
+              selected={null}
+              onChange={(region) => {
+                if (
+                  region &&
+                  !selectedRegions.find((r) => r.id === region.id)
+                ) {
+                  setSelectedRegions((prev) => [...prev, region]);
+                }
+              }}
+              itemName={(item) => {
+                const isSelected = selectedRegions.find(
+                  (r) => r.id === item.id,
+                );
+                const name = item.arabicName ?? item.englishName ?? "";
+                return isSelected ? `✓ ${name}` : name;
+              }}
+              messages={{
+                placeholder: "Add region",
+                search: "Search regions...",
+                empty: "No regions found",
+              }}
+              widthClassName="w-[300px]"
+            />
+          </div>
+        </div>
 
         <div>
           <Button type="submit" disabled={isMutating}>

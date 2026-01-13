@@ -46,6 +46,8 @@ export const createBookSchema = z.object({
       transliteratedName: z.string(),
       diedYear: z.number().optional(),
       yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
+      empires: z.array(z.string()).optional(),
+      regions: z.array(z.string()).optional(),
     }),
   ]),
   versions: z.array(bookVersionSchema),
@@ -99,9 +101,9 @@ export const createBook = async (
   } else {
     const author = data.author._airtableReference
       ? await getAuthor(
-          { _airtableReference: data.author._airtableReference },
-          db,
-        )
+        { _airtableReference: data.author._airtableReference },
+        db,
+      )
       : null;
 
     if (author) {
@@ -198,6 +200,45 @@ export const createBook = async (
         typeof data.author,
         { isUsul: false }
       >;
+
+      // Update empire counts
+      if (validatedAuthor.empires && validatedAuthor.empires.length > 0) {
+        await tx.empire.updateMany({
+          where: {
+            id: {
+              in: validatedAuthor.empires,
+            },
+          },
+          data: {
+            numberOfAuthors: {
+              increment: 1,
+            },
+            numberOfBooks: {
+              increment: 1,
+            },
+          },
+        });
+      }
+
+      // Update region counts
+      if (validatedAuthor.regions && validatedAuthor.regions.length > 0) {
+        await tx.region.updateMany({
+          where: {
+            id: {
+              in: validatedAuthor.regions,
+            },
+          },
+          data: {
+            numberOfAuthors: {
+              increment: 1,
+            },
+            numberOfBooks: {
+              increment: 1,
+            },
+          },
+        });
+      }
+
       const newAuthor = await tx.author.create({
         data: {
           id: createId(),
@@ -210,13 +251,13 @@ export const createBook = async (
           },
           ...(validatedAuthor.otherNames
             ? {
-                otherNameTranslations: {
-                  create: {
-                    locale: "ar",
-                    texts: validatedAuthor.otherNames,
-                  },
+              otherNameTranslations: {
+                create: {
+                  locale: "ar",
+                  texts: validatedAuthor.otherNames,
                 },
-              }
+              },
+            }
             : {}),
           transliteration: validatedAuthor.transliteratedName,
           year: validatedAuthor.diedYear,
@@ -225,6 +266,20 @@ export const createBook = async (
             _airtableReference: validatedAuthor._airtableReference,
           },
           numberOfBooks: 1,
+          ...(validatedAuthor.empires && validatedAuthor.empires.length > 0
+            ? {
+              empires: {
+                connect: validatedAuthor.empires.map((id) => ({ id })),
+              },
+            }
+            : {}),
+          ...(validatedAuthor.regions && validatedAuthor.regions.length > 0
+            ? {
+              regions: {
+                connect: validatedAuthor.regions.map((id) => ({ id })),
+              },
+            }
+            : {}),
         },
       });
 
@@ -258,10 +313,10 @@ export const createBook = async (
         slug,
         ...(simpleGenreIds.length > 0
           ? {
-              genres: {
-                connect: simpleGenreIds.map((genre) => ({ id: genre })),
-              },
-            }
+            genres: {
+              connect: simpleGenreIds.map((genre) => ({ id: genre })),
+            },
+          }
           : {}),
         advancedGenres: {
           connect: advancedGenres.map((genre) => ({ id: genre.id })),
@@ -275,8 +330,8 @@ export const createBook = async (
         extraProperties: {
           ...(data._airtableReference
             ? {
-                _airtableReference: data._airtableReference,
-              }
+              _airtableReference: data._airtableReference,
+            }
             : {}),
         },
       },

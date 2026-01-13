@@ -6,13 +6,9 @@ export default function UsulPage() {
   return (
     <PageLayout title="Usul Admin Panel">
       <div className="grid grid-cols-3 gap-10">
-        <Button asChild className="min-h-[150px] text-lg" variant="outline">
+        {/* <Button asChild className="min-h-[150px] text-lg" variant="outline">
           <Link href="/usul/genres">Genres</Link>
-        </Button>
-
-        <Button asChild className="min-h-[150px] text-lg" variant="outline">
-          <Link href="/usul/advanced-genres">Advanced Genres</Link>
-        </Button>
+        </Button> */}
 
         <Button asChild className="min-h-[150px] text-lg" variant="outline">
           <Link href="/usul/texts">Texts</Link>
@@ -20,6 +16,18 @@ export default function UsulPage() {
 
         <Button asChild className="min-h-[150px] text-lg" variant="outline">
           <Link href="/usul/authors">Authors</Link>
+        </Button>
+
+        <Button asChild className="min-h-[150px] text-lg" variant="outline">
+          <Link href="/usul/advanced-genres">Genres</Link>
+        </Button>
+
+        <Button asChild className="min-h-[150px] text-lg" variant="outline">
+          <Link href="/usul/regions">Regions</Link>
+        </Button>
+
+        <Button asChild className="min-h-[150px] text-lg" variant="outline">
+          <Link href="/usul/empires">Empires & Eras</Link>
         </Button>
 
         {/* <Button asChild className="min-h-[150px] text-lg" variant="outline">

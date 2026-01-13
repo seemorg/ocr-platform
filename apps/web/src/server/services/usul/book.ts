@@ -65,8 +65,14 @@ export const getBookWithDetailsById = async (id: string, db: typeof usulDb) => {
         },
       },
       transliteration: true,
-      advancedGenres: {
-        select: { id: true },
+      AdvancedGenreToBook: {
+        select: {
+          AdvancedGenre: {
+            select: {
+              id: true,
+            },
+          },
+        },
       },
       versions: true,
     },
@@ -91,7 +97,7 @@ export const getBookWithDetailsById = async (id: string, db: typeof usulDb) => {
     englishName: bookNames.en,
     transliteratedName: book.transliteration,
     otherNames: otherNames.ar,
-    advancedGenres: book.advancedGenres.map((genre) => genre.id),
+    advancedGenres: book.AdvancedGenreToBook.map((relation) => relation.AdvancedGenre.id),
     author: {
       id: book.author.id,
       slug: book.author.slug,
@@ -110,8 +116,8 @@ export const deleteBookById = async (id: string, db: typeof usulDb) => {
       select: {
         id: true,
         authorId: true,
-        advancedGenres: { select: { id: true } },
-        genres: { select: { id: true } },
+        AdvancedGenreToBook: { select: { AdvancedGenre: { select: { id: true } } } },
+        BookToGenre: { select: { Genre: { select: { id: true } } } },
       },
       where: { id },
     });
@@ -126,7 +132,7 @@ export const deleteBookById = async (id: string, db: typeof usulDb) => {
     });
 
     await tx.genre.updateMany({
-      where: { id: { in: data.genres.map((genre) => genre.id) } },
+      where: { id: { in: data.BookToGenre.map((relation) => relation.Genre.id) } },
       data: {
         numberOfBooks: {
           decrement: 1,
@@ -135,7 +141,7 @@ export const deleteBookById = async (id: string, db: typeof usulDb) => {
     });
 
     await tx.advancedGenre.updateMany({
-      where: { id: { in: data.advancedGenres.map((genre) => genre.id) } },
+      where: { id: { in: data.AdvancedGenreToBook.map((relation) => relation.AdvancedGenre.id) } },
       data: {
         numberOfBooks: {
           decrement: 1,

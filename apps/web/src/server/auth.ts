@@ -94,10 +94,24 @@ export const authOptions: NextAuthOptions = {
       from: env.EMAIL_FROM,
       ...(env.NODE_ENV === "development"
         ? {
-            sendVerificationRequest(params) {
-              console.log(`LOGIN URL: ${params.url}`);
-            },
-          }
+          async sendVerificationRequest(params) {
+            console.log(`🔐 LOGIN URL: ${params.url}`);
+            
+            // Store the URL so the UI can display it
+            try {
+              await fetch(`${env.NEXTAUTH_URL}/api/dev-login-url`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  email: params.identifier,
+                  url: params.url,
+                }),
+              });
+            } catch (error) {
+              console.error("Failed to store login URL:", error);
+            }
+          },
+        }
         : {}),
     }),
     /**

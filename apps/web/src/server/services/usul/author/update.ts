@@ -14,6 +14,8 @@ export const updateAuthorSchema = z.object({
   yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
   arabicBio: z.string().optional(),
   englishBio: z.string().optional(),
+  empireIds: z.array(z.string()).optional(),
+  regionIds: z.array(z.string()).optional(),
 });
 
 export const updateAuthor = async (
@@ -55,6 +57,41 @@ export const updateAuthor = async (
   const didNameChange =
     input.arabicName !== currentAuthor?.primaryNameTranslations[0]?.text;
 
+  // Handle empire and region updates if provided
+  if (input.empireIds !== undefined) {
+    // Delete existing empire connections
+    await db.authorToEmpire.deleteMany({
+      where: { A: input.id },
+    });
+
+    // Create new empire connections
+    if (input.empireIds.length > 0) {
+      await db.authorToEmpire.createMany({
+        data: input.empireIds.map((empireId) => ({
+          A: input.id,
+          B: empireId,
+        })),
+      });
+    }
+  }
+
+  if (input.regionIds !== undefined) {
+    // Delete existing region connections
+    await db.authorToRegion.deleteMany({
+      where: { A: input.id },
+    });
+
+    // Create new region connections
+    if (input.regionIds.length > 0) {
+      await db.authorToRegion.createMany({
+        data: input.regionIds.map((regionId) => ({
+          A: input.id,
+          B: regionId,
+        })),
+      });
+    }
+  }
+
   const newAuthor = await db.author.update({
     where: { id: input.id },
     data: {
@@ -63,24 +100,24 @@ export const updateAuthor = async (
       yearStatus: input.yearStatus,
       ...(input.otherArabicNames
         ? {
-            otherNameTranslations: {
-              upsert: {
-                where: {
-                  authorId_locale: {
-                    authorId: input.id,
-                    locale: "ar",
-                  },
-                },
-                create: {
+          otherNameTranslations: {
+            upsert: {
+              where: {
+                authorId_locale: {
+                  authorId: input.id,
                   locale: "ar",
-                  texts: input.otherArabicNames,
-                },
-                update: {
-                  texts: input.otherArabicNames,
                 },
               },
+              create: {
+                locale: "ar",
+                texts: input.otherArabicNames,
+              },
+              update: {
+                texts: input.otherArabicNames,
+              },
             },
-          }
+          },
+        }
         : {}),
       primaryNameTranslations: {
         upsert: [
@@ -104,41 +141,41 @@ export const updateAuthor = async (
       bioTranslations: {
         ...(isChangingArabicBio
           ? {
-              upsert: {
-                where: {
-                  authorId_locale: {
-                    authorId: input.id,
-                    locale: "ar",
-                  },
-                },
-                create: {
+            upsert: {
+              where: {
+                authorId_locale: {
+                  authorId: input.id,
                   locale: "ar",
-                  text: input.arabicBio!,
-                },
-                update: {
-                  text: input.arabicBio!,
                 },
               },
-            }
+              create: {
+                locale: "ar",
+                text: input.arabicBio!,
+              },
+              update: {
+                text: input.arabicBio!,
+              },
+            },
+          }
           : {}),
         ...(isChangingEnglishBio
           ? {
-              upsert: {
-                where: {
-                  authorId_locale: {
-                    authorId: input.id,
-                    locale: "en",
-                  },
-                },
-                create: {
+            upsert: {
+              where: {
+                authorId_locale: {
+                  authorId: input.id,
                   locale: "en",
-                  text: input.englishBio!,
-                },
-                update: {
-                  text: input.englishBio!,
                 },
               },
-            }
+              create: {
+                locale: "en",
+                text: input.englishBio!,
+              },
+              update: {
+                text: input.englishBio!,
+              },
+            },
+          }
           : {}),
       },
     },

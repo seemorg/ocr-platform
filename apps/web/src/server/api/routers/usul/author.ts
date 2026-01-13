@@ -42,6 +42,50 @@ export const usulAuthorRouter = createTRPCRouter({
               OR: [{ locale: "ar" }, { locale: "en" }],
             },
           },
+          AuthorToEmpire: {
+            select: {
+              Empire: {
+                select: {
+                  id: true,
+                  slug: true,
+                  transliteration: true,
+                  EmpireName: {
+                    where: {
+                      locale: {
+                        in: ["ar", "en"],
+                      },
+                    },
+                    select: {
+                      text: true,
+                      locale: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          AuthorToRegion: {
+            select: {
+              Region: {
+                select: {
+                  id: true,
+                  slug: true,
+                  transliteration: true,
+                  nameTranslations: {
+                    where: {
+                      locale: {
+                        in: ["ar", "en"],
+                      },
+                    },
+                    select: {
+                      text: true,
+                      locale: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       });
 
@@ -61,6 +105,26 @@ export const usulAuthorRouter = createTRPCRouter({
           ?.text,
         englishBio: author.bioTranslations.find((bio) => bio.locale === "en")
           ?.text,
+        empires: author.AuthorToEmpire.map((ate) => ({
+          id: ate.Empire.id,
+          slug: ate.Empire.slug,
+          arabicName:
+            ate.Empire.EmpireName.find((n) => n.locale === "ar")?.text ?? null,
+          englishName:
+            ate.Empire.EmpireName.find((n) => n.locale === "en")?.text ?? null,
+          transliteratedName: ate.Empire.transliteration,
+        })),
+        regions: author.AuthorToRegion.map((atr) => ({
+          id: atr.Region.id,
+          slug: atr.Region.slug,
+          arabicName:
+            atr.Region.nameTranslations.find((n) => n.locale === "ar")?.text ??
+            null,
+          englishName:
+            atr.Region.nameTranslations.find((n) => n.locale === "en")?.text ??
+            null,
+          transliteratedName: atr.Region.transliteration,
+        })),
       };
 
       return preparedAuthor;
@@ -95,8 +159,8 @@ export const usulAuthorRouter = createTRPCRouter({
         },
         ...(!input.query
           ? {
-              take: 10,
-            }
+            take: 10,
+          }
           : {}),
         select: {
           id: true,

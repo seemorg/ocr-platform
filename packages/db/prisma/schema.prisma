@@ -1,184 +1,157 @@
 generator client {
-    provider        = "prisma-client-js"
-    previewFeatures = ["driverAdapters"]
-    output          = "../../../node_modules/@usul-ocr/client/db"
+  provider        = "prisma-client-js"
+  output          = "../../../node_modules/@usul-ocr/client/db"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
-}
-
-// Necessary for Next auth
-model Account {
-    id                       String  @id @default(cuid())
-    userId                   String
-    type                     String
-    provider                 String
-    providerAccountId        String
-    refresh_token            String? // @db.Text
-    access_token             String? // @db.Text
-    expires_at               Int?
-    token_type               String?
-    scope                    String?
-    id_token                 String? // @db.Text
-    session_state            String?
-    user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-    refresh_token_expires_in Int?
-
-    @@unique([provider, providerAccountId])
-}
-
-model Session {
-    id           String   @id @default(cuid())
-    sessionToken String   @unique
-    userId       String
-    expires      DateTime
-    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-enum UserRole {
-    ADMIN
-    REVIEWER
-    USER
-}
-
-model User {
-    id            String    @id @default(cuid())
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime?
-    image         String?
-    role          UserRole  @default(USER)
-    accounts      Account[]
-    sessions      Session[]
-
-    reviewedPages    Page[]
-    groupMemberships GroupMembership[]
-}
-
-model VerificationToken {
-    identifier String
-    token      String   @unique
-    expires    DateTime
-
-    @@unique([identifier, token])
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Author {
-    id          String  @id @default(cuid())
-    arabicName  String
-    englishName String?
-    airtableId  String? @unique
-    books       Book[]
-}
-
-enum BookStatus {
-    UNPROCESSED
-    PROCESSING
-    IN_REVIEW
-    COMPLETED
+  id          String  @id @default(cuid())
+  arabicName  String
+  airtableId  String? @unique
+  englishName String?
+  books       Book[]
 }
 
 model Book {
-    id            String  @id @default(cuid())
-    splitsData    Json    @default("{}")
-    arabicName    String?
-    englishName   String?
-    airtableId    String? @unique
-    usulBookId    String?
-    pdfUrl        String
-    pages         Page[]
-    totalPages    Int     @default(0)
-    reviewedPages Int     @default(0)
-
-    author   Author?    @relation(fields: [authorId], references: [id], onDelete: Cascade)
-    authorId String?
-    status   BookStatus @default(UNPROCESSED)
-
-    createdAt DateTime @default(now())
-
-    assignedGroupId String?
-    assignedGroup   Group?  @relation(fields: [assignedGroupId], references: [id], onDelete: SetNull)
-
-    @@unique([usulBookId, pdfUrl])
+  id              String     @id @default(cuid())
+  pdfUrl          String
+  totalPages      Int        @default(0)
+  reviewedPages   Int        @default(0)
+  authorId        String
+  status          BookStatus @default(UNPROCESSED)
+  airtableId      String?    @unique
+  arabicName      String?
+  englishName     String?
+  assignedGroupId String?
+  splitsData      Json       @default("{}")
+  createdAt       DateTime   @default(now())
+  Group           Group?     @relation(fields: [assignedGroupId], references: [id])
+  author          Author     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  Page            Page[]
 }
 
-enum PageFlag {
-    NEEDS_ADDITIONAL_REVIEW // Failed to generate gpt-4o content
-    EMPTY // A white page
-}
+model Account {
+  id                       String  @id
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String?
+  access_token             String?
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?
+  session_state            String?
+  refresh_token_expires_in Int?
+  User                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-enum PageOcrStatus {
-    UNPROCESSED
-    PROCESSING
-    COMPLETED
-    FAILED
-}
-
-model Page {
-    id            String @id @default(cuid())
-    pageNumber    Int?
-    volumeNumber  Int?
-    pdfPageNumber Int
-
-    content        String? @db.Text
-    footnotes      String? @db.Text
-    editorialNotes String? @db.Text
-
-    ocrContent   String  @db.Text
-    ocrFootnotes String? @db.Text
-
-    flags PageFlag[]
-
-    ocrStatus PageOcrStatus @default(COMPLETED)
-
-    book         Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
-    bookId       String
-    reviewed     Boolean   @default(false)
-    reviewedAt   DateTime?
-    reviewedBy   User?     @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
-    reviewedById String?
-
-    totalWords Int @default(0)
-
-    azureOcrOutput AzureOcrOutput?
-
-    @@unique([bookId, pdfPageNumber])
-    @@index([totalWords])
-}
-
-model AzureOcrOutput {
-    id        String   @id @default(cuid())
-    pageId    String
-    page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
-    output    String
-    createdAt DateTime @default(now())
-
-    @@unique([pageId])
-}
-
-enum GroupRole {
-    ADMIN
-    MEMBER
-}
-
-model GroupMembership {
-    id        String    @id @default(cuid())
-    role      GroupRole @default(MEMBER)
-    user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-    userId    String
-    group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
-    groupId   String
-    createdAt DateTime  @default(now())
-
-    @@unique([userId, groupId])
+  @@unique([provider, providerAccountId])
 }
 
 model Group {
-    id               String            @id @default(cuid())
-    name             String
-    assignedBooks    Book[]
-    groupMemberships GroupMembership[]
-    createdAt        DateTime          @default(now())
+  id              String            @id
+  name            String
+  createdAt       DateTime          @default(now())
+  Book            Book[]
+  GroupMembership GroupMembership[]
+}
+
+model GroupMembership {
+  id        String    @id
+  role      GroupRole @default(MEMBER)
+  userId    String
+  groupId   String
+  createdAt DateTime  @default(now())
+  Group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+}
+
+model Page {
+  id            String        @id
+  pageNumber    Int?
+  volumeNumber  Int?
+  pdfPageNumber Int
+  content       String?
+  footnotes     String?
+  bookId        String
+  reviewed      Boolean       @default(false)
+  reviewedAt    DateTime?
+  reviewedById  String?
+  ocrContent    String
+  ocrFootnotes  String?
+  flags         PageFlag[]
+  ocrStatus     PageOcrStatus @default(COMPLETED)
+  totalWords    Int           @default(0)
+  Book          Book          @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  User          User?         @relation(fields: [reviewedById], references: [id])
+
+  @@unique([bookId, pdfPageNumber])
+  @@index([totalWords])
+}
+
+model Session {
+  id           String   @id
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id              String            @id
+  name            String?
+  email           String?           @unique
+  emailVerified   DateTime?
+  image           String?
+  role            UserRole          @default(USER)
+  Account         Account[]
+  GroupMembership GroupMembership[]
+  Page            Page[]
+  Session         Session[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum BookStatus {
+  UNPROCESSED
+  PROCESSING
+  IN_REVIEW
+  COMPLETED
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
+
+enum PageFlag {
+  NEEDS_ADDITIONAL_REVIEW
+  EMPTY
+}
+
+enum PageOcrStatus {
+  UNPROCESSED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum UserRole {
+  ADMIN
+  REVIEWER
+  USER
 }

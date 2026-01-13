@@ -26,6 +26,14 @@ export type Text = {
     id: string;
     arabicName?: string;
   }[];
+  empires: {
+    id: string;
+    arabicName?: string;
+  }[];
+  regions: {
+    id: string;
+    arabicName?: string;
+  }[];
 };
 
 export const columns: ColumnDef<Text>[] = [
@@ -65,7 +73,7 @@ export const columns: ColumnDef<Text>[] = [
     },
   },
   {
-    header: "Advanced Genres",
+    header: "Genres",
     cell: ({ row }) => {
       const { advancedGenres } = row.original;
 
@@ -78,6 +86,46 @@ export const columns: ColumnDef<Text>[] = [
               className="rounded-md bg-muted px-2 py-1"
             >
               {g.arabicName}
+            </Link>
+          ))}
+        </div>
+      );
+    },
+  },
+  {
+    header: "Empires",
+    cell: ({ row }) => {
+      const { empires } = row.original;
+
+      return (
+        <div className="flex flex-wrap gap-2">
+          {empires.map((e) => (
+            <Link
+              key={e.id}
+              href={`/usul/empires/${e.id}/edit`}
+              className="rounded-md bg-muted px-2 py-1"
+            >
+              {e.arabicName}
+            </Link>
+          ))}
+        </div>
+      );
+    },
+  },
+  {
+    header: "Regions",
+    cell: ({ row }) => {
+      const { regions } = row.original;
+
+      return (
+        <div className="flex flex-wrap gap-2">
+          {regions.map((r) => (
+            <Link
+              key={r.id}
+              href={`/usul/regions/${r.id}/edit`}
+              className="rounded-md bg-muted px-2 py-1"
+            >
+              {r.arabicName}
             </Link>
           ))}
         </div>

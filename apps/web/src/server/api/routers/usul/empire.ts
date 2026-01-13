@@ -3,15 +3,15 @@ import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "../../trpc";
 
-export const usulGenreRouter = createTRPCRouter({
-  searchGenres: protectedProcedure
+export const usulEmpireRouter = createTRPCRouter({
+  searchEmpires: protectedProcedure
     .input(
       z.object({
         query: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const genres = await ctx.usulDb.genre.findMany({
+      const empires = await ctx.usulDb.empire.findMany({
         where: {
           OR: [
             {
@@ -21,7 +21,7 @@ export const usulGenreRouter = createTRPCRouter({
               },
             },
             {
-              nameTranslations: {
+              EmpireName: {
                 some: {
                   text: {
                     mode: "insensitive",
@@ -41,7 +41,7 @@ export const usulGenreRouter = createTRPCRouter({
           id: true,
           transliteration: true,
           slug: true,
-          nameTranslations: {
+          EmpireName: {
             where: {
               locale: {
                 in: ["ar", "en"],
@@ -55,26 +55,24 @@ export const usulGenreRouter = createTRPCRouter({
         },
       });
 
-      const preparedGenres = genres.map((genre) => {
+      const preparedEmpires = empires.map((empire) => {
         return {
-          id: genre.id,
-          slug: genre.slug,
+          id: empire.id,
+          slug: empire.slug,
           arabicName:
-            genre.nameTranslations.find((n) => n.locale === "ar")?.text ??
-            null,
+            empire.EmpireName.find((n) => n.locale === "ar")?.text ?? null,
           englishName:
-            genre.nameTranslations.find((n) => n.locale === "en")?.text ??
-            null,
-          transliteratedName: genre.transliteration,
+            empire.EmpireName.find((n) => n.locale === "en")?.text ?? null,
+          transliteratedName: empire.transliteration,
         };
       });
 
-      return preparedGenres;
+      return preparedEmpires;
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return ctx.usulDb.genre.delete({ where: { id: input.id } });
+      return ctx.usulDb.empire.delete({ where: { id: input.id } });
     }),
   create: protectedProcedure
     .input(
@@ -83,14 +81,18 @@ export const usulGenreRouter = createTRPCRouter({
         englishName: z.string(),
         transliteration: z.string().optional(),
         slug: z.string(),
+        hijriStartYear: z.number().optional(),
+        hijriEndYear: z.number().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.usulDb.genre.create({
+      return ctx.usulDb.empire.create({
         data: {
           id: createId(),
           transliteration: input.transliteration,
-          nameTranslations: {
+          hijriStartYear: input.hijriStartYear,
+          hijriEndYear: input.hijriEndYear,
+          EmpireName: {
             createMany: {
               data: [
                 {
@@ -116,25 +118,29 @@ export const usulGenreRouter = createTRPCRouter({
         englishName: z.string(),
         transliteration: z.string().optional(),
         slug: z.string(),
+        hijriStartYear: z.number().optional(),
+        hijriEndYear: z.number().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.usulDb.$transaction([
-        ctx.usulDb.genre.update({
+        ctx.usulDb.empire.update({
           where: { id: input.id },
           data: {
             transliteration: input.transliteration,
             slug: input.slug,
+            hijriStartYear: input.hijriStartYear,
+            hijriEndYear: input.hijriEndYear,
           },
         }),
-        ctx.usulDb.genreName.updateMany({
-          where: { genreId: input.id, locale: "ar" },
+        ctx.usulDb.empireName.updateMany({
+          where: { empireId: input.id, locale: "ar" },
           data: {
             text: input.arabicName,
           },
         }),
-        ctx.usulDb.genreName.updateMany({
-          where: { genreId: input.id, locale: "en" },
+        ctx.usulDb.empireName.updateMany({
+          where: { empireId: input.id, locale: "en" },
           data: {
             text: input.englishName,
           },

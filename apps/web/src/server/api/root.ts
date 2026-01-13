@@ -13,6 +13,8 @@ import { usulAdvancedGenreRouter } from "./routers/usul/advancedGenre";
 import { usulAuthorRouter } from "./routers/usul/author";
 import { usulBookRouter } from "./routers/usul/book";
 import { usulGenreRouter } from "./routers/usul/genre";
+import { usulEmpireRouter } from "./routers/usul/empire";
+import { usulRegionRouter } from "./routers/usul/region";
 import { cacheRouter } from "./routers/cache";
 
 /**
@@ -34,6 +36,8 @@ export const appRouter = createTRPCRouter({
   usulGenre: usulGenreRouter,
   usulAdvancedGenre: usulAdvancedGenreRouter,
   usulAuthor: usulAuthorRouter,
+  usulEmpire: usulEmpireRouter,
+  usulRegion: usulRegionRouter,
   cache: cacheRouter,
 });
 

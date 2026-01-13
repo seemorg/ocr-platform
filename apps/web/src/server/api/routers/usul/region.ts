@@ -3,15 +3,15 @@ import { z } from "zod";
 
 import { createTRPCRouter, protectedProcedure } from "../../trpc";
 
-export const usulGenreRouter = createTRPCRouter({
-  searchGenres: protectedProcedure
+export const usulRegionRouter = createTRPCRouter({
+  searchRegions: protectedProcedure
     .input(
       z.object({
         query: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const genres = await ctx.usulDb.genre.findMany({
+      const regions = await ctx.usulDb.region.findMany({
         where: {
           OR: [
             {
@@ -55,26 +55,26 @@ export const usulGenreRouter = createTRPCRouter({
         },
       });
 
-      const preparedGenres = genres.map((genre) => {
+      const preparedRegions = regions.map((region) => {
         return {
-          id: genre.id,
-          slug: genre.slug,
+          id: region.id,
+          slug: region.slug,
           arabicName:
-            genre.nameTranslations.find((n) => n.locale === "ar")?.text ??
+            region.nameTranslations.find((n) => n.locale === "ar")?.text ??
             null,
           englishName:
-            genre.nameTranslations.find((n) => n.locale === "en")?.text ??
+            region.nameTranslations.find((n) => n.locale === "en")?.text ??
             null,
-          transliteratedName: genre.transliteration,
+          transliteratedName: region.transliteration,
         };
       });
 
-      return preparedGenres;
+      return preparedRegions;
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return ctx.usulDb.genre.delete({ where: { id: input.id } });
+      return ctx.usulDb.region.delete({ where: { id: input.id } });
     }),
   create: protectedProcedure
     .input(
@@ -86,7 +86,7 @@ export const usulGenreRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ctx.usulDb.genre.create({
+      return ctx.usulDb.region.create({
         data: {
           id: createId(),
           transliteration: input.transliteration,
@@ -120,21 +120,21 @@ export const usulGenreRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.usulDb.$transaction([
-        ctx.usulDb.genre.update({
+        ctx.usulDb.region.update({
           where: { id: input.id },
           data: {
             transliteration: input.transliteration,
             slug: input.slug,
           },
         }),
-        ctx.usulDb.genreName.updateMany({
-          where: { genreId: input.id, locale: "ar" },
+        ctx.usulDb.regionName.updateMany({
+          where: { regionId: input.id, locale: "ar" },
           data: {
             text: input.arabicName,
           },
         }),
-        ctx.usulDb.genreName.updateMany({
-          where: { genreId: input.id, locale: "en" },
+        ctx.usulDb.regionName.updateMany({
+          where: { regionId: input.id, locale: "en" },
           data: {
             text: input.englishName,
           },
