@@ -32,7 +32,7 @@ async function getData(bookId: string): Promise<{
         ...(user?.role === UserRole.ADMIN
           ? {}
           : {
-              assignedGroup: {
+              Group: {
                 id: {
                   in: user?.groupIds,
                 },
@@ -42,7 +42,7 @@ async function getData(bookId: string): Promise<{
       select: {
         arabicName: true,
         englishName: true,
-        pages: {
+        Page: {
           select: {
             id: true,
             bookId: true,
@@ -73,7 +73,7 @@ async function getData(bookId: string): Promise<{
 
   return {
     book: book!,
-    pages: book!.pages.map((page) => ({
+    pages: book!.Page.map((page) => ({
       ...page,
       reviewer: page.reviewedById
         ? {

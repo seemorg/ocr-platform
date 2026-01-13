@@ -10,7 +10,7 @@ export default function Alerts({
 }: {
   page: {
     reviewed: boolean;
-    reviewedBy?: { email?: string | null } | null;
+    User?: { email?: string | null } | null;
     reviewedAt: Date | null;
     flags: PageFlag[];
     ocrStatus: PageOcrStatus;
@@ -20,7 +20,7 @@ export default function Alerts({
     <>
       {page.reviewed ? (
         <PageAlert icon={CheckCircle} variant="success">
-          This page has been submitted by {page.reviewedBy?.email} at{" "}
+          This page has been submitted by {page.User?.email} at{" "}
           {page.reviewedAt ? formatDate(page.reviewedAt) : null}. You can still
           edit it and override the submission
         </PageAlert>

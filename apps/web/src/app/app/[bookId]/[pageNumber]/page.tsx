@@ -187,7 +187,7 @@ const InnerPage = ({
   user,
 }: {
   page: Page & {
-    book: Book;
+    Book: Book;
   };
   user: Session["user"];
 }) => {
@@ -209,18 +209,11 @@ const InnerPage = ({
     const value = page.footnotes ?? page.ocrFootnotes;
     return serializeTipTapValue(value);
   }, [page]);
-  const parsedEditorialNotesValue = useMemo(() => {
-    const value = page.editorialNotes;
-    return serializeTipTapValue(value);
-  }, [page]);
 
   const [value, setValue] = useState<JSONContent | undefined>(parsedValue);
   const [footnotesValue, setFootnotesValue] = useState<JSONContent | undefined>(
     parsedFootnotesValue,
   );
-  const [editorialNotesValue, setEditorialNotesValue] = useState<
-    JSONContent | undefined
-  >(parsedEditorialNotesValue);
   const [pageNumber, setPageNumber] = useState(page.pageNumber ?? undefined);
   const [isRegenerating, setIsRegenerating] = useState(
     page.ocrStatus === PageOcrStatus.PROCESSING,
@@ -240,9 +233,6 @@ const InnerPage = ({
         content: value ? deserializeTipTapValue(value) : undefined,
         footnotesContent: footnotesValue
           ? deserializeTipTapValue(footnotesValue)
-          : undefined,
-        editorialNotesContent: editorialNotesValue
-          ? deserializeTipTapValue(editorialNotesValue)
           : undefined,
         pageNumber,
       });
@@ -301,7 +291,7 @@ const InnerPage = ({
     <Container className="flex min-h-screen w-full flex-col pb-28 pt-14">
       <Container className="flex justify-between">
         <h3 className="text-4xl font-semibold">
-          {page.book.arabicName ?? page.book.englishName}
+          {page.Book.arabicName ?? page.Book.englishName}
         </h3>
 
         <div className="flex items-center gap-5">
@@ -319,7 +309,7 @@ const InnerPage = ({
             <Button
               size="icon"
               variant="secondary"
-              disabled={page.pdfPageNumber === page.book.totalPages}
+              disabled={page.pdfPageNumber === page.Book.totalPages}
             >
               <ChevronRight className="size-5" />
             </Button>
@@ -388,25 +378,13 @@ const InnerPage = ({
           <div className="h-full w-full bg-secondary">
             {/* <img src="/sample.png" className="h-full w-full object-cover" /> */}
             <Zoom
-              src={`${env.NEXT_PUBLIC_OCR_SERVER_URL}book/${page.book.id}/${page.pdfPageNumber}`}
+              src={`${env.NEXT_PUBLIC_OCR_SERVER_URL}book/${page.Book.id}/${page.pdfPageNumber}`}
               width="100%"
               height="100%"
               className="object-cover"
               zoomScale={2}
             />
           </div>
-
-          <ScrollArea className="mt-5 h-[200px] w-full rounded-md border border-muted shadow-sm">
-            <Editor
-              className="min-h-[200px] sm:rounded-none sm:border-none sm:shadow-none"
-              initialValue={editorialNotesValue}
-              onChange={(newValue) => setEditorialNotesValue(newValue)}
-              placeholderText={
-                direction === "ltr" ? "Editorial Notes" : "تعليقات موقع اصول"
-              }
-            />
-            <ScrollBar orientation="vertical" />
-          </ScrollArea>
         </div>
 
         <div className="flex-1">

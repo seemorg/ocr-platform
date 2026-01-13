@@ -72,7 +72,7 @@ export const groupRouter = createTRPCRouter({
       },
       select: {
         role: true,
-        group: true,
+        Group: true,
       },
     });
 
@@ -88,7 +88,7 @@ export const groupRouter = createTRPCRouter({
       const group = await ctx.db.group.create({
         data: {
           name: input.name,
-          groupMemberships: {
+          GroupMembership: {
             create: {
               userId: ctx.session.user.id,
               role: GroupRole.ADMIN,
@@ -114,7 +114,7 @@ export const groupRouter = createTRPCRouter({
           id: input.groupId,
         },
         data: {
-          assignedBooks: {
+          Book: {
             connect: {
               id: input.bookId,
             },
@@ -138,11 +138,11 @@ export const groupRouter = createTRPCRouter({
         select: {
           id: true,
           name: true,
-          groupMemberships: {
+          GroupMembership: {
             select: {
               role: true,
               createdAt: true,
-              user: {
+              User: {
                 select: {
                   id: true,
                   email: true,
@@ -166,8 +166,21 @@ export const groupRouter = createTRPCRouter({
         where: {
           id: input.groupId,
         },
-        include: {
-          assignedBooks: true,
+        select: {
+          id: true,
+          name: true,
+          createdAt: true,
+          Book: {
+            select: {
+              id: true,
+              arabicName: true,
+              englishName: true,
+              totalPages: true,
+              reviewedPages: true,
+              status: true,
+              createdAt: true,
+            },
+          },
         },
       });
     }),

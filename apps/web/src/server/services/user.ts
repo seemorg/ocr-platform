@@ -10,7 +10,7 @@ export const getUserGroupIdsAndRole = (id: string) =>
           id: userId,
         },
         select: {
-          groupMemberships: {
+          GroupMembership: {
             select: {
               groupId: true,
             },
@@ -24,7 +24,7 @@ export const getUserGroupIdsAndRole = (id: string) =>
       }
 
       return {
-        groupIds: user.groupMemberships.map((membership) => membership.groupId),
+        groupIds: user.GroupMembership.map((membership) => membership.groupId),
         role: user.role,
       };
     },

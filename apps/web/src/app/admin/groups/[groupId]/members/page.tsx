@@ -24,7 +24,7 @@ async function GroupMembersPage({
       <AddMemberForm groupId={groupId} />
       <DataTable
         columns={columns}
-        data={data.groupMemberships.map((g) => ({ ...g, groupId }))}
+        data={data.GroupMembership.map((g) => ({ ...g, groupId }))}
       />
     </PageLayout>
   );

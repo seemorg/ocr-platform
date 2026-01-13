@@ -13,18 +13,18 @@ export const usersRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const users = await ctx.db.user.findMany({
         where: {
-          groupMemberships: {
+          GroupMembership: {
             none: {
               groupId: input.groupId,
             },
           },
           ...(input.query
             ? {
-                email: {
-                  mode: "insensitive",
-                  contains: input.query,
-                },
-              }
+              email: {
+                mode: "insensitive",
+                contains: input.query,
+              },
+            }
             : {}),
         },
         select: {

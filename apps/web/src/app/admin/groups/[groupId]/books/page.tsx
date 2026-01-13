@@ -22,7 +22,7 @@ async function GroupBooksPage({
   return (
     <PageLayout title={`"${data.name}" Books`} backHref="/admin/groups">
       <AddBookForm groupId={groupId} />
-      <DataTable columns={columns} data={data.assignedBooks} />
+      <DataTable columns={columns} data={data.Book} />
     </PageLayout>
   );
 }

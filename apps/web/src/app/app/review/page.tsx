@@ -21,34 +21,32 @@ async function getData(): Promise<Book[]> {
       user?.role === UserRole.ADMIN
         ? {}
         : {
-            assignedGroup: {
+            Group: {
               id: {
                 in: user?.groupIds,
               },
             },
           },
-    include: {
-      author: true,
+    select: {
+      id: true,
+      arabicName: true,
+      englishName: true,
+      status: true,
+      pdfUrl: true,
+      totalPages: true,
+      reviewedPages: true,
+      createdAt: true,
+      author: {
+        select: {
+          id: true,
+          arabicName: true,
+          englishName: true,
+        },
+      },
     },
   });
 
-  return books.map((book) => ({
-    id: book.id,
-    arabicName: book.arabicName,
-    englishName: book.englishName,
-    status: book.status,
-    author: book.author
-      ? {
-          id: book.author.id,
-          arabicName: book.author.arabicName,
-          englishName: book.author.englishName,
-        }
-      : null,
-    pdfUrl: book.pdfUrl,
-    totalPages: book.totalPages,
-    reviewedPages: book.reviewedPages,
-    createdAt: book.createdAt,
-  }));
+  return books;
 }
 
 export default async function BooksPage() {

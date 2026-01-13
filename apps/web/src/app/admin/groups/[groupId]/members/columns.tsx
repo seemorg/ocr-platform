@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import { GroupRole } from "@usul-ocr/db";
 
 export type Membership = {
-  user: {
+  User: {
     id: string;
     email: string | null;
   };
@@ -20,7 +20,7 @@ export type Membership = {
 
 export const columns: ColumnDef<Membership>[] = [
   {
-    accessorKey: "user.email",
+    accessorKey: "User.email",
     header: "Email",
   },
   {
@@ -49,7 +49,7 @@ export const columns: ColumnDef<Membership>[] = [
     // accessorKey: "email",
     header: "Actions",
     cell: ({ row }) => {
-      const { role, groupId, user } = row.original;
+      const { role, groupId, User } = row.original;
       const router = useRouter();
       const { mutateAsync, isPending } = api.group.removeMember.useMutation({
         onSuccess: () => {
@@ -68,7 +68,7 @@ export const columns: ColumnDef<Membership>[] = [
       return (
         <Button
           variant="destructive"
-          onClick={() => mutateAsync({ groupId, userId: user.id })}
+          onClick={() => mutateAsync({ groupId, userId: User.id })}
           disabled={isPending}
         >
           {isPending ? "Removing..." : "Remove"}

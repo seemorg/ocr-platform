@@ -24,26 +24,50 @@ export const pageRouter = createTRPCRouter({
       const page = await ctx.db.page.findFirst({
         where: {
           pdfPageNumber: input.pageNumber,
-          book: {
+          Book: {
             id: input.bookId,
             ...(user?.role === UserRole.ADMIN
               ? {}
               : {
-                  assignedGroup: {
-                    id: {
-                      in: user?.groupIds,
-                    },
+                Group: {
+                  id: {
+                    in: user?.groupIds,
                   },
-                }),
+                },
+              }),
           },
         },
-        include: {
-          book: true,
-          reviewedBy: { select: { email: true } },
+        select: {
+          id: true,
+          pageNumber: true,
+          volumeNumber: true,
+          pdfPageNumber: true,
+          content: true,
+          footnotes: true,
+          bookId: true,
+          reviewed: true,
+          reviewedAt: true,
+          reviewedById: true,
+          ocrContent: true,
+          ocrFootnotes: true,
+          flags: true,
+          ocrStatus: true,
+          totalWords: true,
+          Book: {
+            select: {
+              id: true,
+              arabicName: true,
+              englishName: true,
+              totalPages: true,
+              reviewedPages: true,
+              status: true,
+            },
+          },
+          User: { select: { email: true } },
         },
       });
 
-      if (!page || !page.book)
+      if (!page || !page.Book)
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Page not found",
@@ -57,7 +81,6 @@ export const pageRouter = createTRPCRouter({
         pageId: z.string().min(1),
         content: z.string().optional(),
         footnotesContent: z.string().optional(),
-        editorialNotesContent: z.string().optional(),
         pageNumber: z.number().optional(),
         flags: z
           .array(z.enum([PageFlag.EMPTY]))
@@ -73,7 +96,7 @@ export const pageRouter = createTRPCRouter({
           id: true,
           reviewed: true,
           flags: true,
-          book: {
+          Book: {
             select: {
               status: true,
               totalPages: true,
@@ -105,27 +128,27 @@ export const pageRouter = createTRPCRouter({
       let pageData: Prisma.PageUpdateInput = {
         reviewed: true,
         reviewedAt: new Date(),
-        reviewedBy: {
+        User: {
           connect: {
             id: ctx.session.user.id,
           },
         },
         ...(!page.reviewed
           ? {
-              book: {
-                update: {
-                  reviewedPages: {
-                    increment: 1,
-                  },
-                  ...(page.book.totalPages === page.book.reviewedPages + 1 &&
-                  page.book.status !== "COMPLETED"
-                    ? {
-                        status: BookStatus.COMPLETED,
-                      }
-                    : {}),
+            Book: {
+              update: {
+                reviewedPages: {
+                  increment: 1,
                 },
+                ...(page.Book.totalPages === page.Book.reviewedPages + 1 &&
+                  page.Book.status !== "COMPLETED"
+                  ? {
+                    status: BookStatus.COMPLETED,
+                  }
+                  : {}),
               },
-            }
+            },
+          }
           : {}),
       };
 
@@ -135,8 +158,6 @@ export const pageRouter = createTRPCRouter({
         if (input.content) pageData.content = input.content;
         if (input.footnotesContent) pageData.footnotes = input.footnotesContent;
         if (input.pageNumber) pageData.pageNumber = input.pageNumber;
-        if (input.editorialNotesContent)
-          pageData.editorialNotes = input.editorialNotesContent;
       }
 
       if (input.content || input.footnotesContent) {

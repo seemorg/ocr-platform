@@ -9,7 +9,7 @@ export const bookRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       return ctx.db.book.findMany({
         where: {
-          assignedGroup: null,
+          Group: null,
           ...(input.query
             ? {
                 OR: [
@@ -103,7 +103,7 @@ export const bookRouter = createTRPCRouter({
             : {}),
           ...(input.groupId
             ? {
-                assignedGroup: {
+                Group: {
                   connect: {
                     id: input.groupId,
                   },
