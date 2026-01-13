@@ -178,6 +178,7 @@ export const groupRouter = createTRPCRouter({
               totalPages: true,
               reviewedPages: true,
               status: true,
+              pdfUrl: true,
               createdAt: true,
             },
           },
