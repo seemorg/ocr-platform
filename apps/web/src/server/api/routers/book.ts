@@ -12,15 +12,15 @@ export const bookRouter = createTRPCRouter({
           Group: null,
           ...(input.query
             ? {
-                OR: [
-                  {
-                    arabicName: { mode: "insensitive", contains: input.query },
-                  },
-                  {
-                    englishName: { mode: "insensitive", contains: input.query },
-                  },
-                ],
-              }
+              OR: [
+                {
+                  arabicName: { mode: "insensitive", contains: input.query },
+                },
+                {
+                  englishName: { mode: "insensitive", contains: input.query },
+                },
+              ],
+            }
             : {}),
         },
         select: {
@@ -103,12 +103,12 @@ export const bookRouter = createTRPCRouter({
             : {}),
           ...(input.groupId
             ? {
-                Group: {
-                  connect: {
-                    id: input.groupId,
-                  },
+              Group: {
+                connect: {
+                  id: input.groupId,
                 },
-              }
+              },
+            }
             : {}),
         },
       });
@@ -127,7 +127,7 @@ export const bookRouter = createTRPCRouter({
           where: { id: usulBook.id },
           data: { versions: newVersions },
         });
-      } catch (e) {}
+      } catch (e) { }
 
       const response = await fetch(
         `${env.NEXT_PUBLIC_OCR_SERVER_URL}book/ocr`,
@@ -155,7 +155,7 @@ export const bookRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const result = await ctx.db.page.aggregate({
         where: {
-          book: {
+          Book: {
             id: input.bookId,
           },
         },

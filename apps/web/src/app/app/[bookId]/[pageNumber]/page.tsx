@@ -209,11 +209,18 @@ const InnerPage = ({
     const value = page.footnotes ?? page.ocrFootnotes;
     return serializeTipTapValue(value);
   }, [page]);
+  const parsedEditorialNotesValue = useMemo(() => {
+    const value = page.editorialNotes;
+    return serializeTipTapValue(value);
+  }, [page]);
 
   const [value, setValue] = useState<JSONContent | undefined>(parsedValue);
   const [footnotesValue, setFootnotesValue] = useState<JSONContent | undefined>(
     parsedFootnotesValue,
   );
+  const [editorialNotesValue, setEditorialNotesValue] = useState<
+    JSONContent | undefined
+  >(parsedEditorialNotesValue);
   const [pageNumber, setPageNumber] = useState(page.pageNumber ?? undefined);
   const [isRegenerating, setIsRegenerating] = useState(
     page.ocrStatus === PageOcrStatus.PROCESSING,
@@ -233,6 +240,9 @@ const InnerPage = ({
         content: value ? deserializeTipTapValue(value) : undefined,
         footnotesContent: footnotesValue
           ? deserializeTipTapValue(footnotesValue)
+          : undefined,
+        editorialNotesContent: editorialNotesValue
+          ? deserializeTipTapValue(editorialNotesValue)
           : undefined,
         pageNumber,
       });
@@ -385,6 +395,18 @@ const InnerPage = ({
               zoomScale={2}
             />
           </div>
+
+          <ScrollArea className="mt-5 h-[200px] w-full rounded-md border border-muted shadow-sm">
+            <Editor
+              className="min-h-[200px] sm:rounded-none sm:border-none sm:shadow-none"
+              initialValue={editorialNotesValue}
+              onChange={(newValue) => setEditorialNotesValue(newValue)}
+              placeholderText={
+                direction === "ltr" ? "Editorial Notes" : "تعليقات موقع اصول"
+              }
+            />
+            <ScrollBar orientation="vertical" />
+          </ScrollArea>
         </div>
 
         <div className="flex-1">

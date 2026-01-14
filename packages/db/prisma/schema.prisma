@@ -75,23 +75,24 @@ model GroupMembership {
 }
 
 model Page {
-  id            String        @id
-  pageNumber    Int?
-  volumeNumber  Int?
-  pdfPageNumber Int
-  content       String?
-  footnotes     String?
-  bookId        String
-  reviewed      Boolean       @default(false)
-  reviewedAt    DateTime?
-  reviewedById  String?
-  ocrContent    String
-  ocrFootnotes  String?
-  flags         PageFlag[]
-  ocrStatus     PageOcrStatus @default(COMPLETED)
-  totalWords    Int           @default(0)
-  Book          Book          @relation(fields: [bookId], references: [id], onDelete: Cascade)
-  User          User?         @relation(fields: [reviewedById], references: [id])
+  id              String        @id
+  pageNumber      Int?
+  volumeNumber    Int?
+  pdfPageNumber   Int
+  content         String?
+  footnotes       String?
+  bookId          String
+  reviewed        Boolean       @default(false)
+  reviewedAt      DateTime?
+  reviewedById    String?
+  ocrContent      String
+  ocrFootnotes    String?
+  flags           PageFlag[]
+  ocrStatus       PageOcrStatus @default(COMPLETED)
+  totalWords      Int           @default(0)
+  editorialNotes  String?
+  Book            Book          @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  User            User?         @relation(fields: [reviewedById], references: [id])
 
   @@unique([bookId, pdfPageNumber])
   @@index([totalWords])
