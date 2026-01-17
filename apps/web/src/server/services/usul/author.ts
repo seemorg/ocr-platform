@@ -29,12 +29,12 @@ export const createUniqueAuthorSlug = async (
 export const getAuthor = async (
   data:
     | {
-        id: string;
-      }
+      id: string;
+    }
     | { slug: string }
     | {
-        _airtableReference: string;
-      },
+      _airtableReference: string;
+    },
   db: typeof usulDb,
 ) => {
   let filter: Prisma.AuthorWhereInput;

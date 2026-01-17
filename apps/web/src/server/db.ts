@@ -20,8 +20,8 @@ const createPrismaClient = () => {
     ...(adapter
       ? { adapter }
       : ({
-          datasourceUrl: env.DATABASE_URL,
-        } as any)),
+        datasourceUrl: env.DATABASE_URL,
+      } as any)),
     log:
       env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
   });
@@ -34,8 +34,8 @@ const createUsulDbClient = () => {
     ...(adapter
       ? { adapter }
       : ({
-          datasourceUrl: env.USUL_DATABASE_URL,
-        } as any)),
+        datasourceUrl: env.USUL_DATABASE_URL,
+      } as any)),
     log:
       env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
   });

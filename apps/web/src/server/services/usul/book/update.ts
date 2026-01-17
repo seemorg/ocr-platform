@@ -56,14 +56,22 @@ export const updateBook = async (
       authorId: true,
       slug: true,
       versions: true,
-      genres: {
+      BookToGenre: {
         select: {
-          id: true,
+          Genre: {
+            select: {
+              id: true,
+            },
+          },
         },
       },
-      advancedGenres: {
+      AdvancedGenreToBook: {
         select: {
-          id: true,
+          AdvancedGenre: {
+            select: {
+              id: true,
+            },
+          },
         },
       },
       primaryNameTranslations: {
@@ -89,7 +97,7 @@ export const updateBook = async (
     data.transliteratedName !== currentBook.transliteration;
   const didAdvancedGenresChange = !areArraysEqual(
     data.advancedGenres,
-    currentBook.advancedGenres.map((g) => g.id),
+    currentBook.AdvancedGenreToBook.map((relation) => relation.AdvancedGenre.id),
   );
 
   // check if the new author exists
@@ -135,18 +143,28 @@ export const updateBook = async (
       ),
     ];
 
-    removedAdvancedGenres = currentBook.advancedGenres
-      .filter((genre) => !data.advancedGenres.includes(genre.id))
-      .map((genre) => genre.id);
+    removedAdvancedGenres = currentBook.AdvancedGenreToBook
+      .filter(
+        (relation) => !data.advancedGenres.includes(relation.AdvancedGenre.id),
+      )
+      .map((relation) => relation.AdvancedGenre.id);
     addedAdvancedGenres = data.advancedGenres.filter(
-      (genre) => !currentBook.advancedGenres.map((g) => g.id).includes(genre),
+      (genre) =>
+        !currentBook.AdvancedGenreToBook.map(
+          (relation) => relation.AdvancedGenre.id,
+        ).includes(genre),
     );
 
-    removedSimpleGenres = currentBook.genres
-      .filter((genre) => !simpleGenreIds!.includes(genre.id))
-      .map((genre) => genre.id);
+    removedSimpleGenres = currentBook.BookToGenre
+      .filter(
+        (relation) => !simpleGenreIds!.includes(relation.Genre.id),
+      )
+      .map((relation) => relation.Genre.id);
     addedSimpleGenres = simpleGenreIds.filter(
-      (genre) => !currentBook.genres.map((g) => g.id).includes(genre),
+      (genre) =>
+        !currentBook.BookToGenre.map((relation) => relation.Genre.id).includes(
+          genre,
+        ),
     );
   }
 
@@ -218,6 +236,50 @@ export const updateBook = async (
       });
     }
 
+    // Handle AdvancedGenreToBook relation updates
+    if (didAdvancedGenresChange) {
+      // Delete existing advanced genre connections
+      await tx.advancedGenreToBook.deleteMany({
+        where: { B: data.id },
+      });
+
+      // Create new advanced genre connections
+      if (data.advancedGenres.length > 0) {
+        await tx.advancedGenreToBook.createMany({
+          data: data.advancedGenres.map((genreId) => ({
+            A: genreId,
+            B: data.id,
+          })),
+        });
+      }
+    }
+
+    // Handle BookToGenre relation updates
+    if (didAdvancedGenresChange && simpleGenreIds !== null) {
+      // Delete existing genre connections
+      await tx.bookToGenre.deleteMany({
+        where: { A: data.id },
+      });
+
+      // Create new genre connections
+      if (simpleGenreIds.length > 0) {
+        await tx.bookToGenre.createMany({
+          data: simpleGenreIds.map((genreId) => ({
+            A: data.id,
+            B: genreId,
+          })),
+        });
+      }
+    } else if (addedSimpleGenres && addedSimpleGenres.length > 0) {
+      // Only add new connections if not doing a full replace
+      await tx.bookToGenre.createMany({
+        data: addedSimpleGenres.map((genreId) => ({
+          A: data.id,
+          B: genreId,
+        })),
+      });
+    }
+
     if (didAuthorChange) {
       // decrement old author's number of books
       await tx.author.update({
@@ -253,74 +315,57 @@ export const updateBook = async (
       data: {
         ...(didArabicNameChange
           ? {
-              primaryNameTranslations: {
-                upsert: {
-                  where: {
-                    bookId_locale: {
-                      bookId: data.id,
-                      locale: "ar",
-                    },
-                  },
-                  update: {
-                    text: data.arabicName,
-                  },
-                  create: {
+            primaryNameTranslations: {
+              upsert: {
+                where: {
+                  bookId_locale: {
+                    bookId: data.id,
                     locale: "ar",
-                    text: data.arabicName,
                   },
                 },
+                update: {
+                  text: data.arabicName,
+                },
+                create: {
+                  locale: "ar",
+                  text: data.arabicName,
+                },
               },
-            }
+            },
+          }
           : {}),
         ...(didTransliteratedNameChange
           ? {
-              transliteration: data.transliteratedName,
-            }
+            transliteration: data.transliteratedName,
+          }
           : {}),
         ...(data.otherNames
           ? {
-              otherNameTranslations: {
-                upsert: {
-                  where: {
-                    bookId_locale: {
-                      bookId: data.id,
-                      locale: "ar",
-                    },
-                  },
-                  update: {
-                    texts: data.otherNames,
-                  },
-                  create: {
+            otherNameTranslations: {
+              upsert: {
+                where: {
+                  bookId_locale: {
+                    bookId: data.id,
                     locale: "ar",
-                    texts: data.otherNames,
                   },
                 },
+                update: {
+                  texts: data.otherNames,
+                },
+                create: {
+                  locale: "ar",
+                  texts: data.otherNames,
+                },
               },
-            }
+            },
+          }
           : {}),
         ...(newSlug ? { slug: newSlug } : {}),
-        ...(simpleGenreIds && simpleGenreIds.length > 0
-          ? {
-              genres: {
-                connect: simpleGenreIds.map((genre) => ({ id: genre })),
-              },
-            }
-          : {}),
-        ...(didAdvancedGenresChange && simpleGenreIds !== null
-          ? {
-              advancedGenres: {
-                set: data.advancedGenres.map((genre) => ({ id: genre })),
-              },
-              genres: {
-                set: simpleGenreIds.map((genre) => ({ id: genre })),
-              },
-            }
-          : {}),
 
         ...(didAuthorChange
           ? {
-              author: { connect: { id: data.authorId } },
-            }
+            author: { connect: { id: data.authorId } },
+          }
           : {}),
         versions: versions,
         numberOfVersions: versions.length,

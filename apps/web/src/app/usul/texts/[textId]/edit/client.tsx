@@ -165,7 +165,7 @@ export default function EditTextClientPage({ text }: { text: Text }) {
         }
 
         const shared = {
-          ...(version.id ? { id: version.id } : {}),
+          id: version.id,
           publisher: version.publisher ? String(version.publisher) : undefined,
           publisherLocation: version.publisherLocation
             ? String(version.publisherLocation)
@@ -191,9 +191,16 @@ export default function EditTextClientPage({ text }: { text: Text }) {
               ocrBookId: version.ocrBookId,
             });
           }
-        } else {
+        } else if (version.type === "openiti") {
           finalVersions.push({
-            type: version.type,
+            type: "openiti",
+            value: version.value,
+            ...shared,
+            pdfUrl: finalPdfUrl,
+          });
+        } else if (version.type === "turath") {
+          finalVersions.push({
+            type: "turath",
             value: version.value,
             ...shared,
             pdfUrl: finalPdfUrl,

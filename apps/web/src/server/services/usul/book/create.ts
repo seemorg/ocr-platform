@@ -313,13 +313,21 @@ export const createBook = async (
         slug,
         ...(simpleGenreIds.length > 0
           ? {
-            genres: {
-              connect: simpleGenreIds.map((genre) => ({ id: genre })),
+            BookToGenre: {
+              create: simpleGenreIds.map((genreId) => ({
+                Genre: {
+                  connect: { id: genreId },
+                },
+              })),
             },
           }
           : {}),
-        advancedGenres: {
-          connect: advancedGenres.map((genre) => ({ id: genre.id })),
+        AdvancedGenreToBook: {
+          create: advancedGenres.map((genre) => ({
+            AdvancedGenre: {
+              connect: { id: genre.id },
+            },
+          })),
         },
         author: { connect: { id: authorId } },
         versions,

@@ -60,7 +60,7 @@ export const updateAuthor = async (
   // Handle empire and region updates if provided
   if (input.empireIds !== undefined) {
     // Delete existing empire connections
-    await db.authorToEmpire.deleteMany({
+    await db.authorToRegion.deleteMany({
       where: { A: input.id },
     });
 
@@ -120,23 +120,21 @@ export const updateAuthor = async (
         }
         : {}),
       primaryNameTranslations: {
-        upsert: [
-          {
-            where: {
-              authorId_locale: {
-                authorId: input.id,
-                locale: "ar",
-              },
-            },
-            create: {
+        upsert: {
+          where: {
+            authorId_locale: {
+              authorId: input.id,
               locale: "ar",
-              text: input.arabicName,
-            },
-            update: {
-              text: input.arabicName,
             },
           },
-        ],
+          create: {
+            locale: "ar",
+            text: input.arabicName,
+          },
+          update: {
+            text: input.arabicName,
+          },
+        },
       },
       bioTranslations: {
         ...(isChangingArabicBio
