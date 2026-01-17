@@ -176,7 +176,7 @@ export const updateBook = async (
   }
 
   const newBook = await db.$transaction(async (tx) => {
-    if (addedAdvancedGenres) {
+    if (addedAdvancedGenres && addedAdvancedGenres.length > 0) {
       await tx.advancedGenre.updateMany({
         where: {
           id: {
@@ -191,7 +191,7 @@ export const updateBook = async (
       });
     }
 
-    if (removedAdvancedGenres) {
+    if (removedAdvancedGenres && removedAdvancedGenres.length > 0) {
       await tx.advancedGenre.updateMany({
         where: {
           id: {
@@ -206,7 +206,7 @@ export const updateBook = async (
       });
     }
 
-    if (addedSimpleGenres) {
+    if (addedSimpleGenres && addedSimpleGenres.length > 0) {
       await tx.genre.updateMany({
         where: {
           id: {
@@ -221,7 +221,7 @@ export const updateBook = async (
       });
     }
 
-    if (removedSimpleGenres) {
+    if (removedSimpleGenres && removedSimpleGenres.length > 0) {
       await tx.genre.updateMany({
         where: {
           id: {
@@ -339,7 +339,7 @@ export const updateBook = async (
             transliteration: data.transliteratedName,
           }
           : {}),
-        ...(data.otherNames
+        ...(data.otherNames !== undefined
           ? {
             otherNameTranslations: {
               upsert: {
