@@ -9,10 +9,6 @@ import { parseAsBoolean, parseAsString, useQueryState } from "nuqs";
 
 import { AppRouter } from "@/server/api/root";
 
-type Empire =
-  inferRouterOutputs<AppRouter>["usulEmpire"]["searchEmpires"][number];
-type Region =
-  inferRouterOutputs<AppRouter>["usulRegion"]["searchRegions"][number];
 type AdvancedGenre =
   inferRouterOutputs<AppRouter>["usulAdvancedGenre"]["searchAdvancedGenres"][number];
 
@@ -27,76 +23,6 @@ export const Filter = () => {
         startTransition,
       }),
     );
-
-  // Empire filter
-  const [empireQuery, setEmpireQuery] = useQueryState(
-    "empire",
-    parseAsString.withOptions({
-      clearOnDefault: true,
-      shallow: false,
-      startTransition,
-    }),
-  );
-
-  const [empireSearchQuery, setEmpireSearchQuery] = useQueryState(
-    "empireSearch",
-    parseAsString.withOptions({
-      clearOnDefault: true,
-      shallow: true,
-    }),
-  );
-
-  const {
-    data: empires,
-    isLoading: isLoadingEmpires,
-    isError: isErrorEmpires,
-  } = api.usulEmpire.searchEmpires.useQuery({
-    query: empireSearchQuery ?? undefined,
-  });
-
-  const selectedEmpire = empires?.find((e) => e.id === empireQuery) ?? null;
-
-  const handleEmpireChange = useCallback(
-    (empire: Empire | null) => {
-      setEmpireQuery(empire?.id ?? null);
-    },
-    [setEmpireQuery],
-  );
-
-  // Region filter
-  const [regionQuery, setRegionQuery] = useQueryState(
-    "region",
-    parseAsString.withOptions({
-      clearOnDefault: true,
-      shallow: false,
-      startTransition,
-    }),
-  );
-
-  const [regionSearchQuery, setRegionSearchQuery] = useQueryState(
-    "regionSearch",
-    parseAsString.withOptions({
-      clearOnDefault: true,
-      shallow: true,
-    }),
-  );
-
-  const {
-    data: regions,
-    isLoading: isLoadingRegions,
-    isError: isErrorRegions,
-  } = api.usulRegion.searchRegions.useQuery({
-    query: regionSearchQuery ?? undefined,
-  });
-
-  const selectedRegion = regions?.find((r) => r.id === regionQuery) ?? null;
-
-  const handleRegionChange = useCallback(
-    (region: Region | null) => {
-      setRegionQuery(region?.id ?? null);
-    },
-    [setRegionQuery],
-  );
 
   // Advanced Genre filter
   const [advancedGenreQuery, setAdvancedGenreQuery] = useQueryState(
@@ -147,41 +73,9 @@ export const Filter = () => {
           onChange={handleAdvancedGenreChange}
           itemName={(item) => item.arabicName ?? item.englishName ?? ""}
           messages={{
-            placeholder: "Select advanced genre",
-            search: "Search advanced genres...",
-            empty: "No advanced genres found",
-          }}
-          widthClassName="w-[200px]"
-        />
-
-        <DataCombobox
-          data={empires}
-          isLoading={isLoadingEmpires}
-          isError={isErrorEmpires}
-          onQueryChange={setEmpireSearchQuery}
-          selected={selectedEmpire}
-          onChange={handleEmpireChange}
-          itemName={(item) => item.arabicName ?? item.englishName ?? ""}
-          messages={{
-            placeholder: "Select empire",
-            search: "Search empires...",
-            empty: "No empires found",
-          }}
-          widthClassName="w-[200px]"
-        />
-
-        <DataCombobox
-          data={regions}
-          isLoading={isLoadingRegions}
-          isError={isErrorRegions}
-          onQueryChange={setRegionSearchQuery}
-          selected={selectedRegion}
-          onChange={handleRegionChange}
-          itemName={(item) => item.arabicName ?? item.englishName ?? ""}
-          messages={{
-            placeholder: "Select region",
-            search: "Search regions...",
-            empty: "No regions found",
+            placeholder: "Select genre",
+            search: "Search genres...",
+            empty: "No genres found",
           }}
           widthClassName="w-[200px]"
         />
@@ -197,7 +91,7 @@ export const Filter = () => {
           }
         />
         <label htmlFor="exclude-advanced-genre" className="p-0 text-sm">
-          Show books without an advanced genre
+          Show books without a genre
         </label>
       </div>
     </div>

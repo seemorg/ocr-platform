@@ -55,7 +55,7 @@ export default function AdvancedGenresSelector({
         <MultiSelectorInput
           value={inputValue}
           onValueChange={(value) => setInputValue(value)}
-          placeholder={isLoading ? "Loading..." : "Select advanced genres"}
+          placeholder={isLoading ? "Loading..." : "Select genres"}
           disabled={isLoading}
           onPaste={(event) => {
             event.preventDefault();
