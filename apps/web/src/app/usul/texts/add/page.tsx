@@ -110,8 +110,13 @@ export default function AddTextPage() {
         toast.success("Book created successfully!");
         router.push("/usul/texts");
       },
-      onError: () => {
-        toast.error("Failed to create book");
+      onError: (error) => {
+        const errorMessage =
+          error.data?.zodError?.fieldErrors
+            ? "Please check the form for errors"
+            : error.message || "Failed to create book";
+        toast.error(errorMessage);
+        console.error("Book creation error:", error);
       },
     });
 
@@ -163,7 +168,7 @@ export default function AddTextPage() {
         }
 
         const shared = {
-          ...(version.id ? { id: version.id } : {}),
+          id: version.id,
           publisher: version.publisher ? String(version.publisher) : undefined,
           publisherLocation: version.publisherLocation
             ? String(version.publisherLocation)
@@ -193,7 +198,7 @@ export default function AddTextPage() {
             value: version.value,
             type: version.type,
             ...shared,
-            pdfUrl: finalPdfUrl,
+            ...(finalPdfUrl ? { pdfUrl: finalPdfUrl } : {}),
           });
         }
       }

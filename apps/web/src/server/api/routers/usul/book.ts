@@ -1,6 +1,6 @@
 import {
-  addAuthorToPipeline,
-  addBookToPipeline,
+  addAuthorToPipelineSafe,
+  addBookToPipelineSafe,
   regenerateBook,
 } from "@/lib/usul-pipeline";
 import {
@@ -85,14 +85,19 @@ export const usulBookRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { book, newAuthor } = await createBook(input, ctx.usulDb);
 
+      // Pipeline calls are non-blocking - don't fail the mutation if they timeout
       if (newAuthor) {
-        await addAuthorToPipeline(newAuthor);
+        addAuthorToPipelineSafe(newAuthor).catch((error) => {
+          console.error("Failed to add author to pipeline:", error);
+        });
       }
 
-      await addBookToPipeline({
+      addBookToPipelineSafe({
         slug: book.slug,
         arabicName: book.arabicName,
         authorArabicName: book.authorArabicName,
+      }).catch((error) => {
+        console.error("Failed to add book to pipeline:", error);
       });
 
       return book;
@@ -162,9 +167,9 @@ export const usulBookRouter = createTRPCRouter({
         },
         ...(!input.query
           ? {
-              take: 10,
-              orderBy: { createdAt: "desc" },
-            }
+            take: 10,
+            orderBy: { createdAt: "desc" },
+          }
           : {}),
         select: {
           id: true,

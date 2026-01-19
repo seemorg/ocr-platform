@@ -1,19 +1,39 @@
 import { env } from "@/env";
 
+const PIPELINE_TIMEOUT_MS = 10000; // 10 seconds
+
 const makePipelinePostRequest = async <T>(
   endpoint: string,
   body?: Record<string, any>,
 ) => {
-  const response = await fetch(`${env.USUL_PIPELINE_BASE_URL}${endpoint}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${env.USUL_PIPELINE_API_KEY}`,
-    },
-    body: JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), PIPELINE_TIMEOUT_MS);
 
-  return response.json() as Promise<T>;
+  try {
+    const response = await fetch(`${env.USUL_PIPELINE_BASE_URL}${endpoint}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${env.USUL_PIPELINE_API_KEY}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Pipeline request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json() as Promise<T>;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`Pipeline request timed out after ${PIPELINE_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  }
 };
 
 const makeApiPostRequest = async <T>(
@@ -33,16 +53,34 @@ const makeApiPostRequest = async <T>(
 };
 
 const makePipelineGetRequest = async <T>(endpoint: string) => {
-  const response = await fetch(`${env.USUL_PIPELINE_BASE_URL}${endpoint}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${env.USUL_PIPELINE_API_KEY}`,
-    },
-    cache: "no-store",
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), PIPELINE_TIMEOUT_MS);
 
-  return response.json() as Promise<T>;
+  try {
+    const response = await fetch(`${env.USUL_PIPELINE_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${env.USUL_PIPELINE_API_KEY}`,
+      },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error(`Pipeline request failed: ${response.status} ${response.statusText}`);
+    }
+
+    return response.json() as Promise<T>;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`Pipeline request timed out after ${PIPELINE_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  }
 };
 
 export const addBookToPipeline = async ({
@@ -72,6 +110,30 @@ export const addAuthorToPipeline = async ({
     slug,
     arabicName,
   });
+};
+
+// Non-blocking versions that don't throw errors
+export const addBookToPipelineSafe = async (params: {
+  slug: string;
+  arabicName: string;
+  authorArabicName: string;
+}) => {
+  try {
+    await addBookToPipeline(params);
+  } catch (error) {
+    console.error("Failed to add book to pipeline (non-blocking):", error);
+  }
+};
+
+export const addAuthorToPipelineSafe = async (params: {
+  slug: string;
+  arabicName: string;
+}) => {
+  try {
+    await addAuthorToPipeline(params);
+  } catch (error) {
+    console.error("Failed to add author to pipeline (non-blocking):", error);
+  }
 };
 
 export const regenerateBook = async ({
@@ -117,8 +179,8 @@ export const reIndexTypesense = async ({
   return makePipelinePostRequest<
     | { status: "STARTED"; requestedAt: number }
     | {
-        status: "IN_PROGRESS";
-      }
+      status: "IN_PROGRESS";
+    }
   >("/typesense/index", { clearCloudflareCache });
 };
 
