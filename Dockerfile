@@ -1,7 +1,7 @@
 # Adjust NODE_VERSION as desired
 ARG NODE_VERSION=20.10.0
 ARG PNPM_VERSION=9.6.0
-FROM node:${NODE_VERSION}-slim as base
+FROM node:${NODE_VERSION}-slim AS base
 
 # NestJS app lives here
 WORKDIR /app
@@ -10,7 +10,7 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential libcairo2-dev libpango1.0-dev 
 
 # Throw-away build stage to reduce size of final image
-FROM base as builder
+FROM base AS builder
 
 # Install pnpm
 RUN npm install -g pnpm@$PNPM_VERSION
