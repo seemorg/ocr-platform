@@ -48,12 +48,11 @@ jobs:
         with:
           name: node-app
       
-      - name: Login to Azure
-        uses: azure/login@v2
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_35D29126DD4643719D25E139459BAF76 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_98FAA526C3CD42D29B3C8C7FDA0050A8 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E3226086C29E4252865C31457071690F }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -62,4 +61,5 @@ jobs:
           app-name: 'usul-ocr-v1'
           slot-name: 'Production'
           package: .
+
           
