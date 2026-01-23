@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: ⬆️ Build and deploy | usul-ocr-v1
+name: Build and deploy Node.js app to Azure Web App - usul-ocr-v1
 
 on:
   push:
@@ -13,35 +13,27 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: read #This is required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '20.x'
-          cache: 'pnpm'
+          node-version: '24.x'
 
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.6.0
-          run_install: false
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build
-        run: pnpm build
+      - name: npm install, build, and test
+        run: |
+          npm install
+          npm run build --if-present
+          npm run test --if-present
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
           path: .
-
 
   deploy:
     runs-on: ubuntu-latest
@@ -56,11 +48,12 @@ jobs:
         with:
           name: node-app
       
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - name: Login to Azure
+        uses: azure/login@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_FE7DE46CB73443CC9B5CD3C8FCEB9B3D }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_457154DF1A724B9DAB7485462073B58D }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E19196D9C5E844A789620107C9AA6ED0 }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -69,6 +62,4 @@ jobs:
           app-name: 'usul-ocr-v1'
           slot-name: 'Production'
           package: .
-
           
-
