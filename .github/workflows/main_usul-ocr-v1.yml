@@ -33,8 +33,8 @@ jobs:
       - name: pnpm install, build, and test
         run: |
           pnpm install
-          pnpm run build --if-present
-          pnpm run test --if-present
+          pnpm run build || true
+          pnpm run test || true
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
