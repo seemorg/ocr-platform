@@ -1,5 +1,7 @@
 "use client";
 
+import type { AppRouter } from "@/server/api/root";
+import type { inferRouterOutputs } from "@trpc/server";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdvancedGenresSelector from "@/components/advanced-genres-selector";
@@ -24,10 +26,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import VersionsInput, {
   makeVersionsInitialState,
   Version,
 } from "@/components/versions-input";
+import DataCombobox from "@/components/data-combobox";
 import { useUploadPdfs } from "@/hooks/useUploadPdfs";
 import { textToSlug } from "@/lib/slug";
 import { bookVersionSchema } from "@/server/services/usul/book-versions";
@@ -38,6 +42,11 @@ import toast from "react-hot-toast";
 import { z } from "zod";
 
 import { AuthorYearStatus } from "@usul-ocr/usul-db";
+
+type Empire =
+  inferRouterOutputs<AppRouter>["usulEmpire"]["searchEmpires"][number];
+type Region =
+  inferRouterOutputs<AppRouter>["usulRegion"]["searchRegions"][number];
 
 const schema = z.object({
   arabicNames: z.array(z.string()).min(1),
@@ -54,6 +63,9 @@ const schema = z.object({
       id: z.string().optional(),
       diedYear: z.coerce.number().optional(),
       yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
+      arabicBio: z.string().optional(),
+      empireIds: z.array(z.string()).optional(),
+      regionIds: z.array(z.string()).optional(),
     })
     .refine(
       (data) => {
@@ -83,8 +95,29 @@ const schema = z.object({
 });
 
 export default function AddTextPage() {
+  const [empireSearchQuery, setEmpireSearchQuery] = useState<string>("");
+  const [regionSearchQuery, setRegionSearchQuery] = useState<string>("");
+  const [selectedEmpires, setSelectedEmpires] = useState<Empire[]>([]);
+  const [selectedRegions, setSelectedRegions] = useState<Region[]>([]);
+
   const { data: advancedGenres, isLoading: isLoadingAdvancedGenres } =
     api.usulAdvancedGenre.allAdvancedGenres.useQuery();
+
+  const {
+    data: empires,
+    isLoading: isLoadingEmpires,
+    isError: isErrorEmpires,
+  } = api.usulEmpire.searchEmpires.useQuery({
+    query: empireSearchQuery || undefined,
+  });
+
+  const {
+    data: regions,
+    isLoading: isLoadingRegions,
+    isError: isErrorRegions,
+  } = api.usulRegion.searchRegions.useQuery({
+    query: regionSearchQuery || undefined,
+  });
 
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -94,6 +127,8 @@ export default function AddTextPage() {
       primaryArabicNameIndex: 0,
       author: {
         isUsul: false,
+        empireIds: [],
+        regionIds: [],
       },
     },
   });
@@ -217,20 +252,23 @@ export default function AddTextPage() {
       advancedGenres: data.advancedGenres,
       author: data.author.isUsul
         ? {
-            isUsul: true,
-            slug: data.author.slug!,
-          }
+          isUsul: true,
+          slug: data.author.slug!,
+        }
         : {
-            isUsul: false,
-            arabicName:
-              data.author.arabicNames[data.author.primaryArabicNameIndex]!,
-            otherNames: data.author.arabicNames.filter(
-              (_, idx) => idx !== data.author.primaryArabicNameIndex,
-            ),
-            transliteratedName: data.author.transliteratedName,
-            diedYear: data.author.yearStatus ? undefined : data.author.diedYear,
-            yearStatus: data.author.yearStatus,
-          },
+          isUsul: false,
+          arabicName:
+            data.author.arabicNames[data.author.primaryArabicNameIndex]!,
+          otherNames: data.author.arabicNames.filter(
+            (_, idx) => idx !== data.author.primaryArabicNameIndex,
+          ),
+          transliteratedName: data.author.transliteratedName,
+          diedYear: data.author.yearStatus ? undefined : data.author.diedYear,
+          yearStatus: data.author.yearStatus,
+          arabicBio: data.author.arabicBio,
+          empires: selectedEmpires.map((e) => e.id),
+          regions: selectedRegions.map((r) => r.id),
+        },
       versions: finalVersions,
     });
   };
@@ -244,6 +282,9 @@ export default function AddTextPage() {
     form.resetField("author.primaryArabicNameIndex");
     form.resetField("author.transliteratedName");
     form.resetField("author.diedYear");
+    form.resetField("author.arabicBio");
+    setSelectedEmpires([]);
+    setSelectedRegions([]);
   };
 
   const setAuthorYearStatus = (checked: boolean, status: AuthorYearStatus) => {
@@ -379,7 +420,7 @@ export default function AddTextPage() {
                         getText={() => {
                           const primaryArabicName =
                             form.watch("author.arabicNames")?.[
-                              form.watch("author.primaryArabicNameIndex") ?? 0
+                            form.watch("author.primaryArabicNameIndex") ?? 0
                             ] ?? "";
                           return primaryArabicName;
                         }}
@@ -453,6 +494,143 @@ export default function AddTextPage() {
               )}
             />
 
+            {!isUsulAuthor && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="author.arabicBio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Biography (Arabic)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          className="min-h-40"
+                          {...field}
+                          disabled={isMutating}
+                        />
+                      </FormControl>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-4">
+                  <div>
+                    <Label className="mb-2 block">Empires</Label>
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      {selectedEmpires.map((empire) => (
+                        <div
+                          key={empire.id}
+                          className="flex items-center gap-2 rounded-md bg-secondary px-3 py-1.5"
+                        >
+                          <span className="text-sm">
+                            {empire.arabicName ?? empire.englishName ?? ""}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedEmpires((prev) =>
+                                prev.filter((e) => e.id !== empire.id),
+                              )
+                            }
+                            className="text-muted-foreground hover:text-foreground"
+                            disabled={isMutating}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <DataCombobox<Empire>
+                      data={empires}
+                      isLoading={isLoadingEmpires}
+                      isError={isErrorEmpires}
+                      onQueryChange={setEmpireSearchQuery}
+                      selected={null}
+                      onChange={(empire) => {
+                        if (
+                          empire &&
+                          !selectedEmpires.find((e) => e.id === empire.id)
+                        ) {
+                          setSelectedEmpires((prev) => [...prev, empire]);
+                        }
+                      }}
+                      itemName={(item) => {
+                        const isSelected = selectedEmpires.find(
+                          (e) => e.id === item.id,
+                        );
+                        const name = item.arabicName ?? item.englishName ?? "";
+                        return isSelected ? `✓ ${name}` : name;
+                      }}
+                      messages={{
+                        placeholder: "Add empire",
+                        search: "Search empires...",
+                        empty: "No empires found",
+                      }}
+                      widthClassName="w-[300px]"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="mb-2 block">Regions</Label>
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      {selectedRegions.map((region) => (
+                        <div
+                          key={region.id}
+                          className="flex items-center gap-2 rounded-md bg-secondary px-3 py-1.5"
+                        >
+                          <span className="text-sm">
+                            {region.arabicName ?? region.englishName ?? ""}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setSelectedRegions((prev) =>
+                                prev.filter((r) => r.id !== region.id),
+                              )
+                            }
+                            className="text-muted-foreground hover:text-foreground"
+                            disabled={isMutating}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <DataCombobox<Region>
+                      data={regions}
+                      isLoading={isLoadingRegions}
+                      isError={isErrorRegions}
+                      onQueryChange={setRegionSearchQuery}
+                      selected={null}
+                      onChange={(region) => {
+                        if (
+                          region &&
+                          !selectedRegions.find((r) => r.id === region.id)
+                        ) {
+                          setSelectedRegions((prev) => [...prev, region]);
+                        }
+                      }}
+                      itemName={(item) => {
+                        const isSelected = selectedRegions.find(
+                          (r) => r.id === item.id,
+                        );
+                        const name = item.arabicName ?? item.englishName ?? "";
+                        return isSelected ? `✓ ${name}` : name;
+                      }}
+                      messages={{
+                        placeholder: "Add region",
+                        search: "Search regions...",
+                        empty: "No regions found",
+                      }}
+                      widthClassName="w-[300px]"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
             {isUsulAuthor && (
               <LatestAuthorBooks authorSlug={form.watch("author.slug")} />
             )}
@@ -502,7 +680,7 @@ export default function AddTextPage() {
                     getText={() => {
                       const primaryArabicName =
                         form.watch("arabicNames")?.[
-                          form.watch("primaryArabicNameIndex") ?? 0
+                        form.watch("primaryArabicNameIndex") ?? 0
                         ] ?? "";
                       return primaryArabicName;
                     }}

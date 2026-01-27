@@ -10,6 +10,7 @@ import { Prisma } from "@usul-ocr/usul-db";
 
 import { SearchBar } from "../search-bar";
 import { columns } from "./columns";
+import { Filter } from "./filter";
 import { AuthorSort } from "./sort";
 import { YearSearchBar } from "./year-search";
 
@@ -19,6 +20,10 @@ export default async function AuthorsPage({
   searchParams: PaginationSearchParams & {
     sort?: "year-asc" | "year-desc";
     year?: string;
+    region?: string;
+    empire?: string;
+    showWithoutRegion?: "true" | "false";
+    showWithoutEmpire?: "true" | "false";
   };
 }) {
   const query = getQuery(searchParams);
@@ -68,6 +73,40 @@ export default async function AuthorsPage({
     };
   }
 
+  // Region filter - "show without" takes precedence
+  if (searchParams.showWithoutRegion === "true") {
+    filter = {
+      ...(filter ?? {}),
+      AuthorToRegion: {
+        none: {},
+      },
+    };
+  } else if (searchParams.region) {
+    filter = {
+      ...(filter ?? {}),
+      AuthorToRegion: {
+        some: { B: searchParams.region },
+      },
+    };
+  }
+
+  // Empire filter - "show without" takes precedence
+  if (searchParams.showWithoutEmpire === "true") {
+    filter = {
+      ...(filter ?? {}),
+      AuthorToEmpire: {
+        none: {},
+      },
+    };
+  } else if (searchParams.empire) {
+    filter = {
+      ...(filter ?? {}),
+      AuthorToEmpire: {
+        some: { B: searchParams.empire },
+      },
+    };
+  }
+
   const [count, authors] = await Promise.all([
     usulDb.author.count({
       where: filter,
@@ -75,6 +114,34 @@ export default async function AuthorsPage({
     usulDb.author.findMany({
       where: filter,
       include: {
+        AuthorToRegion: {
+          select: {
+            Region: {
+              select: {
+                id: true,
+                nameTranslations: {
+                  where: {
+                    locale: "ar",
+                  },
+                },
+              },
+            },
+          },
+        },
+        AuthorToEmpire: {
+          select: {
+            Empire: {
+              select: {
+                id: true,
+                EmpireName: {
+                  where: {
+                    locale: "ar",
+                  },
+                },
+              },
+            },
+          },
+        },
         primaryNameTranslations: {
           where: {
             OR: [{ locale: "ar" }, { locale: "en" }],
@@ -86,13 +153,13 @@ export default async function AuthorsPage({
       orderBy: [
         ...(sort
           ? [
-              {
-                year:
-                  sort === "year-asc"
-                    ? Prisma.SortOrder.asc
-                    : Prisma.SortOrder.desc,
-              },
-            ]
+            {
+              year:
+                sort === "year-asc"
+                  ? Prisma.SortOrder.asc
+                  : Prisma.SortOrder.desc,
+            },
+          ]
           : []),
         {
           createdAt: Prisma.SortOrder.desc,
@@ -110,6 +177,14 @@ export default async function AuthorsPage({
     return {
       id: author.id,
       slug: author.slug,
+      regions: author.AuthorToRegion.map((r) => ({
+        id: r.Region.id,
+        arabicName: r.Region.nameTranslations[0]?.text,
+      })),
+      empires: author.AuthorToEmpire.map((e) => ({
+        id: e.Empire.id,
+        arabicName: e.Empire.EmpireName[0]?.text,
+      })),
       year: author.year,
       yearStatus: author.yearStatus,
       arabicName: titles.ar,
@@ -128,13 +203,16 @@ export default async function AuthorsPage({
         </Button>
       }
     >
-      <div className="mb-10 flex items-start justify-between">
+      <div className=" flex items-start justify-between">
         <div className="flex items-center gap-4">
           <SearchBar className="mb-0 min-w-[500px]" />
           <YearSearchBar />
         </div>
 
         <AuthorSort />
+      </div>
+      <div className="mb-5 flex flex-col">
+        <Filter />
       </div>
       <DefaultDataTable
         columns={columns}

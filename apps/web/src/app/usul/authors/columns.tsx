@@ -13,11 +13,20 @@ import { AuthorYearStatus } from "@usul-ocr/usul-db";
 export type Text = {
   id: string;
   slug: string;
+  regions: {
+    id: string;
+    arabicName?: string;
+  }[];
+  empires: {
+    id: string;
+    arabicName?: string;
+  }[];
   year: number | null;
   yearStatus: AuthorYearStatus | null;
   arabicName?: string;
   englishName?: string;
   numberOfBooks: number;
+
 };
 
 export const columns: ColumnDef<Text>[] = [
@@ -28,6 +37,58 @@ export const columns: ColumnDef<Text>[] = [
   {
     accessorKey: "englishName",
     header: "English Name",
+  },
+  {
+    accessorKey: "regions",
+    header: "Regions",
+    cell: ({ row }) => {
+      const { regions } = row.original;
+      const validRegions = regions.filter((r) => r.arabicName);
+
+      if (validRegions.length === 0) {
+        return "-";
+      }
+
+      return (
+        <div className="flex flex-wrap gap-2">
+          {validRegions.map((r) => (
+            <Link
+              key={r.id}
+              href={`/usul/regions/${r.id}/edit`}
+              className="rounded-md bg-muted px-2 py-1"
+            >
+              {r.arabicName}
+            </Link>
+          ))}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "empires",
+    header: "Empires",
+    cell: ({ row }) => {
+      const { empires } = row.original;
+      const validEmpires = empires.filter((e) => e.arabicName);
+
+      if (validEmpires.length === 0) {
+        return "-";
+      }
+
+      return (
+        <div className="flex flex-wrap gap-2">
+          {validEmpires.map((e) => (
+            <Link
+              key={e.id}
+              href={`/usul/empires/${e.id}/edit`}
+              className="rounded-md bg-muted px-2 py-1"
+            >
+              {e.arabicName}
+            </Link>
+          ))}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "year",

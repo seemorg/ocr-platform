@@ -46,6 +46,7 @@ export const createBookSchema = z.object({
       transliteratedName: z.string(),
       diedYear: z.number().optional(),
       yearStatus: z.nativeEnum(AuthorYearStatus).optional(),
+      arabicBio: z.string().optional(),
       empires: z.array(z.string()).optional(),
       regions: z.array(z.string()).optional(),
     }),
@@ -262,6 +263,13 @@ export const createBook = async (
           transliteration: validatedAuthor.transliteratedName,
           year: validatedAuthor.diedYear,
           yearStatus: validatedAuthor.yearStatus,
+          ...(validatedAuthor.arabicBio
+            ? {
+              bioTranslations: {
+                create: { locale: "en", text: validatedAuthor.arabicBio },
+              },
+            }
+            : {}),
           extraProperties: {
             _airtableReference: validatedAuthor._airtableReference,
           },
