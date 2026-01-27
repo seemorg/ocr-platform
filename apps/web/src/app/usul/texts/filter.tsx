@@ -24,7 +24,7 @@ export const Filter = () => {
       }),
     );
 
-  // Advanced Genre filter
+  // Genre filter
   const [advancedGenreQuery, setAdvancedGenreQuery] = useQueryState(
     "advancedGenre",
     parseAsString.withOptions({

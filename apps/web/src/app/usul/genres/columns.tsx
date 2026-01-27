@@ -8,7 +8,7 @@ import { api } from "@/trpc/react";
 import { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
 
-export type Genre = {
+export type AdvancedGenre = {
   id: string;
   slug: string;
   arabicName?: string;
@@ -16,7 +16,7 @@ export type Genre = {
   numberOfBooks: number;
 };
 
-export const columns: ColumnDef<Genre>[] = [
+export const columns: ColumnDef<AdvancedGenre>[] = [
   {
     accessorKey: "arabicName",
     header: "Arabic Name",
@@ -32,7 +32,7 @@ export const columns: ColumnDef<Genre>[] = [
       const { numberOfBooks, id } = row.original;
       return (
         <Link
-          href={`/usul/texts?genre=${id}`}
+          href={`/usul/texts?advancedGenre=${id}`}
           className="text-primary underline"
         >
           {numberOfBooks} (View)
@@ -40,33 +40,30 @@ export const columns: ColumnDef<Genre>[] = [
       );
     },
   },
-  {
-    accessorKey: "slug",
-    header: "Usul",
-    cell: ({ row }) => {
-      const { slug } = row.original;
-      return (
-        <a
-          target="_blank"
-          href={`https://usul.ai/genres/${slug}`}
-          className="text-primary underline"
-        >
-          View on Usul
-        </a>
-      );
-    },
-  },
+  // {
+  //   accessorKey: "slug",
+  //   header: "Usul",
+  //   cell: ({ row }) => {
+  //     const { slug } = row.original;
+  //     return (
+  //       <a target="_blank" href={`https://usul.ai/genres/${slug}`}>
+  //         View on Usul
+  //       </a>
+  //     );
+  //   },
+  // },
   {
     header: "Actions",
     cell: ({ row }) => {
       const { id } = row.original;
       const router = useRouter();
-      const { isPending, mutateAsync } = api.usulGenre.delete.useMutation({
-        onSuccess: () => {
-          toast.success("Genre deleted successfully");
-          router.refresh();
-        },
-      });
+      const { isPending, mutateAsync } =
+        api.usulAdvancedGenre.delete.useMutation({
+          onSuccess: () => {
+            toast.success("genre deleted successfully");
+            router.refresh();
+          },
+        });
 
       return (
         <div className="flex items-center gap-3">

@@ -34,8 +34,8 @@ export const usulAdvancedGenreRouter = createTRPCRouter({
         },
         ...(!input.query
           ? {
-              take: 10,
-            }
+            take: 10,
+          }
           : {}),
         select: {
           id: true,
@@ -92,9 +92,9 @@ export const usulAdvancedGenreRouter = createTRPCRouter({
       name: advancedGenre.nameTranslations[0]!.text,
       ...(advancedGenre.extraProperties._airtableReference
         ? {
-            _airtableReference:
-              advancedGenre.extraProperties._airtableReference,
-          }
+          _airtableReference:
+            advancedGenre.extraProperties._airtableReference,
+        }
         : {}),
     }));
   }),
@@ -110,6 +110,7 @@ export const usulAdvancedGenreRouter = createTRPCRouter({
         englishName: z.string(),
         transliteration: z.string().optional(),
         slug: z.string(),
+        parentGenre: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -117,6 +118,7 @@ export const usulAdvancedGenreRouter = createTRPCRouter({
         data: {
           id: createId(),
           transliteration: input.transliteration,
+          parentGenre: input.parentGenre ?? null,
           nameTranslations: {
             createMany: {
               data: [
@@ -143,6 +145,7 @@ export const usulAdvancedGenreRouter = createTRPCRouter({
         englishName: z.string(),
         transliteration: z.string().optional(),
         slug: z.string(),
+        parentGenre: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -152,6 +155,7 @@ export const usulAdvancedGenreRouter = createTRPCRouter({
           data: {
             transliteration: input.transliteration,
             slug: input.slug,
+            parentGenre: input.parentGenre ?? null,
           },
         }),
         ctx.usulDb.advancedGenreName.updateMany({

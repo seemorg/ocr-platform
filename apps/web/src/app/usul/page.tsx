@@ -19,7 +19,7 @@ export default function UsulPage() {
         </Button>
 
         <Button asChild className="min-h-[150px] text-lg" variant="outline">
-          <Link href="/usul/advanced-genres">Genres</Link>
+          <Link href="/usul/genres">Genres</Link>
         </Button>
 
         <Button asChild className="min-h-[150px] text-lg" variant="outline">

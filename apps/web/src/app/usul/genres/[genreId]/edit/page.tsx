@@ -11,7 +11,7 @@ export default async function EditGenrePage({
     genreId: string;
   };
 }) {
-  const genre = await usulDb.genre.findUnique({
+  const genre = await usulDb.advancedGenre.findUnique({
     where: {
       id: params.genreId,
     },
@@ -38,6 +38,43 @@ export default async function EditGenrePage({
     {} as Record<string, string>,
   );
 
+  // Fetch parent genre if it exists
+  let parentGenre = null;
+  if (genre.parentGenre) {
+    const parent = await usulDb.advancedGenre.findUnique({
+      where: {
+        id: genre.parentGenre,
+      },
+      include: {
+        nameTranslations: {
+          where: {
+            locale: {
+              in: ["ar", "en"],
+            },
+          },
+        },
+      },
+    });
+
+    if (parent) {
+      const parentNames = parent.nameTranslations.reduce(
+        (acc, translation) => {
+          acc[translation.locale] = translation.text;
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+
+      parentGenre = {
+        id: parent.id,
+        slug: parent.slug,
+        arabicName: parentNames.ar ?? null,
+        englishName: parentNames.en ?? null,
+        transliteratedName: parent.transliteration,
+      };
+    }
+  }
+
   return (
     <PageLayout title="Edit Genre" backHref="/usul/genres">
       <EditGenreClientPage
@@ -47,6 +84,7 @@ export default async function EditGenrePage({
           englishName: names.en,
           slug: genre.slug,
           transliteration: genre.transliteration ?? undefined,
+          parentGenre: parentGenre ?? undefined,
         }}
       />
     </PageLayout>

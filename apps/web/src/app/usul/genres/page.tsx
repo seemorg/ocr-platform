@@ -11,15 +11,15 @@ import type { Prisma } from "@usul-ocr/usul-db";
 import { SearchBar } from "../search-bar";
 import { columns } from "./columns";
 
-export default async function GenresPage({
+export default async function AdvancedGenresPage({
   searchParams,
 }: {
   searchParams: PaginationSearchParams;
 }) {
-  const query = getQuery(searchParams);
   const pagination = getPagination(searchParams);
+  const query = getQuery(searchParams);
 
-  let filter: Prisma.GenreWhereInput | undefined;
+  let filter: Prisma.AdvancedGenreWhereInput | undefined;
   if (query) {
     filter = {
       OR: [
@@ -50,9 +50,9 @@ export default async function GenresPage({
     };
   }
 
-  const [total, genres] = await Promise.all([
-    usulDb.genre.count({ where: filter }),
-    usulDb.genre.findMany({
+  const [count, genres] = await Promise.all([
+    usulDb.advancedGenre.count({ where: filter }),
+    usulDb.advancedGenre.findMany({
       where: filter,
       include: {
         nameTranslations: {
@@ -95,7 +95,7 @@ export default async function GenresPage({
       <DefaultDataTable
         columns={columns}
         data={preparedData}
-        totalItems={total}
+        totalItems={count}
       />
     </PageLayout>
   );

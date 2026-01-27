@@ -703,7 +703,7 @@ export default function AddTextPage() {
             disabled={isMutating}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Advanced Genres</FormLabel>
+                <FormLabel>Genres</FormLabel>
                 <FormControl>
                   <AdvancedGenresSelector
                     selectedAdvancedGenreIds={field.value}

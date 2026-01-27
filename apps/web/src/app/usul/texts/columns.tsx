@@ -74,7 +74,7 @@ export const columns: ColumnDef<Text>[] = [
           {advancedGenres.map((g) => (
             <Link
               key={g.id}
-              href={`/usul/advanced-genres/${g.id}/edit`}
+              href={`/usul/genres/${g.id}/edit`}
               className="rounded-md bg-muted px-2 py-1"
             >
               {g.arabicName}

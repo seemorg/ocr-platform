@@ -2,21 +2,38 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import DataCombobox from "@/components/data-combobox";
 import PageLayout from "@/components/page-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { AppRouter } from "@/server/api/root";
+import type { inferRouterOutputs } from "@trpc/server";
 import { textToSlug } from "@/lib/slug";
 import { api } from "@/trpc/react";
 import toast from "react-hot-toast";
+import { Label } from "@/components/ui/label";
 
-export default function AddGenreForm() {
+type AdvancedGenre =
+  inferRouterOutputs<AppRouter>["usulAdvancedGenre"]["searchAdvancedGenres"][number];
+
+export default function AddAdvancedGenreForm() {
   const [arabicName, setArabicName] = useState("");
   const [englishName, setEnglishName] = useState("");
   const [transliteration, setTransliteration] = useState("");
   const [slug, setSlug] = useState("");
+  const [parentGenreSearchQuery, setParentGenreSearchQuery] = useState("");
+  const [selectedParentGenre, setSelectedParentGenre] =
+    useState<AdvancedGenre | null>(null);
 
   const router = useRouter();
-  const { mutateAsync, isPending } = api.usulGenre.create.useMutation({
+  const {
+    data: parentGenres,
+    isLoading: isLoadingParentGenres,
+    isError: isErrorParentGenres,
+  } = api.usulAdvancedGenre.searchAdvancedGenres.useQuery({
+    query: parentGenreSearchQuery || undefined,
+  });
+  const { mutateAsync, isPending } = api.usulAdvancedGenre.create.useMutation({
     onSuccess: () => {
       toast.success("Genre created");
       router.refresh();
@@ -24,6 +41,7 @@ export default function AddGenreForm() {
       setEnglishName("");
       setSlug("");
       setTransliteration("");
+      setSelectedParentGenre(null);
     },
     onError: (error) => {
       toast.error("Something went wrong!");
@@ -43,6 +61,7 @@ export default function AddGenreForm() {
       englishName: preparedEnglishName,
       transliteration: preparedTransliteration,
       slug,
+      parentGenre: selectedParentGenre?.id || undefined,
     });
   };
 
@@ -50,6 +69,7 @@ export default function AddGenreForm() {
     <PageLayout title="Add Genre" backHref="/usul/genres">
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div className="max-w-xl">
+          <Label>Arabic Name</Label>
           <Input
             type="text"
             value={arabicName}
@@ -61,6 +81,7 @@ export default function AddGenreForm() {
         </div>
 
         <div className="max-w-xl">
+          <Label>English Name</Label>
           <Input
             type="text"
             value={englishName}
@@ -76,6 +97,7 @@ export default function AddGenreForm() {
         </div>
 
         <div className="max-w-xl">
+          <Label>Transliteration</Label>
           <Input
             type="text"
             value={transliteration}
@@ -87,6 +109,7 @@ export default function AddGenreForm() {
         </div>
 
         <div className="max-w-xl">
+          <Label>Slug</Label>
           <Input
             type="text"
             value={slug}
@@ -94,6 +117,27 @@ export default function AddGenreForm() {
             onChange={(e) => setSlug(e.target.value)}
             disabled={isPending}
             required
+          />
+        </div>
+
+        <div className="max-w-xl">
+          <Label>Parent Genre</Label>
+          <DataCombobox<AdvancedGenre>
+            data={parentGenres}
+            isLoading={isLoadingParentGenres}
+            isError={isErrorParentGenres}
+            onQueryChange={setParentGenreSearchQuery}
+            selected={selectedParentGenre}
+            onChange={setSelectedParentGenre}
+            itemName={(item) =>
+              item.arabicName ?? item.englishName ?? item.transliteratedName ?? ""
+            }
+            messages={{
+              placeholder: "Select parent genre (optional)",
+              search: "Search genres...",
+              empty: "No genres found",
+            }}
+            widthClassName="w-full max-w-xl"
           />
         </div>
 

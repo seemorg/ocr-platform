@@ -315,21 +315,21 @@ export default function AddTextFromAirtable() {
       physicalDetails: hasPhysicalDetails ? data.physicalDetails : null,
       author: data.author.isUsul
         ? {
-            isUsul: true,
-            slug: data.author.slug!,
-          }
+          isUsul: true,
+          slug: data.author.slug!,
+        }
         : {
-            isUsul: false,
-            _airtableReference: data.author._airtableReference,
-            arabicName:
-              data.author.arabicNames[data.author.primaryArabicNameIndex]!,
-            otherNames: data.author.arabicNames.filter(
-              (_, idx) => idx !== data.author.primaryArabicNameIndex,
-            ),
-            transliteratedName: data.author.transliteratedName,
-            diedYear: data.author.yearStatus ? undefined : data.author.diedYear,
-            yearStatus: data.author.yearStatus,
-          },
+          isUsul: false,
+          _airtableReference: data.author._airtableReference,
+          arabicName:
+            data.author.arabicNames[data.author.primaryArabicNameIndex]!,
+          otherNames: data.author.arabicNames.filter(
+            (_, idx) => idx !== data.author.primaryArabicNameIndex,
+          ),
+          transliteratedName: data.author.transliteratedName,
+          diedYear: data.author.yearStatus ? undefined : data.author.diedYear,
+          yearStatus: data.author.yearStatus,
+        },
       versions: finalVersions,
     });
   };
@@ -582,7 +582,7 @@ export default function AddTextFromAirtable() {
                       getText={() => {
                         const primaryArabicName =
                           form.watch("author.arabicNames")?.[
-                            form.watch("author.primaryArabicNameIndex")
+                          form.watch("author.primaryArabicNameIndex")
                           ];
                         return primaryArabicName ?? "";
                       }}
@@ -711,7 +711,7 @@ export default function AddTextFromAirtable() {
                     getText={() => {
                       const primaryArabicName =
                         form.watch("arabicNames")?.[
-                          form.watch("primaryArabicNameIndex")
+                        form.watch("primaryArabicNameIndex")
                         ];
                       return primaryArabicName ?? "";
                     }}
@@ -733,7 +733,7 @@ export default function AddTextFromAirtable() {
             name="advancedGenres"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Advanced Genres</FormLabel>
+                <FormLabel>Genres</FormLabel>
                 <FormControl>
                   <AdvancedGenresSelector
                     selectedAdvancedGenreIds={field.value}
