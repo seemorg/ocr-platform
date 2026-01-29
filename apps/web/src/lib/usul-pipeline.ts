@@ -152,6 +152,19 @@ export const regenerateBook = async ({
   });
 };
 
+// Non-blocking version that doesn't throw errors
+export const regenerateBookSafe = async (params: {
+  id: string;
+  regenerateNames?: boolean;
+  regenerateCover?: boolean;
+}) => {
+  try {
+    await regenerateBook(params);
+  } catch (error) {
+    console.error("Failed to regenerate book (non-blocking):", error);
+  }
+};
+
 export const regenerateAuthor = async ({
   id,
   regenerateNames,

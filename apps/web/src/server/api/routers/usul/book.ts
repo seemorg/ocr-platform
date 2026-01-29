@@ -2,6 +2,7 @@ import {
   addAuthorToPipelineSafe,
   addBookToPipelineSafe,
   regenerateBook,
+  regenerateBookSafe,
 } from "@/lib/usul-pipeline";
 import {
   deleteBookById,
@@ -110,10 +111,13 @@ export const usulBookRouter = createTRPCRouter({
         ctx.usulDb,
       );
 
-      await regenerateBook({
+      // Pipeline call is non-blocking - don't fail the mutation if it fails
+      regenerateBookSafe({
         id,
         regenerateNames: didArabicNameChange,
         regenerateCover: didArabicNameChange || didAuthorChange,
+      }).catch((error) => {
+        console.error("Failed to regenerate book:", error);
       });
 
       return { success: true };
