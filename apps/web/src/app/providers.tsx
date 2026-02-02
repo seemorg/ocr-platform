@@ -8,7 +8,7 @@ import { Toaster } from "react-hot-toast";
 
 // Dynamically import NextTopLoader to avoid issues during static generation
 const NextTopLoader = dynamic(
-  () => import("nextjs-toploader").then((mod) => mod.default),
+  () => import("nextjs-toploader") as Promise<{ default: React.ComponentType }>,
   { ssr: false }
 );
 
