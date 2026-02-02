@@ -1,4 +1,7 @@
-name: ⬆️ Build and deploy | usul-ocr-v1
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy Node.js app to Azure Web App - usul-ocr-v1
 
 on:
   push:
@@ -18,23 +21,13 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: '22.x'
+          node-version: '24.x'
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9.6.0
-
-      - name: Install system dependencies for canvas
+      - name: npm install, build, and test
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
-
-      - name: pnpm install, build, and test
-        run: |
-          pnpm install
-          pnpm run build || true
-          pnpm run test || true
+          npm install
+          npm run build --if-present
+          npm run test --if-present
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -58,9 +51,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_FE7DE46CB73443CC9B5CD3C8FCEB9B3D }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_457154DF1A724B9DAB7485462073B58D }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E19196D9C5E844A789620107C9AA6ED0 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_7344028D5C154737BCA68F73D3FFDB0C }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_DC06A0F0F0F94DF6911833C401D6ED1F }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_B62B868518A6486BB0704000668A0038 }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
