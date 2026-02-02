@@ -42,21 +42,11 @@ jobs:
       contents: read #This is required for actions/checkout
 
     steps:
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_7344028D5C154737BCA68F73D3FFDB0C }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_DC06A0F0F0F94DF6911833C401D6ED1F }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_B62B868518A6486BB0704000668A0038 }}
-
-      - name: 'Deploy to Azure Web App'
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'usul-ocr-v1'
-          slot-name: 'Production'
-          images: 'index.docker.io/engineeringusul/usul-pipeline:latest'
+      - name: Trigger Azure Container Registry webhook
+        run: |
+          curl -i -X POST "${{ secrets.AZURE_DEPLOYMENT_WEBHOOK_URL }}"
 
           
+
 
 
