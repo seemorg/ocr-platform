@@ -14,6 +14,8 @@ import { Filter } from "./filter";
 import { AuthorSort } from "./sort";
 import { YearSearchBar } from "./year-search";
 
+export const dynamic = "force-dynamic";
+
 export default async function AuthorsPage({
   searchParams,
 }: {

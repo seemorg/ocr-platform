@@ -5,6 +5,8 @@ import { getUserGroupIdsAndRole } from "@/server/services/user";
 
 import { UserRole } from "@usul-ocr/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function AppPage() {
   const session = await getServerAuthSession();
   const user = await getUserGroupIdsAndRole(session!.user.id);
@@ -15,14 +17,14 @@ export default async function AppPage() {
       ...(user?.role === UserRole.ADMIN
         ? {}
         : {
-            Book: {
-              Group: {
-                id: {
-                  in: user?.groupIds,
-                },
+          Book: {
+            Group: {
+              id: {
+                in: user?.groupIds,
               },
             },
-          }),
+          },
+        }),
     },
     select: {
       id: true,

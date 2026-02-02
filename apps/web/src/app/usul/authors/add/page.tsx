@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import type { AppRouter } from "@/server/api/root";
 import type { inferRouterOutputs } from "@trpc/server";
 import { useState } from "react";

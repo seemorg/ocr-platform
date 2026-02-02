@@ -2,6 +2,8 @@ import Link from "next/link";
 import PageLayout from "@/components/page-layout";
 import { Button } from "@/components/ui/button";
 
+export const dynamic = "force-dynamic";
+
 export default function UsulPage() {
   return (
     <PageLayout title="Usul Admin Panel">

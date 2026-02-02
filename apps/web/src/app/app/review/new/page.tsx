@@ -4,6 +4,8 @@ import { Container } from "@/components/ui/container";
 
 import NewBookForm from "./form";
 
+export const dynamic = "force-dynamic";
+
 export default function NewBookPage() {
   return (
     <main className="flex min-h-screen w-full flex-col pb-28 pt-14">

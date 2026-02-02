@@ -10,6 +10,8 @@ import { UserRole } from "@usul-ocr/db";
 import { Book, columns } from "./columns";
 import { DataTable } from "./data-table";
 
+export const dynamic = "force-dynamic";
+
 async function getData(): Promise<Book[]> {
   const session = await getServerAuthSession();
   const user = await getUserGroupIdsAndRole(session!.user.id);
@@ -21,12 +23,12 @@ async function getData(): Promise<Book[]> {
       user?.role === UserRole.ADMIN
         ? {}
         : {
-            Group: {
-              id: {
-                in: user?.groupIds,
-              },
+          Group: {
+            id: {
+              in: user?.groupIds,
             },
           },
+        },
     select: {
       id: true,
       arabicName: true,

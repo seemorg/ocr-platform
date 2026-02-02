@@ -5,6 +5,8 @@ import AddGroupForm from "./add-form";
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
 
+export const dynamic = "force-dynamic";
+
 async function GroupsPage() {
   const data = await db.group.findMany();
 

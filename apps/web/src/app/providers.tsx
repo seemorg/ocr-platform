@@ -3,8 +3,14 @@
 import { Toaster as UiToaster } from "@/components/ui/toaster";
 import { TRPCReactProvider } from "@/trpc/react";
 import { SessionProvider } from "next-auth/react";
-import NextTopLoader from "nextjs-toploader";
+import dynamic from "next/dynamic";
 import { Toaster } from "react-hot-toast";
+
+// Dynamically import NextTopLoader to avoid issues during static generation
+const NextTopLoader = dynamic(
+  () => import("nextjs-toploader").then((mod) => mod.default),
+  { ssr: false }
+);
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (

@@ -4,6 +4,8 @@ import { getServerAuthSession } from "@/server/auth";
 
 import AuthForm from "./auth-form";
 
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage() {
   const session = await getServerAuthSession();
 

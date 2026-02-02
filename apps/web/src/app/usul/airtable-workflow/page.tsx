@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AdvancedGenresSelector from "@/components/advanced-genres-selector";

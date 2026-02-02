@@ -27,6 +27,7 @@
     "@t3-oss/env-nextjs": "^0.10.1",
     "@usul-ocr/db": "workspace:*",
     "bullmq": "^5.10.3",
+    "canvas": "^3.2.1",
     "hono": "^4.5.1",
     "ioredis": "^5.4.1",
     "lru-cache": "^11.0.0",

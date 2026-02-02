@@ -11,6 +11,8 @@ import type { Prisma } from "@usul-ocr/usul-db";
 import { SearchBar } from "../search-bar";
 import { columns } from "./columns";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdvancedGenresPage({
   searchParams,
 }: {

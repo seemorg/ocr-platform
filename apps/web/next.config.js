@@ -18,6 +18,11 @@ const config = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
 
+  /** Skip static generation of error pages */
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
+
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.plugins = [...config.plugins, new PrismaPlugin()];

@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { DeleteModal } from "@/components/delete-modal";
 import PageLayout from "@/components/page-layout";

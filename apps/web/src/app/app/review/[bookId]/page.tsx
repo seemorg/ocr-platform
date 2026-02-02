@@ -11,6 +11,8 @@ import { columns, Page } from "./columns";
 import { DataTable } from "./data-table";
 import TotalWords from "./total-words";
 
+
+
 async function getData(bookId: string): Promise<{
   book: {
     arabicName: string | null;
@@ -32,12 +34,12 @@ async function getData(bookId: string): Promise<{
         ...(user?.role === UserRole.ADMIN
           ? {}
           : {
-              Group: {
-                id: {
-                  in: user?.groupIds,
-                },
+            Group: {
+              id: {
+                in: user?.groupIds,
               },
-            }),
+            },
+          }),
       },
       select: {
         arabicName: true,
@@ -77,9 +79,9 @@ async function getData(bookId: string): Promise<{
       ...page,
       reviewer: page.reviewedById
         ? {
-            id: page.reviewedById,
-            email: userIdToEmail[page.reviewedById] as string,
-          }
+          id: page.reviewedById,
+          email: userIdToEmail[page.reviewedById] as string,
+        }
         : null,
     })),
   };

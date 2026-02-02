@@ -12,6 +12,8 @@ import { SearchBar } from "../search-bar";
 import { columns } from "./columns";
 import { Filter } from "./filter";
 
+export const dynamic = "force-dynamic";
+
 export default async function TextsPage({
   searchParams,
 }: {
