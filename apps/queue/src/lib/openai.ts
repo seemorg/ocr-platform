@@ -12,7 +12,7 @@ import OpenAI from "openai";
 import { env } from "../env";
 
 const azureOpenai = new OpenAIClient(
-  `https://${env.AZURE_OPENAI_RESOURCE_NAME}.cognitiveservices.azure.com/`,
+  `https://${env.AZURE_OPENAI_RESOURCE_NAME}.openai.azure.com/`,
   new AzureKeyCredential(env.AZURE_OPENAI_KEY),
 );
 
@@ -21,7 +21,7 @@ const heliconeOpenai = new OpenAI({
   baseURL: `https://oai.helicone.ai/openai/deployments/${env.AZURE_OPENAI_DEPLOYMENT_NAME}`,
   defaultHeaders: {
     "Helicone-Auth": `Bearer ${env.HELICONE_API_KEY}`,
-    "Helicone-OpenAI-API-Base": `https://${env.AZURE_OPENAI_RESOURCE_NAME}.cognitiveservices.azure.com/`,
+    "Helicone-OpenAI-API-Base": `https://${env.AZURE_OPENAI_RESOURCE_NAME}.openai.azure.com/`,
     "Helicone-Property-App": "ocr-pipeline",
     "Api-Key": env.AZURE_OPENAI_KEY,
   },
@@ -60,22 +60,22 @@ export const getChatCompletions = async (
           typeof message.content === "string"
             ? message.content
             : message.content.map((item) => {
-              if (item.type === "image_url") {
-                const typedItem = item as ChatMessageImageContentItem;
-                return {
-                  type: "image_url",
-                  image_url: {
-                    url: typedItem.imageUrl.url,
-                  },
-                };
-              }
+                if (item.type === "image_url") {
+                  const typedItem = item as ChatMessageImageContentItem;
+                  return {
+                    type: "image_url",
+                    image_url: {
+                      url: typedItem.imageUrl.url,
+                    },
+                  };
+                }
 
-              const typedItem = item as ChatMessageTextContentItem;
-              return {
-                type: "text",
-                text: typedItem.text,
-              };
-            }),
+                const typedItem = item as ChatMessageTextContentItem;
+                return {
+                  type: "text",
+                  text: typedItem.text,
+                };
+              }),
       } as ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam;
     }),
   });
