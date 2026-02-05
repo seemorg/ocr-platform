@@ -22,7 +22,7 @@ model Book {
   pdfUrl          String
   totalPages      Int        @default(0)
   reviewedPages   Int        @default(0)
-  authorId        String
+  authorId        String?
   status          BookStatus @default(UNPROCESSED)
   airtableId      String?    @unique
   arabicName      String?
@@ -31,7 +31,7 @@ model Book {
   splitsData      Json       @default("{}")
   createdAt       DateTime   @default(now())
   Group           Group?     @relation(fields: [assignedGroupId], references: [id])
-  author          Author     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  author          Author?    @relation(fields: [authorId], references: [id], onDelete: Cascade)
   Page            Page[]
 }
 
