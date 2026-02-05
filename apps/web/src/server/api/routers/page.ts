@@ -113,17 +113,47 @@ export const pageRouter = createTRPCRouter({
       }
 
       if (input.redoOcr) {
-        const response = await fetch(
-          `${env.NEXT_PUBLIC_OCR_SERVER_URL}page/${page.id}/ocr`,
-          {
+        // Ensure URL doesn't have double slashes
+        const baseUrl = env.NEXT_PUBLIC_OCR_SERVER_URL.endsWith("/")
+          ? env.NEXT_PUBLIC_OCR_SERVER_URL.slice(0, -1)
+          : env.NEXT_PUBLIC_OCR_SERVER_URL;
+        const url = `${baseUrl}/page/${page.id}/ocr`;
+
+        let response: Response;
+        try {
+          response = await fetch(url, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${env.OCR_SERVER_API_KEY}`,
+              "Content-Type": "application/json",
             },
-          },
-        );
+          });
+        } catch (error) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Failed to connect to OCR server at ${baseUrl}. Make sure the OCR server is running. Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+          });
+        }
 
-        const data = (await response.json()) as { ok: boolean };
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => "Unknown error");
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `OCR server error: ${response.status} ${response.statusText}. ${errorText}. URL: ${url}`,
+          });
+        }
+
+        let data: { ok: boolean };
+        try {
+          const text = await response.text();
+          data = JSON.parse(text) as { ok: boolean };
+        } catch (error) {
+          throw new TRPCError({
+            code: "PARSE_ERROR",
+            message: `Failed to parse OCR server response: ${error instanceof Error ? error.message : "Unknown error"}`,
+          });
+        }
+
         return data;
       }
 

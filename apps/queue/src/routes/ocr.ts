@@ -45,6 +45,100 @@ ocrRoutes.post(
   },
 );
 
+// route for redoing OCR for a certain page
+ocrRoutes.post(
+  "/page/:pageId/ocr",
+  bearerAuth({ token: env.OCR_SERVER_API_KEY }),
+  validator("param", (value, c) => {
+    const parsed = z
+      .object({
+        pageId: z.string().min(1),
+      })
+      .safeParse(value);
+    if (!parsed.success) {
+      return c.json({ ok: false, error: "Invalid request" }, 400);
+    }
+    return parsed.data;
+  }),
+  async (c) => {
+    const { pageId } = c.req.valid("param");
+
+    const page = await db.page.findUnique({
+      where: {
+        id: pageId,
+      },
+      select: {
+        id: true,
+        pdfPageNumber: true,
+        reviewed: true,
+        Book: {
+          select: {
+            id: true,
+            pdfUrl: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    if (!page) {
+      return c.json({ ok: false, error: "Page not found" }, 404);
+    }
+
+    const pageIndex = page.pdfPageNumber - 1;
+
+    await db.page.update({
+      where: {
+        id: pageId,
+      },
+      data: {
+        ocrStatus: PageOcrStatus.PROCESSING,
+        flags: [],
+        reviewed: false,
+        reviewedAt: null,
+        User: { disconnect: true },
+        ocrContent: "",
+        ocrFootnotes: null,
+        content: null,
+        footnotes: null,
+        ...(page.reviewed
+          ? {
+              Book: {
+                update: {
+                  reviewedPages: {
+                    decrement: 1,
+                  },
+                  ...(page.Book.status === BookStatus.COMPLETED
+                    ? {
+                        status: BookStatus.IN_REVIEW,
+                      }
+                    : {}),
+                },
+              },
+            }
+          : {}),
+      },
+    });
+
+    await pagesQueue.add(
+      `${page.Book.id}-page-${pageIndex}`,
+      {
+        pageId,
+        bookId: page.Book.id,
+        pdfUrl: page.Book.pdfUrl,
+        pageIndex,
+        isRedo: true,
+      },
+      {
+        // prioritize redo jobs
+        lifo: true,
+      },
+    );
+
+    return c.json({ ok: true });
+  },
+);
+
 const schema = z.object({
   bookId: z.string().min(1),
   pageNumber: z.coerce.number().min(1),
@@ -86,106 +180,13 @@ ocrRoutes.get(
     return stream(
       c,
       async (stream) => {
-        await stream.write(pageImage);
+        await stream.write(pageImage as unknown as Uint8Array);
       },
       async (err, stream) => {
         console.log(err);
         await stream.writeln("An error occurred!");
       },
     );
-  },
-);
-
-// route for redoing OCR for a certain page
-ocrRoutes.post(
-  "/page/:pageId/ocr",
-  validator("param", (value, c) => {
-    const parsed = z
-      .object({
-        pageId: z.string().min(1),
-      })
-      .safeParse(value);
-    if (!parsed.success) {
-      return c.json({ ok: false, error: "Invalid request" }, 400);
-    }
-    return parsed.data;
-  }),
-  async (c) => {
-    const { pageId } = c.req.valid("param");
-
-    const page = await db.page.findUnique({
-      where: {
-        id: pageId,
-      },
-      select: {
-        id: true,
-        pdfPageNumber: true,
-        reviewed: true,
-        book: {
-          select: {
-            id: true,
-            pdfUrl: true,
-            status: true,
-          },
-        },
-      },
-    });
-
-    if (!page) {
-      return c.json({ ok: false, error: "Page not found" }, 404);
-    }
-
-    const pageIndex = page.pdfPageNumber - 1;
-
-    await db.page.update({
-      where: {
-        id: pageId,
-      },
-      data: {
-        ocrStatus: PageOcrStatus.PROCESSING,
-        flags: [],
-        reviewed: false,
-        reviewedAt: null,
-        reviewedBy: { disconnect: true },
-        ocrContent: "",
-        ocrFootnotes: null,
-        content: null,
-        footnotes: null,
-        ...(page.reviewed
-          ? {
-              book: {
-                update: {
-                  reviewedPages: {
-                    decrement: 1,
-                  },
-                  ...(page.book.status === BookStatus.COMPLETED
-                    ? {
-                        status: BookStatus.IN_REVIEW,
-                      }
-                    : {}),
-                },
-              },
-            }
-          : {}),
-      },
-    });
-
-    await pagesQueue.add(
-      `${page.book.id}-page-${pageIndex}`,
-      {
-        pageId,
-        bookId: page.book.id,
-        pdfUrl: page.book.pdfUrl,
-        pageIndex,
-        isRedo: true,
-      },
-      {
-        // prioritize redo jobs
-        lifo: true,
-      },
-    );
-
-    return c.json({ ok: true });
   },
 );
 
