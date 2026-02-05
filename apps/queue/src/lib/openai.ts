@@ -12,7 +12,7 @@ import OpenAI from "openai";
 import { env } from "../env";
 
 const azureOpenai = new OpenAIClient(
-  `https://${env.AZURE_OPENAI_RESOURCE_NAME}.cognitiveservices.azure.com/`,
+  `https://${env.AZURE_OPENAI_RESOURCE_NAME}.cognitiveservices.azure.com/openai/`,
   new AzureKeyCredential(env.AZURE_OPENAI_KEY),
 );
 
@@ -21,7 +21,7 @@ const heliconeOpenai = new OpenAI({
   baseURL: `https://oai.helicone.ai/openai/deployments/${env.AZURE_OPENAI_DEPLOYMENT_NAME}`,
   defaultHeaders: {
     "Helicone-Auth": `Bearer ${env.HELICONE_API_KEY}`,
-    "Helicone-OpenAI-API-Base": `https://${env.AZURE_OPENAI_RESOURCE_NAME}.cognitiveservices.azure.com/`,
+    "Helicone-OpenAI-API-Base": `https://${env.AZURE_OPENAI_RESOURCE_NAME}.cognitiveservices.azure.com/openai/`,
     "Helicone-Property-App": "ocr-pipeline",
     "Api-Key": env.AZURE_OPENAI_KEY,
   },
