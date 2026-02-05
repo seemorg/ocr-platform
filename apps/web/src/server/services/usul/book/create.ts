@@ -274,29 +274,35 @@ export const createBook = async (
             _airtableReference: validatedAuthor._airtableReference,
           },
           numberOfBooks: 1,
-          ...(validatedAuthor.empires && validatedAuthor.empires.length > 0
-            ? {
-              empires: {
-                connect: validatedAuthor.empires.map((id) => ({ id })),
-              },
-            }
-            : {}),
-          ...(validatedAuthor.regions && validatedAuthor.regions.length > 0
-            ? {
-              regions: {
-                connect: validatedAuthor.regions.map((id) => ({ id })),
-              },
-            }
-            : {}),
         },
       });
+
+      authorId = newAuthor.id;
+
+      // Create empire and region relations separately
+      if (validatedAuthor.empires && validatedAuthor.empires.length > 0) {
+        await tx.authorToEmpire.createMany({
+          data: validatedAuthor.empires.map((empireId) => ({
+            A: authorId,
+            B: empireId,
+          })),
+        });
+      }
+
+      if (validatedAuthor.regions && validatedAuthor.regions.length > 0) {
+        await tx.authorToRegion.createMany({
+          data: validatedAuthor.regions.map((regionId) => ({
+            A: authorId,
+            B: regionId,
+          })),
+        });
+      }
 
       newAuthorParams = {
         slug: newAuthor.slug,
         arabicName: validatedAuthor.arabicName,
       };
       authorArabicName = validatedAuthor.arabicName;
-      authorId = newAuthor.id;
     }
 
     const versions = prepareBookVersions(data.versions);
