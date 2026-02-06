@@ -60,7 +60,7 @@ export const updateAuthor = async (
   // Handle empire and region updates if provided
   if (input.empireIds !== undefined) {
     // Delete existing empire connections
-    await db.authorToRegion.deleteMany({
+    await db.authorToEmpire.deleteMany({
       where: { A: input.id },
     });
 
