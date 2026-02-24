@@ -28,11 +28,14 @@ model Book {
   arabicName      String?
   englishName     String?
   assignedGroupId String?
+  usulBookId      String?
   splitsData      Json       @default("{}")
   createdAt       DateTime   @default(now())
   Group           Group?     @relation(fields: [assignedGroupId], references: [id])
   author          Author?    @relation(fields: [authorId], references: [id], onDelete: Cascade)
   Page            Page[]
+
+  @@unique([usulBookId, pdfUrl])
 }
 
 model Account {
