@@ -78,7 +78,7 @@ model GroupMembership {
 }
 
 model Page {
-  id              String        @id
+  id              String        @id @default(cuid())
   pageNumber      Int?
   volumeNumber    Int?
   pdfPageNumber   Int
