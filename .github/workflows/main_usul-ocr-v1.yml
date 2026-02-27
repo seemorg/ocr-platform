@@ -44,9 +44,9 @@ jobs:
     steps:
       - name: Trigger Azure Container Registry webhook
         run: |
-          curl -i -X POST "${{ secrets.AZURE_DEPLOYMENT_WEBHOOK_URL }}"
-
-          
-
-
-
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST '${{ secrets.AZURE_DEPLOYMENT_WEBHOOK_URL }}')
+          echo "HTTP Status: $response"
+          if [ "$response" -lt 200 ] || [ "$response" -ge 300 ]; then
+            echo "::error::Webhook failed with HTTP $response"
+            exit 1
+          fi
