@@ -76,7 +76,7 @@ export const pagesWorker = new Worker<PagesQueueData>(
 
     await db.page.create({
       data: {
-        book: {
+        Book: {
           connect: {
             id: bookId,
           },
