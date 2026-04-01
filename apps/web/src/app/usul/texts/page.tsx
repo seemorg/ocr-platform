@@ -116,6 +116,7 @@ export default async function TextsPage({
         id: true,
         createdAt: true,
         updatedAt: true,
+        versions: true,
         primaryNameTranslations: {
           where: {
             OR: [{ locale: "ar" }, { locale: "en" }],
@@ -235,6 +236,7 @@ export default async function TextsPage({
         id: relation.Region.id,
         arabicName: relation.Region.nameTranslations[0]?.text,
       })),
+      versions: Array.from(new Set(book.versions.map((v) => v.source))).sort(),
     };
   });
 
